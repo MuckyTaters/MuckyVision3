@@ -42,7 +42,7 @@ iterations being closed-source. Key features of MuckyVision are pixelated
 'character' graphics, a limited colour palette and a self-contained
 executable (i.e. no need for external data files).
 
-MuckyVision 3 is written in C++ and makes use the SDL2 core library,
+MuckyVision 3 is written in C++ and makes use of the SDL2 core library,
 although no knowledge of SDL is required to use MuckyVision within a C++
 application.
 
@@ -50,20 +50,20 @@ application.
 2. Current State of Development
 
 At present, MuckyVision 3 is a collection of C++ header and source files, plus
-several additional files (in the 'tests' folder) to build a small demo.
+several additional files (in the 'tests' folder) that build a small demo.
 This will eventually become a library, potentially with bindings to other
 languages.
 
 MuckyVision's source code is organised in layers. The current commit 
-comprises only the lowest layer: "GameEng". This layers acts as a
+comprises only the lowest layer: "GameEng". This acts as a
 wrapper for SDL, so that higher layers have no need to use SDL
-commands. This makes it easy to swap out SDL for another library,
+commands. This will make it easy to swap out SDL for another library,
 should that be necessary in future.
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
-type traditionally associated with 8bit systems that support “character
-graphics”. These images can easily be creating in source code using binary
+type associated with 8bit systems that support “character graphics”.
+These images may be created within source code using binary
 literals, such as the biplane texture used in tests/GameEngTest.cpp:
 
         0b00111110,  // ..#####.
@@ -75,28 +75,33 @@ literals, such as the biplane texture used in tests/GameEngTest.cpp:
         0b00000110,  // .....##.
         0b00000110   // .....##.
 
-I feel this method of creating graphics is closer, in spirit, to the 8bit
-era than the use of modern image file formats. It encourages developers to build
-large images from small 'character' style elements, rather than simply importing
-large images drawn in modern graphics packages. Of course such importing can
-be done if really needed, using a script to insert data into the source file.
+I feel this method of creating graphics is close, in spirit, to the 8bit
+era. Closer than the use of modern image file formats. It encourages developers to build
+large images from small 'character' style elements, rather than importing a single
+large drawn in a modern graphics packages. Of course the importing of large images can
+be done if really needed, using a script to insert data directly into the source file.
 
 The 'GameEng' layer also provides a convenient way of managing large sets
 of small images, by grouping them together in layers (known as 'blocks').
 Hundreds of images can be moved, or made (in)visible, simply by making a small 
-change to the block they belong to. For example, the demo tests/GameEngTest.cpp
-uses two blocks, each comprised of many small identical images, to easily create 
-a city scape and implement a parallax scrolling effect.
+change to the block to which they belong. For example, the demo in tests/GameEngTest.cpp
+uses two blocks, each comprised of many small identical images, to represent the 
+foreground and background of a city scape, and implement a parallax scrolling effect
+between the two.
 
 Blocks are hierarchical, so changes to a given block automatically affect
 all sub-blocks. This means entire game scenes can be switched on or off,
 made to scroll or shake, or be rendered in a different order.
 
-Class/structs included in this commit:
-GameEng: Singleton class that interfaces with SDL.
-GameEngRenderInfo: Holds metadata for a single image (position, texture, etc.)
-GameEngRenderBlock: A ‘block’ container holding multiple images and other blocks.
-KeyEvent: Keyboard input events from user (not yet fully implemented).
+Classes/structs included in this commit:
+    
+    GameEng: Singleton class that interfaces with SDL.
+    
+    GameEngRenderInfo: Holds metadata for a single image (position, texture, etc.)
+    
+    GameEngRenderBlock: A ‘block’ container holding multiple images and other blocks.
+    
+    KeyEvent: Keyboard input events from user (not yet fully implemented).
 
 
 3. Future Plans
@@ -104,9 +109,9 @@ KeyEvent: Keyboard input events from user (not yet fully implemented).
 Completing keyboard input is next on the TODO list, as is building
 documentation using Doxgen.
 
-Following that, the next layer added will probably an "Image" layer providing
-a rich set of predrawn character graphics, including basic ASCII characters and 
-primitive blocks/shapes for "PETSCI” style graphics.
+Following that, the next layer added will probably be an "Image" layer providing
+a set of predrawn character graphics, including basic ASCII characters and 
+a set of primitive blocks/shapes for "PETSCI” style graphics.
 
 Provision of C64 SID chip style audio (using dynamically generated waveforms)
 is also a high priority.
@@ -130,8 +135,8 @@ DISCLAIMER: Please do not install any software, or change your machine's
 The 'MuckyVision3/tests' folder contains all the files required to 
 build a live demo program, either on Linux or Windows (using MinGW).
 Note the file MuckyVision3/include/Version.h provides control over certain
-aspects of the build process, although the default settings there
-should work initially.
+aspects of the build process, although the default settings should work
+for both Linux and Windows (MinGW).
 
 Suggestions for Linux:
 
@@ -145,7 +150,7 @@ Suggestions for Linux:
     You should see a file called GameEngTest, which when executed
     will create a new window showing a small white biplane moving
     over a city of scrolling purple blocks. The demo will run for
-    about ten seconds, then close automatically. You made need to give
+    about fourteen seconds, then close automatically. You made need to give
     this file run permission in order to execute it.
 
 Suggestions for Windows (MinGW):
@@ -172,7 +177,7 @@ Suggestions for Windows (MinGW):
     for editing (best to make a backup copy first, just in case).
     Replace the fake path names given in square brackets with the actual
     paths to MinGW and SDL on your machine (note the square brackets
-    themselves should also be removed). Then execute:
+    themselves should be removed). Then execute:
     
     make -f makefile_GameEngTest_windows_MinGW
 
@@ -184,10 +189,10 @@ Suggestions for Windows (MinGW):
     If successful, you should see a file called GameEngTest.exe, which 
     when executed will create a new window showing a small white biplane
     moving over a city of scrolling purple blocks. The demo will run for
-    about ten seconds, then close automatically.
+    about fourteen seconds, then close automatically.
 
-    For crisp pixilated graphics, you may need to disable high-DPI 
-    scaling within the executable's properties. MuckyVision asks
+    For crisp pixelated graphics, you may need to disable "high-DPI 
+    scaling" within the executable's compatibility properties. MuckyVision asks
     SDL to ask Windows to disable this on the user's behalf, but
     Windows does as it pleases!
 
