@@ -1,0 +1,96 @@
+###########################################
+##  -----------------------------------
+##  ---MUCKY VISION 2 (BASIC ENGINE)---
+##  -----------------------------------
+##
+##  makefile_GameEngTest.cpp
+##
+##  Makefile to test GameEng class
+##
+##  To run this file, just type: 
+##  make -f makefile_GameEngTest
+##  at the command line (this assumes you
+##  have the 'make' utility installed).
+##
+##  Copyright (c) Muckytators 2023
+##
+##  This program is free software: you can
+##  redistribute it and/or modify it under 
+##  the terms of the GNU General Public License
+##  as published by the Free Software Foundation,
+##  either version 3 of the License, or (at your
+##  option) any later version.
+##
+##  This program is distributed in the hope it
+##  will be useful, but WITHOUT ANY WARRANTY;
+##  without even the implied warranty of MERCHANTABILITY
+##  or FITNESS FOR A PARTICULAR PURPOSE. See the
+##  GNU General Public License for more details.
+##
+##  You should have received a copy of the GNU
+##  General Public License along with this
+##  program. If not, see http://www.gnu.org/license
+############################################
+
+#############################################
+## DISCLAIMER: Dependencies described herein
+## are maintained on a best-effort basis and
+## may not be 100% correct. If in doubt,
+## execute 'make clean' then 'make' to
+## rebuild the entire project
+#############################################
+
+#############################################
+############# PRELIMINARIES #################
+#############################################
+
+#List of all files to be built
+BUILDS := build/GameEng.o build/GameEngTest.o
+
+#CC specifies which compiler we're using
+CC := g++
+
+#COMPILER_FLAGS specifies the additional compilation options we're using
+# -g debug build
+# -std=c++14 Use C++14 (only needed for binary literals, otherwise C++11 is fine)
+# -pedantic-errors
+COMPILER_FLAGS := -g -std=c++14 -pedantic-errors
+
+#LINKER_FLAGS specifies the libraries we're linking against
+LINKER_FLAGS := -lSDL2 
+
+#INC specifies include directories
+INC := -I../include
+
+#OUTPUT specifies the name of our exectuable
+OUTPUT := GameEngTest
+
+
+#############################################
+################# EXECUTABLE ################
+#############################################
+
+# This comes first so we can use 'make' as well as 'make all'
+#This is the target that compiles our executable
+all: $(BUILDS)
+	$(CC) $(BUILDS) $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o $(OUTPUT)
+
+
+# Rules to make dependencies.................
+
+## GameEng ##
+build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h 
+	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
+
+## GameEngTest ##
+build/GameEngTest.o: GameEngTest.cpp build/GameEng.o 
+	$(CC) -c GameEngTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngTest.o
+
+
+#############################################
+################### CLEAN ###################
+#############################################
+
+.PHONY: clean
+clean:
+	rm -f build/*.o
