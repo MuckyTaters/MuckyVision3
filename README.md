@@ -159,7 +159,7 @@ Suggestions for Windows (MinGW):
     Make sure you have MinGW (Minimalist GNU for Windows, currently at
     https://sourceforge.net/projects/mingw/) installed, with MinGW
     versions of 'make' and 'g++' included. These should be present
-    as 'mingw-make.exe' and 'mingw-g++.exe' in your MinGW/bin
+    as 'mingw32-make.exe' and 'mingw32-g++.exe' in your MinGW/bin
     folder. You may also need to add the location of MinGW/bin to
     your PATH environment variable.
     
