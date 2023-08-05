@@ -78,7 +78,7 @@ literals, such as the biplane texture used in tests/GameEngTest.cpp:
 I feel this method of creating graphics is close, in spirit, to the 8bit
 era. Closer than the use of modern image file formats. It encourages developers to build
 large images from small 'character' style elements, rather than importing a single
-large drawn in a modern graphics packages. Of course the importing of large images can
+large image drawn in a modern graphics packages. Of course the importing of large images can
 be done if really needed, using a script to insert data directly into the source file.
 
 The 'GameEng' layer also provides a convenient way of managing large sets
@@ -143,7 +143,8 @@ Suggestions for Linux:
     Ensure you have the developer version of SDL2 installed (on Debian
     based systems this is the libsdl2-dev package), together with  
     g++ and make (both in the build-essentials package).
-    Then navigate to MuckyVision3/tests and execute:
+    Navigate to MuckyVision3/tests, create an empty folder called 'build'
+    (if it does not already exist) and from the 'tests' folder execute:
 
     make -f makefile_GameEngTest_linux
 
@@ -177,9 +178,11 @@ Suggestions for Windows (MinGW):
     for editing (best to make a backup copy first, just in case).
     Replace the fake path names given in square brackets with the actual
     paths to MinGW and SDL on your machine (note the square brackets
-    themselves should be removed). Then execute:
+    themselves should be removed). Within the 'tests' folder, create an
+    empty folder called 'builds', if it does not exist already. Then from
+    the 'tests' folder, execute:
     
-    make -f makefile_GameEngTest_windows_MinGW
+    mingw32-make.exe -f makefile_GameEngTest_windows_MinGW
 
     If this fails, check the paths carefully as this is the most
     likely source of error. The makefile provides an option for
