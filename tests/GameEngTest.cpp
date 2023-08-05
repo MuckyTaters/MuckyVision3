@@ -101,12 +101,16 @@ int main( int argc, char** argv )
     // CREATE IMAGE DATA
 
     // 4x4 black pixels
+    // Note the { 0 , 0 } here represents 16 binary digits,
+    // i.e. 1 digit per pixel for 4 rows of 4 pixels,
+    // all set to zero.
     const MCK_IMG_ID_TYPE IMAGE_BLANK_1BIT_4x4_ID = 0;
     const std::vector<uint8_t> IMAGE_BLANK_1BIT_4x4 = { 0, 0 };
 
     // Square made of 4x4 pixels and 2 colo(u)rs
-    // Note: 8bit binary literals are split in half
-    //       to give 4 bits per line
+    // Note the two 8bit binary literals here represent 4x4
+    // 1bit pixels (similar to above). In effect, each
+    // 8bit number is split in half to give 4 bits per line.
     const MCK_IMG_ID_TYPE IMAGE_SQUARE_1BIT_4x4_ID = 1;
     const std::vector<uint8_t> IMAGE_SQUARE_1BIT_4x4 =
     {
@@ -115,6 +119,10 @@ int main( int argc, char** argv )
     };
 
     // Biplane made of 8x8 pixels and 2 colo(u)rs
+    // Note if you have a text editor capable of
+    // highlighting search matches, then searching for 
+    // '0' or '1' will highlight the image below in
+    // a way that makes the pixels much easier to see.
     const MCK_IMG_ID_TYPE IMAGE_BIPLANE_1BIT_8x8_ID = 2;
     const std::vector<uint8_t> IMAGE_BIPLANE_1BIT_8x8 =
     {
@@ -295,7 +303,7 @@ int main( int argc, char** argv )
         //       in prime render block, so that it
         //       is rendered after everything else
         border_overlay_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),
+            game_eng.get_prime_render_block(),  // 'prime render block' is the topmost block, created automatically by GameEng
             false  // Add to *back*, see note above
         );
         biplane_block = game_eng.create_empty_render_block(
@@ -321,13 +329,15 @@ int main( int argc, char** argv )
     // Set scroll offset for background
     background_block->hoz_offset = scroll_offset;
 
-    // Create mutliple tower blocks, all subservient to 'city_block'
+    // Create mutliple blocks, all subservient to 'city_block'
+    // Each block will hold a 'tower' of square images of random height
     std::list<std::shared_ptr<MCK::GameEngRenderBlock>> tower_blocks;
     for( int i = 0; i < NUM_TOWERS; i++ )
     {
         std::shared_ptr<MCK::GameEngRenderBlock> block;
         try
         {
+            // Create a new (empty) render block, subservient to 'city_block'
             block = game_eng.create_empty_render_block( city_block );
         }
         catch( std::exception &e )
@@ -337,14 +347,19 @@ int main( int argc, char** argv )
                 + e.what() ) );
         }
         
-        // Set horizontal offset
+        // Set horizontal offset, as an exact multiple of tower width
+        // This is necessary, otherwise the towers would be superimposed
+        // on top of each other.
         block->hoz_offset = i * SQUARE_TOTAL_SIZE;
 
+        // Store tower block pointer, for future reference
+        // (although it can also be retrieved from 'city_block')
         tower_blocks.push_back( block );
     }
 
     // Create mutliple tower blocks at half scale,
     // all subservient to 'background'
+    // Each block will hold a 'tower' of half scale square images of random height
     std::list<std::shared_ptr<MCK::GameEngRenderBlock>> background_tower_blocks;
     for( int i = 0; i < NUM_TOWERS * 2; i++ )
     {
@@ -363,6 +378,8 @@ int main( int argc, char** argv )
         // Set horizontal offset
         block->hoz_offset = i * SQUARE_TOTAL_SIZE / 2;
 
+        // Store tower block pointer, for future reference
+        // (although it can also be retrieved from 'background_block')
         background_tower_blocks.push_back( block );
     }
 
@@ -378,10 +395,10 @@ int main( int argc, char** argv )
             black_tex_id,
             border_overlay_block,
             MCK::GameEngRenderInfo::Rect( 
-                0,
-                0,
-                SQUARE_TOTAL_SIZE,
-                WINDOW_HEIGHT_IN_PIXELS
+                0,  // x pos
+                0,  // y pos
+                SQUARE_TOTAL_SIZE,  // width equal to one tower
+                WINDOW_HEIGHT_IN_PIXELS  // full height of window 
             )
         );
     }
@@ -398,10 +415,10 @@ int main( int argc, char** argv )
             black_tex_id,
             border_overlay_block,
             MCK::GameEngRenderInfo::Rect( 
-                WINDOW_WIDTH_IN_PIXELS - SQUARE_TOTAL_SIZE,
-                0,
-                SQUARE_TOTAL_SIZE,
-                WINDOW_HEIGHT_IN_PIXELS
+                WINDOW_WIDTH_IN_PIXELS - SQUARE_TOTAL_SIZE,  // x pos
+                0,  // y pos
+                SQUARE_TOTAL_SIZE,  // width equal to one tower
+                WINDOW_HEIGHT_IN_PIXELS  // full height of window
             )
         );
     }
@@ -438,24 +455,29 @@ int main( int argc, char** argv )
 
     // Create squares render info, and associate with tower blocks
     {
-        int x = 0;
+        int x = 0;  // Enumerates tower blocks
+
+        // Loop over tower blocks
         for( auto block : tower_blocks )
         {
+            // Generate tower height, in squares
             const int TOWER_HEIGHT
                 = rand() % ( MAX_TOWER_HEIGHT_IN_SQUARES - 1 ) + 1;
- 
+
+            // Loop over each square
             for( int y = 0; y < TOWER_HEIGHT; y++ )
             {
                 try
                 {
+                    // Create square and add to tower
                     game_eng.create_render_info(
-                        square_tex_id,
-                        block,
+                        square_tex_id,  // texture ID
+                        block,  // parent (tower) block
                         MCK::GameEngRenderInfo::Rect( 
-                            0,
-                            TOWER_FLOOR_IN_PIXELS_FROM_TOP_OF_WINDOW                                - ( y + 1 ) * SQUARE_TOTAL_SIZE,  // y pos
-                            SQUARE_TOTAL_SIZE,  // width
-                            SQUARE_TOTAL_SIZE  // height
+                            0,  // x pos
+                            TOWER_FLOOR_IN_PIXELS_FROM_TOP_OF_WINDOW - ( y + 1 ) * SQUARE_TOTAL_SIZE,  // y pos
+                            SQUARE_TOTAL_SIZE,  // square width
+                            SQUARE_TOTAL_SIZE  // square height
                         )
                     );
                 }
@@ -474,23 +496,28 @@ int main( int argc, char** argv )
     // Create half-size squares render info,
     // and associate with background tower blocks
     {
-        int x = 0;
+        int x = 0;  // Enumerates tower blocks
+
+        // Loop over background tower blocks
         for( auto block : background_tower_blocks )
         {
+            // Generate tower height, in squares
             const int TOWER_HEIGHT = rand() % 12;
 
+            // Loop over each square
             for( int y = 0; y < TOWER_HEIGHT; y++ )
             {
                 try
                 {
+                    // Create square and add to tower
                     game_eng.create_render_info(
-                        gray_square_tex_id,
-                        block,
+                        gray_square_tex_id,  // texture ID
+                        block,  // parent (tower) block
                         MCK::GameEngRenderInfo::Rect( 
-                            0,
-                            TOWER_FLOOR_IN_PIXELS_FROM_TOP_OF_WINDOW                                - ( y + 1 ) * SQUARE_TOTAL_SIZE / 2,  // y pos
-                            SQUARE_TOTAL_SIZE / 2,  // width
-                            SQUARE_TOTAL_SIZE / 2  // height
+                            0,  // x pos
+                            TOWER_FLOOR_IN_PIXELS_FROM_TOP_OF_WINDOW - ( y + 1 ) * SQUARE_TOTAL_SIZE / 2,  // y pos
+                            SQUARE_TOTAL_SIZE / 2,  // square width
+                            SQUARE_TOTAL_SIZE / 2  // square height
                         )
                     );
                 }
@@ -559,6 +586,7 @@ int main( int argc, char** argv )
 
             for( auto e : events )
             {
+                
                 // For now, only check for quit
                 if( e.key_code == MCK::KeyEvent::KEY_QUIT )
                 {
@@ -584,7 +612,7 @@ int main( int argc, char** argv )
                             * SCROLL_RATE
                     )  % SQUARE_TOTAL_SIZE;
 
-            // If offset has reach min,
+            // If offset has reached minimum,
             // shift all the towers one square left
             // and place the leftmost tower on the right
             if( PREV_OFFSET < city_block->hoz_offset )
@@ -613,7 +641,7 @@ int main( int argc, char** argv )
                             * SCROLL_RATE / 2
                     )  % ( SQUARE_TOTAL_SIZE / 2 );
 
-            // If offset has reach min,
+            // If offset has reached minimum,
             // shift all the towers one square left
             // and place the leftmost tower on the right
             if( PREV_OFFSET < background_block->hoz_offset )
