@@ -45,6 +45,7 @@
 #include <iostream> // For std::cout
 #endif
 
+#include <cmath>  // For ceil
 #include <limits>  // For numeric_limits, size of data type in bits
 #include <list>  // For list
 #include <map>  // For map
