@@ -1,16 +1,17 @@
 ###########################################
 ##  -----------------------------------
-##  ---MUCKY VISION 2 (BASIC ENGINE)---
+##  ---MUCKY VISION 3 (BASIC ENGINE)---
 ##  -----------------------------------
 ##
-##  makefile_GameEngTest.cpp
+##  makefile_GameEngTest_linux
 ##
-##  Makefile to test GameEng class
+##  Makefile to build test of GameEng 
+##  class on Linux using g++.
 ##
-##  To run this file, just type: 
-##  make -f makefile_GameEngTest
-##  at the command line (this assumes you
-##  have the 'make' utility installed).
+##  IMPORTANT:
+##  Before running this file, please 
+##  read section 4 of README.md in the
+##  projects top level directory.
 ##
 ##  Copyright (c) Muckytators 2023
 ##
@@ -36,7 +37,8 @@
 ## DISCLAIMER: Dependencies described herein
 ## are maintained on a best-effort basis and
 ## may not be 100% correct. If in doubt,
-## execute 'make clean' then 'make' to
+## execute 'make -f makefile_GameEngTest_linux clean'
+## then 'make -f makefile_GameEngTest_linux' to
 ## rebuild the entire project
 #############################################
 
@@ -79,7 +81,7 @@ all: $(BUILDS)
 # Rules to make dependencies.................
 
 ## GameEng ##
-build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h 
+build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ..\include\GameEngRenderInfo.h ..\include\GameEngRenderBlock.h
 	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
 
 ## GameEngTest ##
