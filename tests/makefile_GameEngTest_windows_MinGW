@@ -1,16 +1,16 @@
 ###########################################
 ##  -----------------------------------
-##  ---MUCKY VISION 2 (BASIC ENGINE)---
+##  ---MUCKY VISION 3 (BASIC ENGINE)---
 ##  -----------------------------------
 ##
-##  makefile_GameEngTest.cpp
+##  makefile_GameEngTest_windows_MinGW
 ##
-##  Makefile to test GameEng class
+##  Makefile to build test for GameEng 
+##  class on Windows using MinGW.
 ##
-##  To run this file, just type: 
-##  make -f makefile_GameEngTest
-##  at the command line (this assumes you
-##  have the 'make' utility installed).
+##  Before running this file, please 
+##  read section 4 of README.md in the
+##  projects top level directory.
 ##
 ##  Copyright (c) Muckytators 2023
 ##
@@ -36,8 +36,8 @@
 ## DISCLAIMER: Dependencies described herein
 ## are maintained on a best-effort basis and
 ## may not be 100% correct. If in doubt, execute
-## 'make -f makefile_GameEngTest.windows clean' 
-## then 'make -f makefile_GameEngTest.windows'
+## 'make -f makefile_GameEngTest_windows_MinGW clean' 
+## then 'make -f makefile_GameEngTest_windows_MinGW'
 ## to rebuild the entire project
 #############################################
 
@@ -49,6 +49,10 @@
 BUILDS := build\GameEng.o build\GameEngTest.o
 
 #CC specifies which compiler we're using
+#Note: MinGW (or Windows) seems to automatically
+#      convert 'g++' to the correct executable.
+#      If this is not recognised, try replacing
+#      g++ here with mingw32-g++.exe 
 CC := g++
 
 #COMPILER_FLAGS specifies the additional compilation options we're using
@@ -86,7 +90,7 @@ all: $(BUILDS)
 # Rules to make dependencies.................
 
 ## GameEng ##
-build\GameEng.o: ..\src\GameEng.cpp ..\include\GameEng.h ..\include\Defs.h ..\include\KeyEvent.h ..\include\Version.h 
+build\GameEng.o: ..\src\GameEng.cpp ..\include\GameEng.h ..\include\Defs.h ..\include\KeyEvent.h ..\include\Version.h ..\include\GameEngRenderInfo.h ..\include\GameEngRenderBlock.h 
 	$(CC) -c ..\src\GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\GameEng.o
 
 ## GameEngTest ##
