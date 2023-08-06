@@ -586,9 +586,10 @@ int main( int argc, char** argv )
 
             for( auto e : events )
             {
-                
                 // For now, only check for quit
-                if( e.key_code == MCK::KeyEvent::KEY_QUIT )
+                if( e.key_code == MCK::KeyEvent::KEY_QUIT
+                    && e.status == MCK::KeyEvent::PRESSED
+                )
                 {
                     // Just exit: GameEng instance will be
                     // destroyed automatically, and SDL 

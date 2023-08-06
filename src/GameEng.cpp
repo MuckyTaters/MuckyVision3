@@ -535,44 +535,44 @@ void MCK::GameEng::init(
 #endif
         ) );
     }
-    
-    // Set default key values
-    this->scancodes.resize( int( MCK::KeyEvent::KEY_TOTAL ) );
-    this->scancodes[ int( MCK::KeyEvent::KEY_UP ) ] = SDL_SCANCODE_UP;
-    this->scancodes[ int( MCK::KeyEvent::KEY_RIGHT ) ] = SDL_SCANCODE_RIGHT;
-    this->scancodes[ int( MCK::KeyEvent::KEY_DOWN ) ] = SDL_SCANCODE_DOWN;
-    this->scancodes[ int( MCK::KeyEvent::KEY_LEFT ) ] = SDL_SCANCODE_LEFT;
-    this->scancodes[ int( MCK::KeyEvent::KEY_SELECT ) ] = SDL_SCANCODE_RETURN;
-    this->scancodes[ int( MCK::KeyEvent::KEY_ESC ) ] = SDL_SCANCODE_ESCAPE;
-    this->scancodes[ int( MCK::KeyEvent::KEY_QUIT ) ] = SDL_SCANCODE_F9;
-    this->scancodes[ int( MCK::KeyEvent::KEY_HELP ) ] = SDL_SCANCODE_F1;
-    this->scancodes[ int( MCK::KeyEvent::KEY_A ) ] = SDL_SCANCODE_A;
-    this->scancodes[ int( MCK::KeyEvent::KEY_B ) ] = SDL_SCANCODE_B;
-    this->scancodes[ int( MCK::KeyEvent::KEY_C ) ] = SDL_SCANCODE_C;
-    this->scancodes[ int( MCK::KeyEvent::KEY_D ) ] = SDL_SCANCODE_D;
-    this->scancodes[ int( MCK::KeyEvent::KEY_E ) ] = SDL_SCANCODE_E;
-    this->scancodes[ int( MCK::KeyEvent::KEY_F ) ] = SDL_SCANCODE_F;
-    this->scancodes[ int( MCK::KeyEvent::KEY_G ) ] = SDL_SCANCODE_G;
-    this->scancodes[ int( MCK::KeyEvent::KEY_H ) ] = SDL_SCANCODE_H;
-    this->scancodes[ int( MCK::KeyEvent::KEY_I ) ] = SDL_SCANCODE_I;
-    this->scancodes[ int( MCK::KeyEvent::KEY_J ) ] = SDL_SCANCODE_J;
-    this->scancodes[ int( MCK::KeyEvent::KEY_K ) ] = SDL_SCANCODE_K;
-    this->scancodes[ int( MCK::KeyEvent::KEY_L ) ] = SDL_SCANCODE_L;
-    this->scancodes[ int( MCK::KeyEvent::KEY_M ) ] = SDL_SCANCODE_M;
-    this->scancodes[ int( MCK::KeyEvent::KEY_N ) ] = SDL_SCANCODE_N;
-    this->scancodes[ int( MCK::KeyEvent::KEY_O ) ] = SDL_SCANCODE_O;
-    this->scancodes[ int( MCK::KeyEvent::KEY_P ) ] = SDL_SCANCODE_P;
-    this->scancodes[ int( MCK::KeyEvent::KEY_Q ) ] = SDL_SCANCODE_Q;
-    this->scancodes[ int( MCK::KeyEvent::KEY_R ) ] = SDL_SCANCODE_R;
-    this->scancodes[ int( MCK::KeyEvent::KEY_S ) ] = SDL_SCANCODE_S;
-    this->scancodes[ int( MCK::KeyEvent::KEY_T ) ] = SDL_SCANCODE_T;
-    this->scancodes[ int( MCK::KeyEvent::KEY_U ) ] = SDL_SCANCODE_U;
-    this->scancodes[ int( MCK::KeyEvent::KEY_V ) ] = SDL_SCANCODE_V;
-    this->scancodes[ int( MCK::KeyEvent::KEY_W ) ] = SDL_SCANCODE_W;
-    this->scancodes[ int( MCK::KeyEvent::KEY_X ) ] = SDL_SCANCODE_X;
-    this->scancodes[ int( MCK::KeyEvent::KEY_Y ) ] = SDL_SCANCODE_Y;
-    this->scancodes[ int( MCK::KeyEvent::KEY_Z ) ] = SDL_SCANCODE_Z;
-    
+
+    // Link SDL scancodes to MuckyVision key code, using
+    // default settings (i.e. A maps to A, B maps to B, and so on )
+    this->init_key( SDL_SCANCODE_UP, MCK::KeyEvent::KEY_UP );
+    this->init_key( SDL_SCANCODE_RIGHT, MCK::KeyEvent::KEY_RIGHT );
+    this->init_key( SDL_SCANCODE_DOWN, MCK::KeyEvent::KEY_DOWN );
+    this->init_key( SDL_SCANCODE_LEFT, MCK::KeyEvent::KEY_LEFT );
+    this->init_key( SDL_SCANCODE_RETURN, MCK::KeyEvent::KEY_SELECT );
+    this->init_key( SDL_SCANCODE_ESCAPE, MCK::KeyEvent::KEY_ESC );
+    this->init_key( SDL_SCANCODE_F9, MCK::KeyEvent::KEY_QUIT );
+    this->init_key( SDL_SCANCODE_F1, MCK::KeyEvent::KEY_HELP );
+    this->init_key( SDL_SCANCODE_A, MCK::KeyEvent::KEY_A );
+    this->init_key( SDL_SCANCODE_B, MCK::KeyEvent::KEY_B );
+    this->init_key( SDL_SCANCODE_C, MCK::KeyEvent::KEY_C );
+    this->init_key( SDL_SCANCODE_D, MCK::KeyEvent::KEY_D );
+    this->init_key( SDL_SCANCODE_E, MCK::KeyEvent::KEY_E );
+    this->init_key( SDL_SCANCODE_F, MCK::KeyEvent::KEY_F );
+    this->init_key( SDL_SCANCODE_G, MCK::KeyEvent::KEY_G );
+    this->init_key( SDL_SCANCODE_H, MCK::KeyEvent::KEY_H );
+    this->init_key( SDL_SCANCODE_I, MCK::KeyEvent::KEY_I );
+    this->init_key( SDL_SCANCODE_J, MCK::KeyEvent::KEY_J );
+    this->init_key( SDL_SCANCODE_K, MCK::KeyEvent::KEY_K );
+    this->init_key( SDL_SCANCODE_L, MCK::KeyEvent::KEY_L );
+    this->init_key( SDL_SCANCODE_M, MCK::KeyEvent::KEY_M );
+    this->init_key( SDL_SCANCODE_N, MCK::KeyEvent::KEY_N );
+    this->init_key( SDL_SCANCODE_O, MCK::KeyEvent::KEY_O );
+    this->init_key( SDL_SCANCODE_P, MCK::KeyEvent::KEY_P );
+    this->init_key( SDL_SCANCODE_Q, MCK::KeyEvent::KEY_Q );
+    this->init_key( SDL_SCANCODE_R, MCK::KeyEvent::KEY_R );
+    this->init_key( SDL_SCANCODE_S, MCK::KeyEvent::KEY_S );
+    this->init_key( SDL_SCANCODE_T, MCK::KeyEvent::KEY_T );
+    this->init_key( SDL_SCANCODE_U, MCK::KeyEvent::KEY_U );
+    this->init_key( SDL_SCANCODE_V, MCK::KeyEvent::KEY_V );
+    this->init_key( SDL_SCANCODE_W, MCK::KeyEvent::KEY_W );
+    this->init_key( SDL_SCANCODE_X, MCK::KeyEvent::KEY_X );
+    this->init_key( SDL_SCANCODE_Y, MCK::KeyEvent::KEY_Y );
+    this->init_key( SDL_SCANCODE_Z, MCK::KeyEvent::KEY_Z );
+
     // Create (empty) prime render block
     this->prime_render_block
         = std::make_shared<MCK::GameEngRenderBlock>();
@@ -1463,18 +1463,70 @@ void MCK::GameEng::get_pending_keyboard_actions(
     SDL_Event e;
     while ( SDL_PollEvent( &e ) )
     {
-        // If quit signal received, ignore all other input
+        // Declare KeyEvent instance, set to default values
+        MCK::KeyEvent key_ev;
+
+        // Set timestamp
+        key_ev.timestamp = e.key.timestamp;
+
+        // If quit signal received, treat same as pressing 
+        // of quit key
         if( e.type == SDL_QUIT )
         {
-            key_events.push_back(
-                MCK::KeyEvent(
-                    MCK::KeyEvent::Keys::KEY_QUIT,
-                    0,  // timestamp not needed for quit event
-                    MCK::KeyEvent::PRESSED
-                )
-            );
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+            std::cout << "SDL close window signal detected" << std::endl;
+#endif
+
+            key_ev.key_code = MCK::KeyEvent::Keys::KEY_QUIT;
+            key_ev.status = MCK::KeyEvent::PRESSED;
+            key_events.push_back( key_ev );
+            continue;
         }
 
-        // TODO: Rest of key processing...
+        // Otherwise, check for a key up or key down event
+        const bool UP = e.type == SDL_KEYUP;
+        const bool DOWN = e.type == SDL_KEYDOWN;
+        if( !UP && !DOWN )
+        {
+            // For now, igore all other non-key input
+            continue;
+        }
+
+        // For key presses, get status
+        if( DOWN )
+        {
+            if( e.key.repeat )
+            {
+                key_ev.status = MCK::KeyEvent::Status::AUTO_REPEAT;
+            }
+            else
+            {
+                key_ev.status = MCK::KeyEvent::Status::PRESSED;
+            }
+        }
+        else
+        {
+            key_ev.status = MCK::KeyEvent::Status::RELEASED;
+        }
+
+        // Determine key code (leave as invalid if not recognised)
+        std::map<SDL_Scancode,MCK::KeyEvent::Keys>::const_iterator it 
+            = scancodes.find( e.key.keysym.scancode );
+        if( it != scancodes.end() )
+        {
+            key_ev.key_code = it->second;
+        }
+
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+        if( key_ev.key_code == MCK::KeyEvent::KEY_QUIT )
+        {
+            std::cout << "Quit key event (status="
+                      << key_ev.status << ")"
+                      << std::endl;
+        }
+#endif
+
+        // Store event
+        key_events.push_back( key_ev );
     }
 }

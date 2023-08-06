@@ -36,6 +36,7 @@
 
 #ifndef MCK_NO_STD_OUT
 #include <iostream> // For std::cout
+#include <string>
 #endif
 
 #include "Version.h"
@@ -92,6 +93,7 @@ struct KeyEvent
         KEY_TOTAL
     };
 
+    //! Key status at time of event
     enum Status { INVALID, PRESSED, AUTO_REPEAT, RELEASED };
 
     //! Code of key pressed
@@ -123,6 +125,19 @@ struct KeyEvent
         this->timestamp = _timestamp;
         this->status    = _status;
     }
+
+#ifndef MCK_NO_STD_OUT
+    std::string str( void )
+    {
+        return "KeyEvent{key_code="
+               + std::to_string( this->key_code )
+               + ",timestamp="
+               + std::to_string( this->timestamp )
+               + ",status="
+               + std::to_string( this->status )
+               + "}";
+    }
+#endif
 };
 
 }  // End of namespace MCK

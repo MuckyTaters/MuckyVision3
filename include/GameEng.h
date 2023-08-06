@@ -41,7 +41,7 @@
 #include <SDL2/SDL.h>
 #endif
 
-#ifndef MCK_NO_STD_OUT
+#if defined MCK_STD_OUT
 #include <iostream> // For std::cout
 #endif
 
@@ -179,6 +179,25 @@ class GameEng
 
     private:
 
+        //! Assign MuckyVision key code to SDL scancode, assuming scancode has no current assignment
+        /*! If scancode has already been assigned to a key,
+         *  this call will be ignored.
+         *  This method is only used during initialisation,
+         *  hence it being private.
+         * */
+        void init_key(
+            SDL_Scancode sc,
+            MCK::KeyEvent::Keys k
+        )
+        {
+            this->scancodes.insert(
+                std::pair<SDL_Scancode,MCK::KeyEvent::Keys>(
+                    sc,
+                    k
+                )
+            );
+        }
+
         //! Calculate texture id from image id and palette id
         static MCK_TEX_ID_TYPE calc_tex_id(
             MCK_IMG_ID_TYPE image_id,
@@ -266,7 +285,7 @@ class GameEng
         int keyboard_state_array_size;
 
         // Scan codes, used to link key strokes to actions
-        std::vector<SDL_Scancode> scancodes;
+        std::map<SDL_Scancode,MCK::KeyEvent::Keys> scancodes;
 
         // Constructor/destructor/copy/assignment/
         // initializer made private to avoid misuse.
