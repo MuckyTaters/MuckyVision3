@@ -62,17 +62,43 @@ CC := g++
 # -mwindows hide terminal window when running on Windows (leave in if you want the terminal)
 COMPILER_FLAGS := -g -std=c++14 -pedantic-errors -mwindows
 
-# IMPORTANT: The following text in brackets [] (including the brackets) must be replaced with actual path info from your machine
+# This must be set to either 'x86_64' or 'i686' (without the enclosing ' marks).
+# IMPORTANT: There must no NO TRAILING SPACES, OR ANYTHING ELSE AFTER THIS ENTRY
+BUILD_OPTION := i686
+
+$(info BUILD_OPTION set as $(BUILD_OPTION) )
+
+# THESE VARIABLES MUST BE SET BY YOU, REPLACE ??? WITH THE ACTUAL PATH
+# IMPORTANT: There must no NO TRAILING SPACES, OR ANYTHING ELSE AFTER THESE ENTRIES
+SDL_PATH := ???
+MINGW_PATH := ???
+
+ifeq '$(SDL_PATH)' '???'
+    $(error SDL_PATH must be set by you! You need to edit makefile_GameEngTest_windows_MinGW )
+endif
+
+ifeq '$(MING_PATH)' '???'
+    $(error MINGW_PATH must be set by you! You need to edit makefile_GameEngTest_windows_MinGW )
+endif
+
+$(info SDL_PATH set as $(SDL_PATH) )
+$(info MINGW_PATH set as $(MINGW_PATH) )
 
 #LINKER_FLAGS specifies the libraries we're linking against (i686 version)
-LINKER_FLAGS := -L[PATH TO EXTRACTED SDL REPO]\i686-w64-mingw32\lib -L[PATH TO MINGW]\lib -lmingw32 -lSDL2main -lSDL2  
-# ... or use thus alternate linker line for x86 version
-#LINKER_FLAGS := -L[PATH TO EXTRACTED SDL REPO]\x86_64-w64-mingw32\lib -L[PATH TO MINGW]\lib -lmingw32 -lSDL2main -lSDL2
-
 #INC specifies include directories (i686 version)
-INC := -I..\include -I[PATH TO EXTRACTED SDL REPO]\i686-w64-mingw32\include
-# ... or use thus alternate include line for x86 version
-#INC := -I..\include -I[PATH TO EXTRACTED SDL REPO]\x86_64-w64-mingw32\include
+ifeq '$(BUILD_OPTION)' 'i686'
+    LINKER_FLAGS := -L$(SDL_PATH)\i686-w64-mingw32\lib -L$(MINGW_PATH)\lib -lmingw32 -lSDL2main -lSDL2
+    INC := -I..\include -I$(SDL_PATH)\i686-w64-mingw32\include
+else
+    ifeq '$(BUILD_OPTION)' 'x86_64'
+        LINKER_FLAGS := -L$(SDL_PATH)\x86_64-w64-mingw32\lib -L$(MINGW_PATH)\lib -lmingw32 -lSDL2main -lSDL2    
+        INC := -I..\include -I$(SDL_PATH)\x86_64-w64-mingw32\include
+    else
+        $(error BUILD_OPTION is invalid.)
+    endif 
+endif
+$(info LINKER_FLAGS = $(LINKER_FLAGS) )
+$(info INC = $(INC) )
 
 #OUTPUT specifies the name of our exectuable
 OUTPUT := GameEngTest

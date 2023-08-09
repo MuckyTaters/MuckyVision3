@@ -176,18 +176,22 @@ Suggestions for Windows (MinGW):
 
     Navigate to MuckyVision3/tests and open makefile_GameEngTest_windows_MinGW
     for editing (best to make a backup copy first, just in case).
-    Replace the fake path names given in square brackets with the actual
-    paths to MinGW and SDL on your machine (note the square brackets
-    themselves should be removed). Within the 'tests' folder, create an
-    empty folder called 'builds', if it does not exist already. Then from
-    the 'tests' folder, execute:
+    On lines 72 and 73, replace the three question marks (???) with
+    the actual paths to SDL2 and MinGW on your machine, respectively.
+    Save the file and exit.
+
+    Within the 'tests' folder, create an empty folder called 'builds',
+    if it does not exist already.
+
+    Then from the 'tests' folder, execute:
     
     mingw32-make.exe -f makefile_GameEngTest_windows_MinGW
 
     If this fails, check the paths carefully as this is the most
-    likely source of error. The makefile provides an option for
-    an x86 build, so feel free to try this if the default i686 build fails,
-    or produces an executable that won't run.
+    likely source of error. Also, line 66 of the windows makefile
+    provides an option for an x86_64 build, so feel free to try
+    this if the default i686 build fails, or produces an executable
+    that won't run.
 
     If successful, you should see a file called GameEngTest.exe, which 
     when executed will create a new window showing a small white biplane
