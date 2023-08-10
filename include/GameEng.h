@@ -114,6 +114,23 @@ class GameEng
             uint16_t &height_in_pixels
         );
 
+        //! Returns true if texture with this ID already exists
+        bool texture_exists( MCK_TEX_ID_TYPE tex_id ) const
+        {
+            return textures.find( tex_id ) != textures.end();
+        }
+        
+        //! Returns true if texture with this image ID and palette ID already exists
+        bool texture_exists(
+            MCK_IMG_ID_TYPE image_id,
+            MCK_PAL_ID_TYPE local_palette_id
+        ) const
+        {
+            return texture_exists(
+                MCK::GameEng::calc_tex_id( image_id, local_palette_id )
+            );
+        }
+
         //! Create empty render block
         /*! @param parent_block: if empty pointer supplied, block has no parent and thus will not be rendered
          *  @param add_to_front: if True render before all sibling blocks, if false render after all sibling blocks
@@ -176,6 +193,17 @@ class GameEng
             std::vector< KeyEvent > &key_events
         );
      
+        //! Calculate texture id from image id and palette id
+        static MCK_TEX_ID_TYPE calc_tex_id(
+            MCK_IMG_ID_TYPE image_id,
+            MCK_PAL_ID_TYPE local_palette_id
+        )
+        {
+            return image_id 
+                   | ( MCK_TEX_ID_TYPE( local_palette_id )
+                           << std::numeric_limits<MCK_IMG_ID_TYPE>::digits );
+        }
+
 
     private:
 
@@ -196,17 +224,6 @@ class GameEng
                     k
                 )
             );
-        }
-
-        //! Calculate texture id from image id and palette id
-        static MCK_TEX_ID_TYPE calc_tex_id(
-            MCK_IMG_ID_TYPE image_id,
-            MCK_PAL_ID_TYPE local_palette_id
-        )
-        {
-            return image_id 
-                   | ( MCK_TEX_ID_TYPE( local_palette_id )
-                           << std::numeric_limits<MCK_IMG_ID_TYPE>::digits );
         }
 
         //! Get RGBA values for a given colo(u)r ID
