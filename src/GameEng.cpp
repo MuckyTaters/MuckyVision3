@@ -1530,3 +1530,41 @@ void MCK::GameEng::get_pending_keyboard_actions(
         key_events.push_back( key_ev );
     }
 }
+
+void MCK::GameEng::set_clearing_color( uint8_t global_color_id ) const
+{
+    if( global_color_id >= MCK::TOTAL_CORE_COLORS )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot set clearing color as " )
+                + std::string( "global color ID " )
+                + std::to_string( global_color_id )
+                + std::string( " is invalid." )
+#else
+                ""
+#endif
+        ) );
+    }
+
+    // Set renderer colour
+    // (black, for clearing window)
+    int rc = SDL_SetRenderDrawColor(
+        this->renderer,
+        CORE_PALETTE_REDS[ global_color_id ],
+        CORE_PALETTE_GREENS[ global_color_id ],
+        CORE_PALETTE_BLUES[ global_color_id ],
+        CORE_PALETTE_ALPHAS[ global_color_id ]
+    );
+    // -ve return code indicates failure
+    if ( rc < 0 )
+    {
+#if defined MCK_STD_OUT
+        // Issue warning but do not throw execption
+        std::cout << "Failed to set render clearing color, "
+                  << "SDL2 error message = "
+                  << SDL_GetError()
+                  << std::endl;
+#endif
+    }
+}

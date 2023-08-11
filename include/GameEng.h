@@ -169,7 +169,10 @@ class GameEng
             int16_t vert_offset = 0
         ) const;
 
-        //! Clears screen to black
+        //! Set render clearing colo(u)r
+        void set_clearing_color( uint8_t global_color_id ) const;
+
+        //! Clears screen
         void clear( void ) const;
 
         //! Present all rendering undertaken since last 'show'

@@ -30,13 +30,30 @@
 #include "GameEng.h"
 #include "ImageMan.h"
 
+// Calculate vertical pos of text
+int calc_vert_offset(
+    uint32_t ticks,
+    float hoz_pos,  // 0.0 to 1.0
+    int vert_range
+)
+{
+    const float PERIOD
+        = float( ticks ) / 1000.0f + hoz_pos;
+    return int(
+               float( 
+                   sin( PERIOD * 3.14127f * 2.0f ) * vert_range
+               ) + 0.5f
+           ); 
+}
+
+
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )
 {   
     // Define window size (these can be changed to any sensible value)
     const int WINDOW_WIDTH_IN_PIXELS = 640;
-    const int WINDOW_HEIGHT_IN_PIXELS = 480;
+    const int WINDOW_HEIGHT_IN_PIXELS = 360;
    
 
     //////////////////////////////////////////////
@@ -45,7 +62,7 @@ int main( int argc, char** argv )
     try
     {
         game_eng.init(
-            "GameEngTest",  // Window name
+            "ImageManTest",  // Window name
             0,  // Window x pos
             0,  // Window y pos
             WINDOW_WIDTH_IN_PIXELS,
@@ -56,6 +73,18 @@ int main( int argc, char** argv )
     {
         throw( std::runtime_error(
             std::string( "Failed to initialize SDL, error: ")
+            + e.what() ) );
+    }
+
+    // Set render clearing colo(u)r for this demo
+    try
+    {
+        game_eng.set_clearing_color( MCK::COL_ROTTING_PURPLE );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to set clearing color, error: ")
             + e.what() ) );
     }
 
@@ -77,56 +106,51 @@ int main( int argc, char** argv )
 
     ///////////////////////////////////////////
     // CREATE DEMO PARAMETERS
-    // TODO...
+    const int NUM_ASCII_RENDER_BLOCKS = 16;
+    const int VERT_RANGE = 5;
+    const int NUM_ROWS = 8;
+    const int NUM_COLS = 256 / NUM_ROWS;
+    const int TEXT_H_SCALE = 2;
+    const int TEXT_V_SCALE = 3;
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
-    std::shared_ptr<MCK::GameEngRenderBlock> border_overlay_block;
-    std::shared_ptr<MCK::GameEngRenderBlock> ascii_1_block;
-    std::shared_ptr<MCK::GameEngRenderBlock> ascii_2_block;
-    try
+    std::vector<std::shared_ptr<MCK::GameEngRenderBlock>> ascii_blocks;
+    for( int i = 0; i < NUM_ASCII_RENDER_BLOCKS; i++ )
     {
-        // Note: The order here is important as it
-        //       defines the order in which blocks
-        //       are rendered. Those placed at the
-        //       front of the list will be rendered
-        //       first, i.e. in the background.
-        //       The border overlay is the *last* sub-block
-        //       in prime render block, so that it
-        //       is rendered after everything else
-        border_overlay_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),  // 'prime render block' is the topmost block, created automatically by GameEng
-            false  // Add to *back*, see note above
-        );
-        ascii_1_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block()
-        );
-        ascii_2_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block()
-        );
+        try
+        {
+            ascii_blocks.push_back(
+                game_eng.create_empty_render_block(
+                    game_eng.get_prime_render_block()
+                )
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create render block, error: ")
+                + e.what() ) );
+        }
+        ascii_blocks[i]->vert_offset
+            = calc_vert_offset(
+                0, 
+                float( i ) / float( NUM_ASCII_RENDER_BLOCKS ),
+                VERT_RANGE
+            );
     }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create render blocks, error: ")
-            + e.what() ) );
-    }
-
-    // Set scroll offset for ascii blocks
-    ascii_1_block->hoz_offset = 0;
-    ascii_2_block->hoz_offset = 0;
 
     
     ///////////////////////////////////////////
     // CREATE LOCAL PALETTES
-    MCK_PAL_ID_TYPE black_white_palette_id;
+    MCK_PAL_ID_TYPE black_yellow_palette_id;
     try
     {
-         black_white_palette_id = image_man.create_local_palette(
+         black_yellow_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_BLACK,
-                    MCK::COL_WHITE
+                    MCK::COL_YELLOW
                 }
             )
         );
@@ -138,14 +162,33 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
     
-    MCK_PAL_ID_TYPE purple_yellow_palette_id;
+    MCK_PAL_ID_TYPE black_red_palette_id;
     try
     {
-         purple_yellow_palette_id = image_man.create_local_palette(
+         black_red_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
-                    MCK::COL_PURPLE,
-                    MCK::COL_YELLOW
+                    MCK::COL_BLACK,
+                    MCK::COL_RED
+                }
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create transparent/yellow palette, error: ")
+            + e.what() ) );
+    }
+    
+    MCK_PAL_ID_TYPE black_green_palette_id;
+    try
+    {
+         black_green_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_BLACK,
+                    MCK::COL_GREEN
                 }
             )
         );
@@ -161,89 +204,66 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE RENDER INFO
 
-    try
+    int block_count = 0;
+    for( int row = 0; row < NUM_ROWS; row++ )
     {
-        image_man.create_extended_ascii_image(
-            'A',
-            black_white_palette_id,
-            50,
-            30,
-            4,
-            4,
-            ascii_1_block
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create 'A' image, error: ")
-            + e.what() ) );
-    }
+        for( int c = 0; c < NUM_COLS; c++ )
+        {
+            const uint8_t CHAR_ID = row * 32 + c;
 
-    try
-    {
-        image_man.create_extended_ascii_image(
-            'a',
-            purple_yellow_palette_id,
-            100,
-            30,
-            4,
-            4,
-            ascii_2_block
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create 'a' image, error: ")
-            + e.what() ) );
-    }
+            // Determine which block to assign this
+            // image to
+            const int BLOCK_ID =
+                ( block_count++ 
+                    + ( row % 2 ) 
+                        * NUM_ASCII_RENDER_BLOCKS / 2
+                ) % NUM_ASCII_RENDER_BLOCKS;
 
-    /*
-    // Create border overlay render info, 
-    // and associate with border overlay block
-    try
-    {
-        // Lefthand border
-        game_eng.create_render_info(
-            black_tex_id,
-            border_overlay_block,
-            MCK::GameEngRenderInfo::Rect( 
-                0,  // x pos
-                0,  // y pos
-                32,
-                WINDOW_HEIGHT_IN_PIXELS  // full height of window 
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create left border, error: ")
-            + e.what() ) );
-    }
-    try
-    {
-        // Righthand border
-        game_eng.create_render_info(
-            black_tex_id,
-            border_overlay_block,
-            MCK::GameEngRenderInfo::Rect( 
-                WINDOW_WIDTH_IN_PIXELS - 32,  // x pos
-                0,  // y pos
-                32,
-                WINDOW_HEIGHT_IN_PIXELS  // full height of window
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create left border, error: ")
-            + e.what() ) );
-    }
-    */
+            // Calculate position within block
+            const int X_POS = 36 + 18 * c;
+            const int Y_POS = 30 + row * VERT_RANGE * 8;
 
+            MCK_PAL_ID_TYPE palette_id;
+            switch( row % 4 )
+            {
+                case 0:
+                    palette_id = black_yellow_palette_id;
+                    break;
+
+                case 1:
+                    palette_id = black_red_palette_id;
+                    break;
+
+                case 2:
+                    palette_id = black_green_palette_id;
+                    break;
+
+                case 3:
+                    palette_id = black_red_palette_id;
+                    break;
+            }
+
+            // Create image
+            try
+            {
+                image_man.create_extended_ascii_image(
+                    CHAR_ID,
+                    palette_id,
+                    X_POS,
+                    Y_POS,
+                    TEXT_H_SCALE,
+                    TEXT_V_SCALE,
+                    ascii_blocks[ BLOCK_ID ]
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create ascii image, error: ")
+                    + e.what() ) );
+            }
+        }
+    }
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
@@ -255,8 +275,7 @@ int main( int argc, char** argv )
     uint32_t current_ticks = game_eng.get_ticks();
     uint32_t start_ticks = current_ticks;
     uint32_t next_frame_ticks = current_ticks + TICKS_PER_FRAME; 
-    uint32_t end_ticks = current_ticks + 13500;
-    const float SCROLL_RATE = 0.1f;  // Pixels per tick
+    uint32_t end_ticks = current_ticks + 50000;
     do
     {
         ////////////////////////////////////////
@@ -311,6 +330,16 @@ int main( int argc, char** argv )
 
                 // TODO: Other keyboard input
             }
+        }
+
+        for( int i = 0; i < NUM_ASCII_RENDER_BLOCKS; i++ )
+        {
+            ascii_blocks[i]->vert_offset
+                = calc_vert_offset(
+                    current_ticks, 
+                    float( i ) / float( NUM_ASCII_RENDER_BLOCKS ),
+                    VERT_RANGE
+                );
         }
 
         // Clear, render and present
