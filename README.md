@@ -4,7 +4,7 @@
 
 README.md
 
-Copyright (c) Muckytators 2023
+Copyright (c) Muckytaters 2023
 
 This program is free software: you can
 redistribute it and/or modify it under 
@@ -22,6 +22,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU
 General Public License along with this
 program. If not, see http://www.gnu.org/license
+
+IMPORTANT ADDITIONAL INFORMATION AND DISCLAIMER:
+
+   The images whose data is contained within this project
+   were created by MuckyTaters and share the same license
+   as the code. They are provided in good faith,
+   but the creator cannot guarantee that their use will
+   not infringe third party intellectual property rights,
+   particularly with regard to copying the look and feel
+   of existing software.
+   
+   If you use any of the images contained in this project,
+   you must perform the same due diligence, with regard to
+   third party intellectual property rights, as would be
+   required if you had created the images yourself.
+   
+   This statement does not constitute, nor should be considered
+   a replacement for, legal advice.
 
 
 Contents:
@@ -55,10 +73,13 @@ This will eventually become a library, potentially with bindings to other
 languages.
 
 MuckyVision's source code is organised in layers. The current commit 
-comprises only the lowest layer: "GameEng". This acts as a
-wrapper for SDL, so that higher layers have no need to use SDL
-commands. This will make it easy to swap out SDL for another library,
-should that be necessary in future.
+comprises the lowest layer: "GameEng", and the layer above "ImageMan".
+GameEng acts as a wrapper for SDL, so that higher layers have no need
+to use SDL commands. This will make it easy to swap out SDL for another
+library, should that be necessary in future. ImageMan is an image manager,
+it maintains pointers to binary image data and colo(u)r palette information,
+and provides a less cumbersome way of creating images (although only for
+ASCII characters at present).
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
@@ -103,21 +124,22 @@ Classes/structs included in this commit:
     
     KeyEvent: Keyboard input events from user (not yet fully implemented).
 
+    ImageMan: Singleton class that provides image data and palette management.
+
+    ImageData_EXT_ASCII: An extended ASCII set of 256 8x8 pixel images.
+
 
 3. Future Plans
 
-Completing keyboard input is next on the TODO list, as is building
-documentation using Doxgen.
-
-Following that, the next layer added will probably be an "Image" layer providing
-a set of predrawn character graphics, including basic ASCII characters and 
-a set of primitive blocks/shapes for "PETSCI” style graphics.
+Next on the TODO list is providing ImageMan with an interface for storing
+custom image data. After that, creating text and number objects that manage
+multiple ASCII images in a sensible way.
 
 Provision of C64 SID chip style audio (using dynamically generated waveforms)
 is also a high priority.
 
 
-4. Building the Supplied Demo
+4. Building the Supplied Demos
 
 DISCLAIMER: Please do not install any software, or change your machine's
             settings, unless you are competent to do so and confident that
@@ -133,10 +155,17 @@ DISCLAIMER: Please do not install any software, or change your machine's
             DO NOT PROCEED.
 
 The 'MuckyVision3/tests' folder contains all the files required to 
-build a live demo program, either on Linux or Windows (using MinGW).
+build two live demo programs, either on Linux or Windows (using MinGW).
 Note the file MuckyVision3/include/Version.h provides control over certain
 aspects of the build process, although the default settings should work
 for both Linux and Windows (MinGW).
+
+For the ImageManTest demo, replace all references to 'GameEng' below
+with 'ImageMan', including where it is part of a larger word, so 
+'makefile_GameEngTest_linux' becomes 'makefile_ImageManTest_linux'
+and so on. Note that lines numbers in the ImageMan makefile may 
+differ slightly.
+
 
 Suggestions for Linux:
 

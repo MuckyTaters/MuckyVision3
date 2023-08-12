@@ -8,7 +8,7 @@
 //  Test/demo for GameEng class, including
 //  structs GameEngRenderInfo and GameEngRenderBlock
 //
-//  Copyright (c) Muckytators 2023
+//  Copyright (c) Muckytaters 2023
 //
 //  This program is free software: you can
 //  redistribute it and/or modify it under 

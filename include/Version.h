@@ -10,7 +10,7 @@
 //  Comment these definitions in or out
 //  depending on the version you wish to build
 //
-//  Copyright (c) Muckytators 2023
+//  Copyright (c) Muckytaters 2023
 //
 //  This program is free software: you can
 //  redistribute it and/or modify it under 

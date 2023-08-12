@@ -9,7 +9,7 @@
 //  texture management and
 //  screen rendering
 //
-//  Copyright (c) Muckytators 2023
+//  Copyright (c) Muckytaters 2023
 //
 //  This program is free software: you can
 //  redistribute it and/or modify it under 
