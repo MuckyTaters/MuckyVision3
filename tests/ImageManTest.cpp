@@ -115,6 +115,22 @@ int main( int argc, char** argv )
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
+
+    std::shared_ptr<MCK::GameEngRenderBlock> logo_block;
+    try
+    {
+        logo_block =
+            game_eng.create_empty_render_block(
+                game_eng.get_prime_render_block()
+            );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create logo block, error: ")
+            + e.what() ) );
+    }
+
     std::vector<std::shared_ptr<MCK::GameEngRenderBlock>> ascii_blocks;
     for( int i = 0; i < NUM_ASCII_RENDER_BLOCKS; i++ )
     {
@@ -132,6 +148,8 @@ int main( int argc, char** argv )
                 std::string( "Failed to create render block, error: ")
                 + e.what() ) );
         }
+
+        // Set block's vertical position
         ascii_blocks[i]->vert_offset
             = calc_vert_offset(
                 0, 
@@ -158,7 +176,7 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create black/white palette, error: ")
+            std::string( "Failed to create black yellow palette, error: ")
             + e.what() ) );
     }
     
@@ -177,7 +195,7 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create transparent/yellow palette, error: ")
+            std::string( "Failed to create black red palette, error: ")
             + e.what() ) );
     }
     
@@ -196,7 +214,26 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create transparent/yellow palette, error: ")
+            std::string( "Failed to create black green palette, error: ")
+            + e.what() ) );
+    }
+    
+    MCK_PAL_ID_TYPE logo_palette_id;
+    try
+    {
+         logo_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_DARK_RED
+                }
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create logo palette, error: ")
             + e.what() ) );
     }
     
@@ -204,6 +241,7 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE RENDER INFO
 
+    // Create 256 extended ASCII chars
     int block_count = 0;
     for( int row = 0; row < NUM_ROWS; row++ )
     {
@@ -221,7 +259,7 @@ int main( int argc, char** argv )
 
             // Calculate position within block
             const int X_POS = 36 + 18 * c;
-            const int Y_POS = 30 + row * VERT_RANGE * 8;
+            const int Y_POS = 20 + row * VERT_RANGE * 8;
 
             MCK_PAL_ID_TYPE palette_id;
             switch( row % 4 )
@@ -262,6 +300,45 @@ int main( int argc, char** argv )
                     std::string( "Failed to create ascii image, error: ")
                     + e.what() ) );
             }
+        }
+    }
+
+    // Create logo as string
+    {
+        const int H_SCALE = 2;
+        const int V_SCALE = 2;
+        const uint8_t COPYRIGHT_SYMBOL = 0xFF;
+        std::string logo_str;
+        logo_str += COPYRIGHT_SYMBOL;
+        logo_str += " MUCKYTATERS 2023";
+        const int LOGO_SIZE = logo_str.size();
+
+        // Loop over chars in logo string, creating an ASCII image
+        // for each char and assigning it to the logo render block
+        int x_pos = WINDOW_WIDTH_IN_PIXELS
+                        - logo_str.size() * 8 * H_SCALE;
+        for( uint8_t c : logo_str )
+        {
+            try
+            {
+                image_man.create_extended_ascii_image(
+                    c,
+                    logo_palette_id,
+                    x_pos,
+                    WINDOW_HEIGHT_IN_PIXELS - 8 * V_SCALE,
+                    H_SCALE,
+                    V_SCALE,
+                    logo_block
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create logo ascii image, error: ")
+                    + e.what() ) );
+            }
+
+            x_pos += 8 * H_SCALE;
         }
     }
 

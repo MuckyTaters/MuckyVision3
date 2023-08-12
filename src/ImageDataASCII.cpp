@@ -3,7 +3,7 @@
 //  ---MUCKY VISION 3 (BASIC ENGINE) ---
 //  ------------------------------------
 //
-//  ImageData_EXT_ASCII.cpp
+//  ImageDataASCII.cpp
 //
 //  Image Data for extended ASCII characters,
 //  8x8 pixels
@@ -46,9 +46,9 @@
 //  a replacement for, legal advice.
 ////////////////////////////////////////////
 
-#include "ImageData_EXT_ASCII.h"
+#include "ImageDataASCII.h"
 
-const std::vector<std::vector<uint8_t>> MCK::ImageData_EXT_ASCII::image_data 
+const std::vector<std::vector<uint8_t>> MCK::ImageDataASCII::image_data 
 {  // Start of outer vector
 { // 0
 0b00000001,

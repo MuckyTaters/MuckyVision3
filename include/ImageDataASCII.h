@@ -3,7 +3,7 @@
 //  ---MUCKY VISION 3 (BASIC ENGINE) ---
 //  ------------------------------------
 //
-//  ImageData_EXT_ASCII.h
+//  ImageDataASCII.h
 //
 //  Image Data for extended ASCII characters,
 //  8x8 pixels
@@ -28,8 +28,8 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
-#ifndef IMG_DATA_EXT_ASCII
-#define IMG_DATA_EXT_ASCII
+#ifndef IMG_DATAASCII
+#define IMG_DATAASCII
 
 #include <cstdint>  // For uint8_t
 #include <vector>
@@ -37,7 +37,7 @@
 namespace MCK
 {
 
-class ImageData_EXT_ASCII
+class ImageDataASCII
 {
     public:
 

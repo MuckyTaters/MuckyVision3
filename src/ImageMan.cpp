@@ -217,7 +217,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
         const std::vector<uint8_t>* pixel_data = NULL;
         try
         {
-            pixel_data = &MCK::ImageData_EXT_ASCII::image_data.at( ascii_value );
+            pixel_data = &MCK::ImageDataASCII::image_data.at( ascii_value );
         }
         catch( ... )
         {
@@ -226,7 +226,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
                 std::string( "Attempt to access image data for ascii value " )
                 + std::to_string( ascii_value )
                 + std::string( " has raised an exception. Check " )
-                + std::string( "integrity of file ImageData_EXT_ASCII.h" )
+                + std::string( "integrity of file ImageDataASCII.h" )
 #else
                 ""
 #endif

@@ -44,7 +44,7 @@
 #include "GameEng.h"
 #include "GameEngRenderBlock.h"
 #include "GameEngRenderInfo.h"
-#include "ImageData_EXT_ASCII.h"
+#include "ImageDataASCII.h"
 #include "Version.h"
 
 namespace MCK

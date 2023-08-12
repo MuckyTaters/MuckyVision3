@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/ImageData_EXT_ASCII.o build/ImageMan.o build/ImageManTest.o 
+BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageManTest.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -84,9 +84,9 @@ all: $(BUILDS)
 build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
 
-## ImageData_EXT_ASCII ##
-build/ImageData_EXT_ASCII.o: ../src/ImageData_EXT_ASCII.cpp ../include/ImageData_EXT_ASCII.h 
-	$(CC) -c ../src/ImageData_EXT_ASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageData_EXT_ASCII.o
+## ImageDataASCII ##
+build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h 
+	$(CC) -c ../src/ImageDataASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageDataASCII.o
 
 ## ImageMan ##
 build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../include/Defs.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
