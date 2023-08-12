@@ -27,23 +27,9 @@
 //  General Public License along with this
 //  program. If not, see http://www.gnu.org/license
 //
-//  IMPORTANT ADDITIONAL INFORMATION AND DISCLAIMER:
-//  
-//  The images whose data is contained in this file
-//  were created by MuckyTaters and share the same license
-//  as the code. They are provided in good faith,
-//  but the creator cannot guarantee that their use will
-//  not infringe third party intellectual property rights,
-//  particularly with regard to copying the look and feel
-//  of existing software.
+//  IMPORTANT: Please see the statement in file 
+//  'IMAGE_RIGHTS_DISCLAIMER.md'
 //
-//  If you use any of the images contained in this file, you
-//  must perform the same due diligence, with regard to
-//  third party intellectual property rights, as would be
-//  required if you had created the images yourself.
-//  
-//  This statement does not constitute, nor should be considered
-//  a replacement for, legal advice.
 ////////////////////////////////////////////
 
 #include "ImageDataASCII.h"

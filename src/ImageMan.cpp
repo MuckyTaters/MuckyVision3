@@ -26,6 +26,10 @@
 //  You should have received a copy of the GNU
 //  General Public License along with this
 //  program. If not, see http://www.gnu.org/license
+//
+//  IMPORTANT: Please see the statement in file 
+//  'IMAGE_RIGHTS_DISCLAIMER.md'
+//
 ////////////////////////////////////////////
 
 #include "ImageMan.h"

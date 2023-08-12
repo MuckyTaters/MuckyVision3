@@ -93,7 +93,7 @@ build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../i
 	$(CC) -c ../src/ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageMan.o
 
 ## ImageManTest ##
-build/ImageManTest.o: ImageManTest.cpp build/ImageMan.o build/GameEng.o ../include/Defs.h 
+build/ImageManTest.o: ImageManTest.cpp build/ImageMan.o build/GameEng.o 
 	$(CC) -c ImageManTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageManTest.o
 
 

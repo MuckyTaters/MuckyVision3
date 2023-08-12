@@ -23,23 +23,7 @@ You should have received a copy of the GNU
 General Public License along with this
 program. If not, see http://www.gnu.org/license
 
-IMPORTANT ADDITIONAL INFORMATION AND DISCLAIMER:
-
-   The images whose data is contained within this project
-   were created by MuckyTaters and share the same license
-   as the code. They are provided in good faith,
-   but the creator cannot guarantee that their use will
-   not infringe third party intellectual property rights,
-   particularly with regard to copying the look and feel
-   of existing software.
-   
-   If you use any of the images contained in this project,
-   you must perform the same due diligence, with regard to
-   third party intellectual property rights, as would be
-   required if you had created the images yourself.
-   
-   This statement does not constitute, nor should be considered
-   a replacement for, legal advice.
+PLEASE ALSO SEE THE STATEMENT IN FILE 'IMAGE_RIGHTS_DISCLAIMER.md'.
 
 
 Contents:
@@ -74,12 +58,14 @@ languages.
 
 MuckyVision's source code is organised in layers. The current commit 
 comprises the lowest layer: "GameEng", and the layer above "ImageMan".
+
 GameEng acts as a wrapper for SDL, so that higher layers have no need
 to use SDL commands. This will make it easy to swap out SDL for another
-library, should that be necessary in future. ImageMan is an image manager,
-it maintains pointers to binary image data and colo(u)r palette information,
-and provides a less cumbersome way of creating images (although only for
-ASCII characters at present).
+library, should that be necessary in future.
+
+ImageMan is an image manager, it maintains pointers to binary image data
+and colo(u)r palette information, and provides a less cumbersome way of
+creating images (although only for ASCII characters at present).
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
@@ -126,7 +112,7 @@ Classes/structs included in this commit:
 
     ImageMan: Singleton class that provides image data and palette management.
 
-    ImageData_EXT_ASCII: An extended ASCII set of 256 8x8 pixel images.
+    ImageDataASCII: An extended ASCII set of 256 8x8 pixel images.
 
 
 3. Future Plans
@@ -161,7 +147,7 @@ aspects of the build process, although the default settings should work
 for both Linux and Windows (MinGW).
 
 For the ImageManTest demo, replace all references to 'GameEng' below
-with 'ImageMan', including where it is part of a larger word, so 
+with 'ImageMan', including where it is part of a larger word. Hence 
 'makefile_GameEngTest_linux' becomes 'makefile_ImageManTest_linux'
 and so on. Note that lines numbers in the ImageMan makefile may 
 differ slightly.
