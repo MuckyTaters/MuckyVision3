@@ -5,8 +5,7 @@
 //
 //  ImageDataASCII.h
 //
-//  Image Data for extended ASCII characters,
-//  8x8 pixels
+//  Image Data for extended ASCII characters
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -32,8 +31,8 @@
 //
 ////////////////////////////////////////////
 
-#ifndef IMG_DATAASCII
-#define IMG_DATAASCII
+#ifndef IMG_DATA_ASCII_H
+#define IMG_DATA_ASCII_H
 
 #include <cstdint>  // For uint8_t
 #include <vector>
@@ -41,12 +40,19 @@
 namespace MCK
 {
 
-class ImageDataASCII
+struct ImageDataASCII
 {
-    public:
-
+        //! Vector of character images, each stored in a flat (1d) vector
         static const std::vector<std::vector<uint8_t>> image_data;
 
+        //! Bit depth shared by all images in 'image_data'
+        static const uint8_t BITS_PER_PIXEL = 1;
+
+        //! Width (in pixels), shared by all images in 'image_data'
+        static const uint8_t PITCH_IN_PIXELS = 8;
+
+        //! Height (in pixels), shared by all images in 'image_data'
+        static const uint8_t HEIGHT_IN_PIXELS = 8;
 };
 
 }  // End of namespace MCK

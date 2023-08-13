@@ -32,12 +32,14 @@
 #ifndef MCK_GAME_ENG_H
 #define MCK_GAME_ENG_H
 
-// SDL includes (Linux/Windows specific)
+// SDL includes
 #ifdef MCK_MINGW
+// This is required if cross-compiling for Windows *on Linux*
 #define SDL_MAIN_HANDLED  // Tells g++ to ignore SDL's own main
 #include <SDL.h>
 #endif
 #ifndef MCK_MINGW
+// This is required if compiling on Linux or Windows (MinGW)
 #include <SDL2/SDL.h>
 #endif
 
@@ -101,7 +103,7 @@ class GameEng
          *  @param pixel_data: Pixel bits, packed sequentially into bytes
          *  @param local_palette: Vector of colo(u)r IDs
          *  @param tex_id: Resulting texture id
-         *  @param tex_id: Resulting image height (for quality checks)
+         *  @param height_in_pixels: Resulting image height (for quality checks)
          */
         void create_texture(
             MCK_IMG_ID_TYPE image_id,
@@ -141,8 +143,16 @@ class GameEng
         ) const;
 
         //! Create render info for specified texture id
-        /*! Note: rectangles NOT passed by ref as generally
-         *  supplied as r-values
+        /*! @param tex_id: Texture ID
+         *  @param parent_block: Block to which image is to be attached
+         *  @param dest_rect: Destination of image, in game window pixels
+         *  @param clip: If True, only render part of texture
+         *  @param clip_rect: If clip == True, defines part of texture to render
+         *  @param rotation: Rotated of image, in multiples of 90 degrees
+         *  @param flip_x: Horizonatal flip
+         *  @param flip_y: Vertical flip
+         *  Note: rectangles are intentionally NOT passed by reference as
+         *  they are generally supplied as r-values
          */
         std::shared_ptr<MCK::GameEngRenderInfo> create_render_info(
             MCK_TEX_ID_TYPE tex_id,
@@ -178,20 +188,25 @@ class GameEng
         //! Present all rendering undertaken since last 'show'
         void show( void ) const;
 
-        //! Get milliseconds since initiation
+        //! Get milliseconds since SDL initialization
         uint32_t get_ticks( void ) const { return SDL_GetTicks(); }
     
         //! Delay, to give time back to the operating system
+        /* @param ticks: Nominal delay in milliseconds
+         * Note: the exact duration of the delay is not guaranteed
+         */
         void delay( int ticks ) const
         {
             SDL_Delay( ticks );
         }
 
+        //! Get the render block to which all other render blocks are subservient
         std::shared_ptr<MCK::GameEngRenderBlock> get_prime_render_block( void ) const noexcept
         {
             return prime_render_block;
         }
 
+        //! Get vector of new keyboard events, in the order they occurred.
         void get_pending_keyboard_actions(
             std::vector< KeyEvent > &key_events
         );
@@ -211,11 +226,11 @@ class GameEng
     private:
 
         //! Assign MuckyVision key code to SDL scancode, assuming scancode has no current assignment
-        /*! If scancode has already been assigned to a key,
+        /*! Note: if a scancode has already been assigned to the key,
          *  this call will be ignored.
          *  This method is only used during initialisation,
          *  hence it being private.
-         * */
+         */
         void init_key(
             SDL_Scancode sc,
             MCK::KeyEvent::Keys k
@@ -230,13 +245,13 @@ class GameEng
         }
 
         //! Get RGBA values for a given colo(u)r ID
-        void get_RGBA(
+        static void get_RGBA(
             uint8_t col_id,
             uint8_t &r,
             uint8_t &g,
             uint8_t &b,
             uint8_t &a
-        ) const
+        )
         {
             // TODO: Add provision for extended palette
             //       with user-defined colo(u)rs
@@ -273,18 +288,13 @@ class GameEng
         //! Map linking texture ids to texture pointers
         std::map<MCK_TEX_ID_TYPE,SDL_Texture*> textures;
 
-        /*
-        //! List of all render blocks to be processed
-        std::list<std::shared_ptr<MCK::GameEngRenderBlock>> render_list;
-        */
-        
         //! Top level render block
         std::shared_ptr<MCK::GameEngRenderBlock> prime_render_block;
 
-        //! SDL renderer instance
+        //! SDL2 renderer instance
         SDL_Renderer* renderer;
 
-        //! SDL window instance
+        //! SDL2 window instance
         SDL_Window* window;
             
         //! Game window width
@@ -295,7 +305,7 @@ class GameEng
         /*! Height of game window in pixels.*/
         unsigned int window_height_in_pixels;
         
-        //! Pointer to SDL's keyboard state array
+        //! Pointer to SDL2's keyboard state array
         const Uint8* keyboard_state;
 
         //! Current size of SDL's keyboard state array.

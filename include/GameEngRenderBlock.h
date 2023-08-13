@@ -6,7 +6,8 @@
 //  GameEngRenderBlock.h
 //
 //  A vector of GameEngRenderInfo structs,
-//  together with added meta information
+//  a list of subservient blocks,
+//  and additional meta information
 //
 //  This file has no corresponding .cpp file
 //
@@ -34,10 +35,6 @@
 #define MCK_GAME_ENG_RB_H
 
 #include <vector>
-
-#ifdef MCK_MULTITHREAD
-#include <mutex>
-#endif
 
 #include "GameEngRenderInfo.h"
 

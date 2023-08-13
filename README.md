@@ -203,7 +203,7 @@ Suggestions for Windows (MinGW):
     mingw32-make.exe -f makefile_GameEngTest_windows_MinGW
 
     If this fails, check the paths carefully as this is the most
-    likely source of error. Also, line 66 of the windows makefile
+    likely source of error. Also, line 67 of the windows makefile
     provides an option for an x86_64 build, so feel free to try
     this if the default i686 build fails, or produces an executable
     that won't run.
