@@ -49,10 +49,10 @@ struct ImageDataASCII
         static const uint8_t BITS_PER_PIXEL = 1;
 
         //! Width (in pixels), shared by all images in 'image_data'
-        static const uint8_t PITCH_IN_PIXELS = 8;
+        static const uint16_t PITCH_IN_PIXELS = 8;
 
         //! Height (in pixels), shared by all images in 'image_data'
-        static const uint8_t HEIGHT_IN_PIXELS = 8;
+        static const uint16_t HEIGHT_IN_PIXELS = 8;
 };
 
 }  // End of namespace MCK

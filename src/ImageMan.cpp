@@ -67,8 +67,11 @@ void MCK::ImageMan::init(
     }
     this->game_eng = &_game_eng;
 
-    // Set palette ID counter
-    this->next_local_palette_id = 0;
+    // Reverse space for local colo(u)r palette index
+    palettes_by_id.reserve( MCK::MAX_LOCAL_COLOR_PALETTES );
+
+    // Create metadata for image pixel data
+    // TODO
 
     this->initialized = true;
 }
@@ -103,10 +106,12 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
     }
 
     // Loop over existing palettes and check for match
-    for( auto it : this->palettes_by_id )
+    const MCK_PAL_ID_TYPE NUM_PAL = palettes_by_id.size();
+    for( MCK_PAL_ID_TYPE id = 0; id < NUM_PAL; id++ )
     {
-        // Get reference to palette
-        const std::shared_ptr<std::vector<uint8_t>> PALETTE = it.second;
+        // Get pointer to palette
+        const std::shared_ptr<std::vector<uint8_t>> PALETTE
+            = palettes_by_id[id];
 
         // Ignore NULL pointers
         if( PALETTE.get() == NULL )
@@ -114,7 +119,7 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
             continue;
         }
 
-        // I different length, no match
+        // If different length, no match
         if( PALETTE->size() != SIZE )
         {
             continue;
@@ -135,12 +140,12 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
         if( match )
         {
             // Return ID of existing palette
-            return it.first;
+            return id;
         }
     }
 
     // Unlikey, but check if we've run out of palette IDs
-    if( next_local_palette_id + 1 == 0 )
+    if( palettes_by_id.size() == MCK::INVALID_IMG_ID )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -153,18 +158,10 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
 
     // If we get to this point, assume this local
     // palette is new, and assign it a new ID
-    // and increment ID counter
-    // We can disregard return value here as no
-    // chance of duplicate key
-    const MCK_PAL_ID_TYPE ID = this->next_local_palette_id++;
-    this->palettes_by_id.insert(
-        std::pair<MCK_PAL_ID_TYPE,std::shared_ptr<std::vector<uint8_t>>>(
-            ID,
-            global_color_ids
-        )
-    );
+    palettes_by_id.push_back( global_color_ids );
 
-    return ID;
+    // Return index of new palette as ID
+    return palettes_by_id.size() - 1;
 }
 
 std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_image(
@@ -236,22 +233,6 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
 #endif
             ) );
         }
-
-        // Get pointer to local colo(u)r palette
-        std::map<MCK_PAL_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>>::const_iterator it
-            = this->palettes_by_id.find( local_palette_id );
-        if( it == this->palettes_by_id.end() )
-        {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                "Cannot create extended ascii image as local_palette_id invalid, have you forgetten to use 'create_local_palette'?"
-#else
-                ""
-#endif
-            ) );
-        }
-        const std::shared_ptr<const std::vector<uint8_t>> LOCAL_PALETTE
-            = it->second;
 
         // Create texture (in case it doesn't exist already)
         try
@@ -333,24 +314,34 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
         ) );
     }
 
-    // Get pointer to local colo(u)r palette
-    std::map<
-        MCK_PAL_ID_TYPE,
-        const std::shared_ptr<std::vector<uint8_t>>
-    >::const_iterator it
-        = this->palettes_by_id.find( local_palette_id );
-    if( it == this->palettes_by_id.end() )
+    // Ensure that image ID is not invalid
+    if( image_id == MCK::INVALID_IMG_ID )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "Cannot create image as local_palette_id invalid, have you forgetten to use 'create_local_palette'?"
+            std::string( "Cannot create image as image ID is invalid (" )
+            + std::to_string( MCK::INVALID_IMG_ID )
+            + std::string( ")" )
 #else
             ""
 #endif
         ) );
     }
-    const std::shared_ptr<std::vector<uint8_t>> LOCAL_PALETTE
-        = it->second;
+
+    // Check palette id is valid
+    if( local_palette_id >= palettes_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Local palette ID " )
+            + std::to_string( local_palette_id )
+            + std::string( " is invalid, cannot create ASCII " )
+            + std::string( "character." )
+#else
+            ""
+#endif
+        ) );
+    }
 
     // Create texture
     uint16_t height_in_pixels = 0;
@@ -363,7 +354,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
             bits_per_pixel,
             pitch_in_pixels,
             pixel_data,
-            *LOCAL_PALETTE,
+            *palettes_by_id[ local_palette_id ],
             tex_id,
             height_in_pixels
         );

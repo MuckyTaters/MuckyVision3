@@ -116,6 +116,42 @@ class ImageMan
 
     private:
 
+        //! Private struct used to store metadata for a sequence of images
+        struct ImageDataMeta
+        {
+            MCK_IMG_ID_TYPE start_image_id;
+            MCK_IMG_ID_TYPE end_image_id;
+            uint8_t bits_per_pixel;
+            uint16_t pitch_in_pixels;
+            uint16_t height_in_pixels;
+
+            //! Default constructor
+            ImageDataMeta( void )
+            {
+                start_image_id = MCK::INVALID_IMG_ID;
+                end_image_id = MCK::INVALID_IMG_ID;
+                bits_per_pixel = 0;
+                pitch_in_pixels = 0;
+                height_in_pixels = 0;
+            }
+
+            //! Constructor
+            ImageDataMeta(
+                MCK_IMG_ID_TYPE _start_image_id,
+                MCK_IMG_ID_TYPE _end_image_id,
+                uint8_t _bits_per_pixel,
+                uint16_t _pitch_in_pixels,
+                uint16_t _height_in_pixels
+            )
+            {       
+                start_image_id = _start_image_id;
+                end_image_id = _end_image_id;
+                bits_per_pixel = _bits_per_pixel;
+                pitch_in_pixels = _pitch_in_pixels; 
+                height_in_pixels = _height_in_pixels;
+            }
+        };
+
         //! Extended ASCII images are numbered sequentially from this value
         static const MCK_IMG_ID_TYPE ASCII_IMAGE_ID_BASE = 0;
 
@@ -136,13 +172,10 @@ class ImageMan
         GameEng* game_eng;
 
         //! Store pointers to local palettes, indexed by their id 
-        std::map<MCK_PAL_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> palettes_by_id;
+        std::vector<std::shared_ptr<std::vector<uint8_t>>> palettes_by_id;
 
         //! Store pointers to image data, indexed by image ID
         std::map<MCK_IMG_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> image_data_ptrs_by_id;
-
-        //! Next available local palette id
-        MCK_PAL_ID_TYPE next_local_palette_id;
 
         // Constructor/destructor/copy/assignment/
         // initializer made private to avoid misuse.

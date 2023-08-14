@@ -39,11 +39,20 @@
 
 namespace MCK
 {
+    //! Ceiling/invalid value to image ids
+    const MCK_IMG_ID_TYPE INVALID_IMG_ID = 0xFFFFFFFF;
+
     //! Safety parameter - max window width
-    const unsigned int MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
+    const uint16_t MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
     
     //! Safety parameter - max window height
-    const unsigned int MAX_WINDOW_HEIGHT_IN_PIXELS = 2048;
+    const uint16_t MAX_WINDOW_HEIGHT_IN_PIXELS = 2048;
+
+    //! Expected max number of local colo(u)r palettes, as a power of 2
+    /* Note: This is a 'soft' upper limit, exceeding it
+     *       is permissible but may reduce efficiency.
+     */
+    const uint16_t MAX_LOCAL_COLOR_PALETTES = 1024; 
 
     //! Colo(u)r codes for core palette
     /*! Note US spelling of GRAY used here
