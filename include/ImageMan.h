@@ -5,7 +5,7 @@
 //
 //  ImageMan.h
 //
-//  Imager Manager singleton class,
+//  Image Manager singleton class,
 //  sits on top of GameEng instance.
 //
 //  Copyright (c) Muckytaters 2023
@@ -66,25 +66,26 @@ class ImageMan
         }
 
         //! Initialize image manager
-        /*! @param premake_all: Make *all* textures at initialization */
+        /*! @param _game_eng: Initialized singleton GameEng instance
+         */
         void init(
             GameEng &_game_eng
         );
 
         //! Create local colo(u)r palette
-        /*! A local palettes is a subset of the global colo(u)r
-         *  palette containing 2, 4, or 16 colo(u)rs, referenced
-         *  by global colo(u)r ID.
-         *  Local palettes are used to assign colo(u)rs to each
-         *  pixel within an image, and the palette's size should
-         *  correspond to the number of bits per pixel (1, 2 or 4
-         *  respectively).
-         *  Local palettes are order sensitive, e.g. {0,1} and {1,0}
-         *  will produce inverted image colo(u)rs.
-         *  If palette already exists, ID of existing palette
-         *  will be returned.
-         *  @params global_color_ids: Vector of length 2, 4 or 16 containing values in range 0-31
-         *  @returns ID of new (or existing) palette
+        /*! A local palette is a subset of the global colo(u)r
+         *  palette containing 2, 4, or 16 colo(u)rs, each 
+         *  referenced by their ID in the global palette.
+         *  Local palettes are used to assign colo(u)rs to
+         *  pixels within an image, and the palette's size should
+         *  always correspond to the number of bits per pixel
+         *  (1, 2 or 4 respectively). 
+         *  Local palettes are order sensitive, so (for example)
+         *  {0,1} and {1,0} will produce mutally inverted images.
+         *  If a local palette already exists, ID of existing
+         *  palette will be returned.
+         *  @params global_color_ids: Pointer to a vector of length 2, 4 or 16, each element being a global colo(u)r ID.
+         *  @returns ID of new (or existing) local palette
          */
         MCK_PAL_ID_TYPE create_local_palette(
             const std::shared_ptr<std::vector<uint8_t>> global_color_ids
@@ -115,7 +116,7 @@ class ImageMan
 
     private:
 
-        //! Image ID for ASCII chars = ASCII_IMAGE_ID_BASE + 0-255
+        //! Extended ASCII images are numbered sequentially from this value
         static const MCK_IMG_ID_TYPE ASCII_IMAGE_ID_BASE = 0;
 
         //! Private method for creating texture and render info
@@ -134,10 +135,10 @@ class ImageMan
 
         GameEng* game_eng;
 
-        //! Store local palettes *indexed by* their id 
+        //! Store pointers to local palettes, indexed by their id 
         std::map<MCK_PAL_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> palettes_by_id;
 
-        //! Store pointers to image data by image ID
+        //! Store pointers to image data, indexed by image ID
         std::map<MCK_IMG_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> image_data_ptrs_by_id;
 
         //! Next available local palette id

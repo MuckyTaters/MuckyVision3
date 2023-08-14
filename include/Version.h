@@ -49,7 +49,7 @@
 #define MCK_STD_OUT
 
 // Keep this commented IN if you
-// want verbose output
+// want verbose console output
 #define MCK_VERBOSE
 
 #endif

@@ -36,10 +36,12 @@
 #define MCK_GAME_ENG_RI_H
 
 // SDL includes (Linux/Windows specific)
+// This is required if cross-compiling for Windows *on Linux*
 #ifdef MCK_MINGW
 #include <SDL.h>
 #endif
 #ifndef MCK_MINGW
+// This is required if compiling on Linux or Windows (MinGW)
 #include <SDL2/SDL.h>
 #endif
 
@@ -48,20 +50,28 @@ namespace MCK
 
 struct GameEngRenderInfo
 {
-    // GameEng instance can access protected/private members
+    //! Friendship so GameEng can access protected/private members
     friend class GameEng;
 
     //!Non-SDL wrapper for SDL_Rect
     struct Rect
     {
-        // GameEng instance can access protected/private members
+        //! Friendship so GameEng can access protected/private members
         friend class GameEng;
-        
+       
+        //! Get left position of rectangle
         int get_x( void ) const noexcept { return r.x; }
+        
+        //! Get top position of rectangle
         int get_y( void ) const noexcept { return r.y; }
+
+        //! Get width of rectangle
         int get_w( void ) const noexcept { return r.w; }
+
+        //! Get height of rectangle
         int get_h( void ) const noexcept { return r.h; }
 
+        //! Default constructor
         Rect( void )
         {
             r.x = 0;
@@ -70,6 +80,12 @@ struct GameEngRenderInfo
             r.h = 0;
         }
 
+        //! Constructor
+        /* @param _x: Left position of rectangle
+         * @param _y: Left position of rectangle
+         * @param _w: Width of rectangle
+         * @param _h: Height position of rectangle
+         */
         Rect( int _x, int _y, int _w, int _h )
         {
             r.x = _x;
@@ -80,6 +96,7 @@ struct GameEngRenderInfo
         
         private:
 
+            //! SDL rectangle is private so direct use is only by GameEng
             SDL_Rect r;
     };
 
@@ -147,6 +164,7 @@ struct GameEngRenderInfo
         /*! See flag masks */
         uint8_t flags;
 
+        //! Calculate flag byte
         static uint8_t calc_flags(
             int rotation,
             bool flip_x,

@@ -2597,4 +2597,3 @@ const std::vector<std::vector<uint8_t>> MCK::ImageDataASCII::image_data
 0b00000000
 }
 };  // End of outer vector
-

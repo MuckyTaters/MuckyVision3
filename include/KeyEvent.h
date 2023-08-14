@@ -105,6 +105,7 @@ struct KeyEvent
     //! Status (pressed or released)
     MCK::KeyEvent::Status status;
 
+    //! Reset KeyEvent to newly constructed state
     void reset( void ) noexcept
     {
         this->key_code = MCK::KeyEvent::KEY_INVALID;
@@ -112,9 +113,10 @@ struct KeyEvent
         this->status = MCK::KeyEvent::INVALID;
     }
 
-    // Default constructor
+    //! Default constructor
     KeyEvent( void ) noexcept { this->reset(); }
 
+    //! Constructor
     KeyEvent(
         MCK::KeyEvent::Keys _key_code,
         uint32_t _timestamp,

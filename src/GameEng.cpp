@@ -171,6 +171,8 @@ const std::vector<uint8_t> MCK::GameEng::CORE_PALETTE_ALPHAS = {
     0xff   // 31 - Dark Brown
 };
 
+///////////////////////////////////////////////
+
 MCK::GameEng::GameEng( void )
 {
     // Set all variables to invalid/default values
@@ -312,10 +314,8 @@ void MCK::GameEng::init(
     }
     
     // Record window dimensions
-    this->window_height_in_pixels
-        = _window_height_in_pixels;
-    this->window_height_in_pixels
-        = _window_height_in_pixels;
+    this->window_height_in_pixels = WIDTH;
+    this->window_height_in_pixels = HEIGHT;
 
     // Try to initialize SDL2
     int rc = SDL_Init( SDL_INIT_VIDEO );
@@ -882,7 +882,7 @@ void MCK::GameEng::create_texture(
     height_in_pixels
         = uint16_t(
             std::ceil ( 
-                float( pixel_data.size() * 8 ) 
+                float( pixel_data.size() * 8 )  // Size of pixel data in *bits* 
                     / float( bits_per_pixel )
                         / float( pitch_in_pixels )
             )
@@ -897,6 +897,7 @@ void MCK::GameEng::create_texture(
             pitch_in_pixels,
             height_in_pixels,
             32,  // depth in bits
+            // Choice of masks here is arbitrary, can be changed if required
             0x00FF0000,  // Red mask
             0x0000FF00,  // Green mask
             0x000000FF,  // Blue mask
@@ -1353,10 +1354,10 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_render_info(
     SDL_Texture* tex = NULL;
     {
         std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::const_iterator it 
-            = textures.find( tex_id );
+            = this->textures.find( tex_id );
         
         // If texture does not exist, throw exception
-        if( it == textures.end() )
+        if( it == this->textures.end() )
         {
             throw( std::runtime_error(
 #if defined MCK_STD_OUT

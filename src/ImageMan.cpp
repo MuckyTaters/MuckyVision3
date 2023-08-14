@@ -68,9 +68,9 @@ void MCK::ImageMan::init(
     this->game_eng = &_game_eng;
 
     // Set palette ID counter
-    next_local_palette_id = 0;
+    this->next_local_palette_id = 0;
 
-    initialized = true;
+    this->initialized = true;
 }
 
 MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
@@ -106,16 +106,16 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
     for( auto it : this->palettes_by_id )
     {
         // Get reference to palette
-        const std::shared_ptr<std::vector<uint8_t>> palette = it.second;
+        const std::shared_ptr<std::vector<uint8_t>> PALETTE = it.second;
 
         // Ignore NULL pointers
-        if( palette.get() == NULL )
+        if( PALETTE.get() == NULL )
         {
             continue;
         }
 
         // I different length, no match
-        if( palette->size() != SIZE )
+        if( PALETTE->size() != SIZE )
         {
             continue;
         }
@@ -123,7 +123,7 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
         // If size matches, loop over elements
         size_t count = 0;
         bool match = true;
-        for( const uint8_t COLOR_ID : *palette )
+        for( const uint8_t COLOR_ID : *PALETTE )
         {
             if( global_color_ids->at(count) != COLOR_ID )
             {
@@ -156,7 +156,7 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
     // and increment ID counter
     // We can disregard return value here as no
     // chance of duplicate key
-    const MCK_PAL_ID_TYPE ID = next_local_palette_id++;
+    const MCK_PAL_ID_TYPE ID = this->next_local_palette_id++;
     this->palettes_by_id.insert(
         std::pair<MCK_PAL_ID_TYPE,std::shared_ptr<std::vector<uint8_t>>>(
             ID,
@@ -211,8 +211,8 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
     const MCK::GameEngRenderInfo::Rect DEST_RECT(
         x_pos,
         y_pos,
-        x_scale * 8,  // Width always multiple of 8
-        y_scale * 8  // Height always multiple of 8
+        x_scale * MCK::ImageDataASCII::PITCH_IN_PIXELS,
+        y_scale * MCK::ImageDataASCII::HEIGHT_IN_PIXELS
     );
     // If texture doesn't already exist, create it
     if( !this->game_eng->texture_exists( TEX_ID ) )
@@ -259,9 +259,9 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
             ans = this->create_texture_and_render_info(
                 IMAGE_ID,
                 local_palette_id,
-                1,  // bits_per_pixel, always 1 for ascii
-                8,  // pitch_in_pixels, always 8 for ascii
-                8,  // expected_height_in_pixels, always 8 for ascii
+                MCK::ImageDataASCII::BITS_PER_PIXEL,
+                MCK::ImageDataASCII::PITCH_IN_PIXELS,
+                MCK::ImageDataASCII::HEIGHT_IN_PIXELS,
                 *pixel_data,
                 DEST_RECT, 
                 parent_block
@@ -338,8 +338,8 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
         MCK_PAL_ID_TYPE,
         const std::shared_ptr<std::vector<uint8_t>>
     >::const_iterator it
-        = palettes_by_id.find( local_palette_id );
-    if( it == palettes_by_id.end() )
+        = this->palettes_by_id.find( local_palette_id );
+    if( it == this->palettes_by_id.end() )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -357,7 +357,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
     MCK_TEX_ID_TYPE tex_id;
     try
     {
-        game_eng->create_texture(
+        this->game_eng->create_texture(
             image_id,
             local_palette_id,
             bits_per_pixel,
