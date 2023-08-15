@@ -50,9 +50,19 @@ namespace MCK
 
     //! Expected max number of local colo(u)r palettes, as a power of 2
     /* Note: This is a 'soft' upper limit, exceeding it
-     *       is permissible but may reduce efficiency.
+     *       is permissible but may reduce efficiency
+     *       during initialization.
      */
     const uint16_t MAX_LOCAL_COLOR_PALETTES = 1024; 
+
+    //! Expected max number of images, as a power of 2
+    /* Note: This is a 'soft' upper limit, exceeding it
+     *       is permissible but may cause delays during
+     *       imitialization.
+     * Note: An 'image' here means just pixel data, so many
+     *       textures can be created from one image.
+     */
+    const uint16_t MAX_IMAGES = 2048; 
 
     //! Colo(u)r codes for core palette
     /*! Note US spelling of GRAY used here

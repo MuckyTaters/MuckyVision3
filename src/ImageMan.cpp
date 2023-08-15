@@ -38,6 +38,7 @@ MCK::ImageMan::ImageMan( void )
 {
     // Set all variables to invalid/default values
     this->game_eng = NULL;
+    this->ascii_image_id_base = MCK::INVALID_IMG_ID;
 }
 
 void MCK::ImageMan::init(
@@ -68,10 +69,24 @@ void MCK::ImageMan::init(
     this->game_eng = &_game_eng;
 
     // Reverse space for local colo(u)r palette index
-    palettes_by_id.reserve( MCK::MAX_LOCAL_COLOR_PALETTES );
+    this->palettes_by_id.reserve( MCK::MAX_LOCAL_COLOR_PALETTES );
 
-    // Create metadata for image pixel data
-    // TODO
+    // Reserve space for image metadata 
+    this->image_meta_data_by_id.reserve( MCK::MAX_IMAGES ); 
+    
+    // Create meta data for ascii image pixel data
+    this->ascii_image_id_base = image_meta_data_by_id.size();
+    for( const std::vector<uint8_t> &data : MCK::ImageDataASCII::image_data )
+    {
+        this->image_meta_data_by_id.push_back(
+            MCK::ImageMan::ImageMetaData(
+                std::make_shared<const std::vector<uint8_t>>( data ),
+                MCK::ImageDataASCII::BITS_PER_PIXEL,
+                MCK::ImageDataASCII::PITCH_IN_PIXELS,
+                MCK::ImageDataASCII::HEIGHT_IN_PIXELS
+            )
+        );
+    }
 
     this->initialized = true;
 }
@@ -187,7 +202,26 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
 
     // Calculate image ID
     const MCK_IMG_ID_TYPE IMAGE_ID
-        = MCK::ImageMan::ASCII_IMAGE_ID_BASE + ascii_value;
+        = this->ascii_image_id_base + ascii_value;
+
+    // Make sure image ID is valid
+    if( IMAGE_ID >= image_meta_data_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create extended ascii image as image ID " )
+            + std::to_string( IMAGE_ID ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get pointer to image meta data
+    // (safe because of above check)
+    const MCK::ImageMan::ImageMetaData* const META_DATA
+        = &image_meta_data_by_id[ IMAGE_ID ];
 
     // Calculate texture ID
     const MCK_TEX_ID_TYPE TEX_ID
@@ -208,42 +242,22 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
     const MCK::GameEngRenderInfo::Rect DEST_RECT(
         x_pos,
         y_pos,
-        x_scale * MCK::ImageDataASCII::PITCH_IN_PIXELS,
-        y_scale * MCK::ImageDataASCII::HEIGHT_IN_PIXELS
+        x_scale * META_DATA->get_pitch_in_pixels(),
+        y_scale * META_DATA->get_height_in_pixels()
     );
     // If texture doesn't already exist, create it
     if( !this->game_eng->texture_exists( TEX_ID ) )
     {
-        // Get pointer to image data
-        const std::vector<uint8_t>* pixel_data = NULL;
-        try
-        {
-            pixel_data = &MCK::ImageDataASCII::image_data.at( ascii_value );
-        }
-        catch( ... )
-        {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                std::string( "Attempt to access image data for ascii value " )
-                + std::to_string( ascii_value )
-                + std::string( " has raised an exception. Check " )
-                + std::string( "integrity of file ImageDataASCII.h" )
-#else
-                ""
-#endif
-            ) );
-        }
-
         // Create texture (in case it doesn't exist already)
         try
         {
             ans = this->create_texture_and_render_info(
                 IMAGE_ID,
                 local_palette_id,
-                MCK::ImageDataASCII::BITS_PER_PIXEL,
-                MCK::ImageDataASCII::PITCH_IN_PIXELS,
-                MCK::ImageDataASCII::HEIGHT_IN_PIXELS,
-                *pixel_data,
+                META_DATA->get_bits_per_pixel(),
+                META_DATA->get_pitch_in_pixels(),
+                META_DATA->get_height_in_pixels(),
+                *(META_DATA->pixel_data),
                 DEST_RECT, 
                 parent_block
             );

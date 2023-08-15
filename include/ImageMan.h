@@ -117,43 +117,67 @@ class ImageMan
     private:
 
         //! Private struct used to store metadata for a sequence of images
-        struct ImageDataMeta
+        struct ImageMetaData
         {
-            MCK_IMG_ID_TYPE start_image_id;
-            MCK_IMG_ID_TYPE end_image_id;
-            uint8_t bits_per_pixel;
-            uint16_t pitch_in_pixels;
-            uint16_t height_in_pixels;
+            std::shared_ptr<const std::vector<uint8_t>> pixel_data;
 
             //! Default constructor
-            ImageDataMeta( void )
+            ImageMetaData( void )
             {
-                start_image_id = MCK::INVALID_IMG_ID;
-                end_image_id = MCK::INVALID_IMG_ID;
-                bits_per_pixel = 0;
-                pitch_in_pixels = 0;
-                height_in_pixels = 0;
+                this->info = 0;
             }
 
             //! Constructor
-            ImageDataMeta(
-                MCK_IMG_ID_TYPE _start_image_id,
-                MCK_IMG_ID_TYPE _end_image_id,
+            /*! Note: Only valid values for _bits_per_pixel are 1, 2 and 4
+             *  Note: Only lowest 12 bits of pitch and height are used
+             */
+            ImageMetaData(
+                std::shared_ptr<const std::vector<uint8_t>> _pixel_data,
                 uint8_t _bits_per_pixel,
                 uint16_t _pitch_in_pixels,
                 uint16_t _height_in_pixels
             )
-            {       
-                start_image_id = _start_image_id;
-                end_image_id = _end_image_id;
-                bits_per_pixel = _bits_per_pixel;
-                pitch_in_pixels = _pitch_in_pixels; 
-                height_in_pixels = _height_in_pixels;
+            {
+                pixel_data = _pixel_data;
+                info = 0 
+                       | _bits_per_pixel
+                       | ( uint32_t( ( _pitch_in_pixels % 0x0FFF ) ) << 8 )
+                       | ( uint32_t( ( _height_in_pixels % 0x0FFF ) ) << 20 );
             }
+
+            //! Get bits per pixel
+            /* Note:only values 1, 2 and 4 are valid,
+             * all other values should be considered invalid
+             */
+            uint8_t get_bits_per_pixel( void ) const noexcept
+            {
+                return info & 0xFF;
+            }
+
+            //! Get pitch in pixels
+            /* Note: only first 12 bits are used */
+            uint16_t get_pitch_in_pixels( void ) const noexcept
+            {
+                return ( info >> 8 ) & 0x0FFF;
+            }
+
+            //! Get height in pixels
+            /* Note: only first 12 bits are used */
+            uint16_t get_height_in_pixels( void ) const noexcept
+            {
+                return ( info >> 20 ) & 0x0FFF;
+            }
+
+            private:
+
+                // bits 0-7: Bit depth (only values 1, 2 and 4 valid)
+                // bits 8-19: Image width
+                // bits 20-31: Image height
+                uint32_t info;
         };
 
         //! Extended ASCII images are numbered sequentially from this value
-        static const MCK_IMG_ID_TYPE ASCII_IMAGE_ID_BASE = 0;
+        MCK_IMG_ID_TYPE ascii_image_id_base;
 
         //! Private method for creating texture and render info
         std::shared_ptr<MCK::GameEngRenderInfo> create_texture_and_render_info(
@@ -175,7 +199,7 @@ class ImageMan
         std::vector<std::shared_ptr<std::vector<uint8_t>>> palettes_by_id;
 
         //! Store pointers to image data, indexed by image ID
-        std::map<MCK_IMG_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> image_data_ptrs_by_id;
+        std::vector<MCK::ImageMan::ImageMetaData> image_meta_data_by_id;
 
         // Constructor/destructor/copy/assignment/
         // initializer made private to avoid misuse.
