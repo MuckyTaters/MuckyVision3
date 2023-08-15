@@ -91,7 +91,17 @@ class ImageMan
             const std::shared_ptr<std::vector<uint8_t>> global_color_ids
         );
 
-        //! Create an image of an extended ascii character
+        //! Create a custom image, and return its Image ID
+        /*! Note: no checking is done for duplicate images
+         */
+        MCK_IMG_ID_TYPE create_custom_image(
+            std::shared_ptr<const std::vector<uint8_t>> pixel_data,
+            uint8_t bits_per_pixel,
+            uint16_t pitch_in_pixels,
+            uint16_t height_in_pixels
+        );
+
+        //! Create render info for an extended ascii character
         // @param ascii_value: ASCII code (0-255) of desired char
         // @param local_palette_id: ID of existing local colo(u)r palette
         // @param x_pos: Hoz screen pos of image (excluding any block offsets) 
@@ -103,8 +113,39 @@ class ImageMan
         //        First local palette colo(u)r is background
         //        Second local palette colo(u)r is foreground
         //        Any other local palette colo(u)rs are ignored
-        std::shared_ptr<MCK::GameEngRenderInfo> create_extended_ascii_image(
+        std::shared_ptr<MCK::GameEngRenderInfo> create_extended_ascii_render_info(
             uint8_t ascii_value,
+            MCK_PAL_ID_TYPE local_palette_id,
+            int x_pos,
+            int y_pos,
+            uint8_t x_scale,
+            uint8_t y_scale,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block
+        ) const
+        {
+            // Let calling program handle any exception here
+            return create_render_info(
+                MCK_IMG_ID_TYPE( ascii_image_id_base + ascii_value ),
+                local_palette_id,
+                x_pos,
+                y_pos,
+                x_scale,
+                y_scale,
+                parent_block
+            );
+        }
+
+        //! Create render info for specified image and colo(u)r palette 
+        // @param image_id: ID of existing image
+        // @param local_palette_id: ID of existing local colo(u)r palette
+        // @param x_pos: Hoz screen pos of image (excluding any block offsets) 
+        // @param x_pos: Vert screen pos of image (excluding any block offsets) 
+        // @param x_scale: Non-zero integer scale applied to image width
+        // @param x_scale: Non-zero integer scale applied to image height
+        // @param owning_block: Pointer to block to which image is assigned (if points to NULL, image will be an *orphan*)
+        // Notes: Orphan images will not be visible until they are assigned to an active block.
+        std::shared_ptr<MCK::GameEngRenderInfo> create_render_info(
+            MCK_IMG_ID_TYPE image_id,
             MCK_PAL_ID_TYPE local_palette_id,
             int x_pos,
             int y_pos,

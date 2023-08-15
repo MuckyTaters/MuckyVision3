@@ -284,7 +284,7 @@ int main( int argc, char** argv )
             // Create image
             try
             {
-                image_man.create_extended_ascii_image(
+                image_man.create_extended_ascii_render_info(
                     CHAR_ID,
                     palette_id,
                     X_POS,
@@ -321,7 +321,7 @@ int main( int argc, char** argv )
         {
             try
             {
-                image_man.create_extended_ascii_image(
+                image_man.create_extended_ascii_render_info(
                     c,
                     logo_palette_id,
                     x_pos,
