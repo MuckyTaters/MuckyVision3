@@ -154,6 +154,19 @@ class ImageMan
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block
         ) const;
 
+        //! Change texture of render info object
+        /*! @param info: Pointer to render info object
+         *  @param image_id: ID of (an existing) image that will be used for the new texture
+         *  @param local_palette_id: ID of existing local colo(u)r palette, used for new texture
+         *  @param keep_orignal_dest_rect_size: If true, size of destination rectangle is prevserved, even if new texture is different size
+         */
+        void change_render_info_tex(
+            std::shared_ptr<MCK::GameEngRenderInfo> info,
+            MCK_IMG_ID_TYPE image_id,
+            MCK_PAL_ID_TYPE local_palette_id,
+            bool keep_orig_dest_rect_size = false
+        ) const;
+
 
     private:
 

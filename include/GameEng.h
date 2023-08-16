@@ -166,6 +166,15 @@ class GameEng
             bool flip_y = false
         ) const;
 
+        //! Change texture of render info object
+        /*! @param info: Pointer to render info object
+         *  @param new_tex_id: ID of the new texture
+         */
+        void change_render_info_tex(
+            std::shared_ptr<MCK::GameEngRenderInfo> info,
+            MCK_TEX_ID_TYPE new_tex_id
+        ) const;
+
         //! Render specified render block (and all sub blocks)
         /*! @param render_block: Highest block to be rendered, e.g. prime_render_block
          *  @param hoz_offset: Horizonal offset, in pixels

@@ -1569,3 +1569,70 @@ void MCK::GameEng::set_clearing_color( uint8_t global_color_id ) const
 #endif
     }
 }
+
+void MCK::GameEng::change_render_info_tex(
+    std::shared_ptr<MCK::GameEngRenderInfo> info,
+    MCK_TEX_ID_TYPE new_tex_id
+) const
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change render info texture as SDL not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( info.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change render info texture as info pointer is NULL."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get texture
+    SDL_Texture* tex = NULL;
+    {
+        std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::const_iterator it 
+            = this->textures.find( new_tex_id );
+        
+        // If texture does not exist, throw exception
+        if( it == this->textures.end() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot change render info texture as texture with id " )
+                + std::to_string( new_tex_id )
+                + std::string( " does not exist." )
+#else
+                ""
+#endif
+            ) );
+        }
+
+        tex = it->second;
+    }
+
+    if( tex == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texutre as texture with id " )
+            + std::to_string( new_tex_id )
+            + std::string( " is NULL." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Update render info
+    info->tex = tex;
+}

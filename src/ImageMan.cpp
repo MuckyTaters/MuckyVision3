@@ -604,6 +604,20 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
     const MCK::ImageMan::ImageMetaData* const META_DATA
         = &image_meta_data_by_id[ image_id ];
 
+    // Make sure palette ID is valid
+    if( local_palette_id >= palettes_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texture as local palette ID " )
+            + std::to_string( local_palette_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
     // Calculate texture ID
     const MCK_TEX_ID_TYPE TEX_ID
         = this->game_eng->calc_tex_id(
@@ -682,4 +696,141 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
     }
 
     return ans;
+}
+
+void MCK::ImageMan::change_render_info_tex(
+    std::shared_ptr<MCK::GameEngRenderInfo> info,
+    MCK_IMG_ID_TYPE image_id,
+    MCK_PAL_ID_TYPE local_palette_id,
+    bool keep_orig_dest_rect_size
+) const
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change render info texture as Image Manager not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Make sure image ID is valid
+    if( image_id >= image_meta_data_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texture as image ID " )
+            + std::to_string( image_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get pointer to image meta data
+    // (safe because of above check)
+    const MCK::ImageMan::ImageMetaData* const META_DATA
+        = &image_meta_data_by_id[ image_id ];
+
+    // Make sure palette ID is valid
+    if( local_palette_id >= palettes_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texture as local palette ID " )
+            + std::to_string( local_palette_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Calculate texture ID
+    const MCK_TEX_ID_TYPE TEX_ID
+        = this->game_eng->calc_tex_id(
+            image_id,
+            local_palette_id
+        );
+
+    // If texture doesn't already exist, create it
+    if( !this->game_eng->texture_exists( TEX_ID ) )
+    {
+        // Create texture
+        uint16_t height_in_pixels = 0;
+        MCK_TEX_ID_TYPE tex_id;
+        try
+        {
+            this->game_eng->create_texture(
+                image_id,
+                local_palette_id,
+                META_DATA->get_bits_per_pixel(),
+                META_DATA->get_pitch_in_pixels(),
+                *META_DATA->pixel_data,
+                *palettes_by_id[ local_palette_id ],
+                tex_id,
+                height_in_pixels
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot change image texture as texture " )
+                + std::string( "creation failed, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+        if( height_in_pixels != META_DATA->get_height_in_pixels() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot change image texture as texture's " )
+                + std::string( "height in pixels (" )
+                + std::to_string( height_in_pixels )
+                + std::string( ") not as expected (" )
+                + std::to_string( META_DATA->get_height_in_pixels() )
+                + std::string( ")." )
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    // Change render info texture, at GameEng level
+    // (because only GameEng has access to the actual
+    //  texture instance)
+    try
+    {
+        game_eng->change_render_info_tex(
+            info,
+            TEX_ID
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change image texture as GameEng " )
+            + std::string( "returned error: " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If necessary, update size of destination rect
+    if( !keep_orig_dest_rect_size )
+    {
+        info->dest_rect.set_w( META_DATA->get_pitch_in_pixels() );
+        info->dest_rect.set_h( META_DATA->get_height_in_pixels() );
+    }
 }

@@ -71,6 +71,18 @@ struct GameEngRenderInfo
         //! Get height of rectangle
         int get_h( void ) const noexcept { return r.h; }
 
+        //! Set left position of rectangle
+        void set_x( int val ) noexcept { r.x = val; }
+        
+        //! Set top position of rectangle
+        void set_y( int val ) noexcept { r.y = val; }
+
+        //! Set width of rectangle
+        void set_w( int val ) noexcept { r.w = val; }
+
+        //! Set height of rectangle
+        void set_h( int val ) noexcept { r.h = val; }
+
         //! Default constructor
         Rect( void )
         {
