@@ -3,13 +3,7 @@
 //  ---MUCKY VISION 3 (BASIC ENGINE) ---
 //  ------------------------------------
 //
-//  GameEngRenderBlock.h
-//
-//  A vector of GameEngRenderInfo structs,
-//  a list of subservient blocks,
-//  and additional meta information
-//
-//  This file has no corresponding .cpp file
+//  FancyTypeface.h (DEMO FILE)
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -29,45 +23,34 @@
 //  You should have received a copy of the GNU
 //  General Public License along with this
 //  program. If not, see http://www.gnu.org/license
+//  
+//  IMPORTANT: Please see the statement in file 
+//  'IMAGE_RIGHTS_DISCLAIMER.md'
+//
 ////////////////////////////////////////////
 
-#ifndef MCK_GAME_ENG_RB_H
-#define MCK_GAME_ENG_RB_H
+#ifndef IMG_FANCY
+#define IMG_FANCY
 
+#include <cstdint>  // For uint8_t
 #include <vector>
-
-#include "GameEngRenderInfo.h"
 
 namespace MCK
 {
 
-struct GameEngRenderBlock
+struct FancyTypeface
 {
-    //! Flag to indicate if block should be rendered
-    /*! True = render, false = don't render */
-    bool active;
+        //! Vector of character images, each stored in a flat (1d) vector
+        static const std::vector<std::vector<uint8_t>> image_data;
 
-    //! Optional horizontal offset (in screen pixels)
-    int16_t hoz_offset;
+        //! Bit depth shared by all images in 'image_data'
+        static const uint8_t BITS_PER_PIXEL = 2;
 
-    //! Optional vertical offset (in screen pixels)
-    int16_t vert_offset;
+        //! Width (in pixels), shared by all images in 'image_data'
+        static const uint16_t PITCH_IN_PIXELS = 12;
 
-    //! Vector of textures that form this block
-
-    std::vector<std::shared_ptr<MCK::GameEngRenderInfo>> render_info;
-
-    //! List of blocks subserviant to this block
-    std::list<std::shared_ptr<MCK::GameEngRenderBlock>> sub_blocks;
-
-    //! Default constructor
-    GameEngRenderBlock( void )
-    {
-        this->active = true;
-        this->hoz_offset = 0;
-        this->vert_offset = 0;
-    }
-
+        //! Height (in pixels), shared by all images in 'image_data'
+        static const uint16_t HEIGHT_IN_PIXELS = 12;
 };
 
 }  // End of namespace MCK

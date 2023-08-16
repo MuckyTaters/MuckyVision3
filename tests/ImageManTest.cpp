@@ -29,6 +29,7 @@
 
 #include "GameEng.h"
 #include "ImageMan.h"
+#include "FancyTypeface.h"
 
 // Calculate vertical pos of text
 int calc_vert_offset(
@@ -237,6 +238,50 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
     
+    MCK_PAL_ID_TYPE fancy_palette_id;
+    try
+    {
+         fancy_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_BLACK,
+                    MCK::COL_CYAN,
+                    MCK::COL_SAND
+                }
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create black green palette, error: ")
+            + e.what() ) );
+    }
+    
+
+    /////////////////////////////////////////////
+    // Create custom image(s)
+    MCK_IMG_ID_TYPE fancy_A_image_id;
+    {
+        try
+        {
+            fancy_A_image_id = image_man.create_custom_image(
+                std::make_shared<const std::vector<uint8_t>>(
+                    MCK::FancyTypeface::image_data[0]
+                ),
+                2,  // bits_per_pixel,
+                12,  // pitch_in_pixels,
+                12  // height_in_pixels
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create fancy 'A', error: ")
+                + e.what() ) );
+        }
+    }
 
     ///////////////////////////////////////////
     // CREATE RENDER INFO
@@ -340,6 +385,23 @@ int main( int argc, char** argv )
 
             x_pos += 8 * H_SCALE;
         }
+    }
+
+    // Overwrite 'A', i.e. first render info item in 3rd ASCII block
+    try
+    {
+        image_man.change_render_info_tex(
+            ascii_blocks[1]->render_info[4], 
+            fancy_A_image_id,
+            fancy_palette_id,
+            true  // keep_orig_dest_rect_size
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to change 'A', error: ")
+            + e.what() ) );
     }
 
     /////////////////////////////////////////////

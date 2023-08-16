@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageManTest.o 
+BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/FancyTypeface.o build/ImageManTest.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -62,7 +62,7 @@ COMPILER_FLAGS := -g -std=c++14 -pedantic-errors
 LINKER_FLAGS := -lSDL2 
 
 #INC specifies include directories
-INC := -I../include
+INC := -I../include -I.
 
 #OUTPUT specifies the name of our exectuable
 OUTPUT := ImageManTest
@@ -92,8 +92,12 @@ build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h
 build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../include/Defs.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageMan.o
 
+## FancyTypeface ##
+build/FancyTypeface.o: ./FancyTypeface.cpp ./FancyTypeface.h 
+	$(CC) -c ./FancyTypeface.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/FancyTypeface.o
+
 ## ImageManTest ##
-build/ImageManTest.o: ImageManTest.cpp build/ImageMan.o build/GameEng.o 
+build/ImageManTest.o: ImageManTest.cpp build/FancyTypeface.o build/ImageMan.o build/GameEng.o 
 	$(CC) -c ImageManTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageManTest.o
 
 

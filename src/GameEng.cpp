@@ -1047,7 +1047,7 @@ void MCK::GameEng::create_texture(
             // set i'th bit of 'palette_col_id'
             if( current_byte & BIT_MASK )
             {
-                palette_col_id |= 0x01 << i;
+                palette_col_id |= 0x01 << ( bits_per_pixel - i - 1 );
             }
 
             // If this is end of byte, 
