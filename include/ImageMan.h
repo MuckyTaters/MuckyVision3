@@ -72,6 +72,12 @@ class ImageMan
             GameEng &_game_eng
         );
 
+        //! Returns true if initialized, false otherwise
+        bool is_initialized( void ) const noexcept
+        {
+            return initialized;
+        }
+
         //! Create local colo(u)r palette
         /*! A local palette is a subset of the global colo(u)r
          *  palette containing 2, 4, or 16 colo(u)rs, each 
@@ -124,8 +130,8 @@ class ImageMan
         ) const
         {
             // Let calling program handle any exception here
-            return create_render_info(
-                MCK_IMG_ID_TYPE( ascii_image_id_base + ascii_value ),
+            return this->create_render_info(
+                MCK_IMG_ID_TYPE( this->ascii_image_id_base + ascii_value ),
                 local_palette_id,
                 x_pos,
                 y_pos,
@@ -166,6 +172,26 @@ class ImageMan
             MCK_PAL_ID_TYPE local_palette_id,
             bool keep_orig_dest_rect_size = false
         ) const;
+
+        //! Assign new ASCII texture to render info object, keeping original dest_rect size
+        /*! @param info: Pointer to render info object
+         *  @param ascii_value: ASCII code (0-255) of desired char
+         *  @param local_palette_id: ID of existing local colo(u)r palette, used for new texture
+         */
+        void change_render_info_ascii_value(
+            std::shared_ptr<MCK::GameEngRenderInfo> info,
+            uint8_t ascii_value,
+            MCK_PAL_ID_TYPE local_palette_id
+        ) const
+        {
+            this->change_render_info_tex(
+                info,
+                this->ascii_image_id_base + ascii_value,
+                local_palette_id,
+                true // keep original dest_rect size
+            );
+        }
+
 
 
     private:

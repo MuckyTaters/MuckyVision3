@@ -32,6 +32,8 @@
 #ifndef MCK_DEFS_H
 #define MCK_DEFS_H
 
+// #include<cstdint>
+
 // Defines data type used for object IDs
 #define MCK_IMG_ID_TYPE uint32_t
 #define MCK_PAL_ID_TYPE uint32_t
@@ -39,8 +41,11 @@
 
 namespace MCK
 {
-    //! Ceiling/invalid value to image ids
+    //! Ceiling/invalid value for image ids
     const MCK_IMG_ID_TYPE INVALID_IMG_ID = 0xFFFFFFFF;
+
+    //! Ceiling/invalid value for local palette ids
+    const MCK_IMG_ID_TYPE INVALID_PAL_ID = 0xFFFFFFFF;
 
     //! Safety parameter - max window width
     const uint16_t MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
@@ -103,6 +108,9 @@ namespace MCK
     static const uint8_t TOTAL_CORE_COLORS = 32;
     
     static const uint8_t COL_INVALID = 255;
+
+    // ASCII value of blank character in ImageText
+    static const uint8_t BLANK_CHAR = 32;
 
 }  // End of namespace MCK
 

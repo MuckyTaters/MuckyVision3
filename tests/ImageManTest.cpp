@@ -29,6 +29,7 @@
 
 #include "GameEng.h"
 #include "ImageMan.h"
+#include "ImageText.h"
 #include "FancyTypeface.h"
 
 // Calculate vertical pos of text
@@ -348,45 +349,6 @@ int main( int argc, char** argv )
         }
     }
 
-    // Create logo as string
-    {
-        const int H_SCALE = 2;
-        const int V_SCALE = 2;
-        const uint8_t COPYRIGHT_SYMBOL = 0xFF;
-        std::string logo_str;
-        logo_str += COPYRIGHT_SYMBOL;
-        logo_str += " MUCKYTATERS 2023";
-        const int LOGO_SIZE = logo_str.size();
-
-        // Loop over chars in logo string, creating an ASCII image
-        // for each char and assigning it to the logo render block
-        int x_pos = WINDOW_WIDTH_IN_PIXELS
-                        - logo_str.size() * 8 * H_SCALE;
-        for( uint8_t c : logo_str )
-        {
-            try
-            {
-                image_man.create_extended_ascii_render_info(
-                    c,
-                    logo_palette_id,
-                    x_pos,
-                    WINDOW_HEIGHT_IN_PIXELS - 8 * V_SCALE,
-                    H_SCALE,
-                    V_SCALE,
-                    logo_block
-                );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to create logo ascii image, error: ")
-                    + e.what() ) );
-            }
-
-            x_pos += 8 * H_SCALE;
-        }
-    }
-
     // Overwrite 'A', i.e. first render info item in 3rd ASCII block
     try
     {
@@ -402,6 +364,50 @@ int main( int argc, char** argv )
         throw( std::runtime_error(
             std::string( "Failed to change 'A', error: ")
             + e.what() ) );
+    }
+
+    // Create test ImageTest instance
+    std::shared_ptr<MCK::ImageText> image_text_test
+        = std::make_shared<MCK::ImageText>();
+    {
+        /*
+        const std::string COPYRIGHT_SYMBOL( 1, uint8_t( 255 ) );
+        const std::string TEXT = COPYRIGHT_SYMBOL + " MuckyTaters 2023";
+        */
+
+        const std::string TEXT = "Hit the 'A' key...";
+
+
+        const uint8_t CHAR_WIDTH = 16;
+        const uint8_t CHAR_HEIGHT = 16;
+        const int PADDING = 5;
+        const uint8_t SIZE_IN_CHARS = TEXT.size() + PADDING;
+        const int X = WINDOW_WIDTH_IN_PIXELS
+                        - CHAR_WIDTH * SIZE_IN_CHARS;
+        const int Y = WINDOW_HEIGHT_IN_PIXELS
+                        - CHAR_HEIGHT;
+        try
+        {
+            image_text_test->init(
+                game_eng,
+                image_man,
+                game_eng.get_prime_render_block(),
+                black_yellow_palette_id,
+                X,
+                Y,
+                SIZE_IN_CHARS,
+                CHAR_WIDTH,
+                CHAR_HEIGHT,
+                TEXT,
+                MCK::ImageText::CENTER
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create ImageText instance, error: ")
+                + e.what() ) );
+        }
     }
 
     /////////////////////////////////////////////
@@ -465,6 +471,23 @@ int main( int argc, char** argv )
                     // destroyed automatically, and SDL 
                     // shut down safely
                     exit( 0 );
+                }
+
+                // DEMO ONLY
+                if( e.key_code == MCK::KeyEvent::KEY_A
+                    && e.status == MCK::KeyEvent::PRESSED
+                )
+                {
+                    try
+                    {
+                        image_text_test->set_content( "//////////////////You hit 'A'!/////////////////////" );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+                            std::string( "Set content failed, error: ")
+                            + e.what() ) );
+                    }
                 }
 
                 // TODO: Other keyboard input

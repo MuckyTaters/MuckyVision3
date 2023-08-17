@@ -1,0 +1,342 @@
+////////////////////////////////////////////
+//  ------------------------------------
+//  ---MUCKY VISION 3 (BASIC ENGINE) ---
+//  ------------------------------------
+//
+//  ImageText.cpp
+//
+//  Basic multi-character text object for Image layer
+//
+//  Copyright (c) Muckytaters 2023
+//
+//  This program is free software: you can
+//  redistribute it and/or modify it under 
+//  the terms of the GNU General Public License
+//  as published by the Free Software Foundation,
+//  either version 3 of the License, or (at your
+//  option) any later version.
+//
+//  This program is distributed in the hope it
+//  will be useful, but WITHOUT ANY WARRANTY;
+//  without even the implied warranty of MERCHANTABILITY
+//  or FITNESS FOR A PARTICULAR PURPOSE. See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU
+//  General Public License along with this
+//  program. If not, see http://www.gnu.org/license
+//
+//  IMPORTANT: Please see the statement in file 
+//  'IMAGE_RIGHTS_DISCLAIMER.md'
+//
+////////////////////////////////////////////
+
+#include "ImageText.h"
+
+MCK::ImageText::ImageText( void )
+{
+    this->initialized = false;
+    this->game_eng = NULL;
+    this->image_man = NULL;
+    this->x_pos = 0;
+    this->y_pos = 0;
+    this->local_palette_id = MCK::INVALID_PAL_ID; 
+    // this->size_in_chars = 0;
+}
+
+void MCK::ImageText::init(
+    GameEng &_game_eng,
+    ImageMan &_image_man,
+    std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+    MCK_PAL_ID_TYPE _local_palette_id,
+    int _x_pos,
+    int _y_pos,
+    uint8_t _size_in_chars,
+    uint8_t _char_width_in_pixels,
+    uint8_t _char_height_in_pixels,
+    std::string initial_content,
+    MCK::ImageText::HozJust _justify,
+    bool add_to_front_of_parent_block
+)
+{
+    if( this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot intialize ImageText instance, as already init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Check game engine
+    if( !_game_eng.is_initialized() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot initialize ImageText as GameEng not init."
+#else
+            ""
+#endif
+        ) );
+    }
+    this->game_eng = &_game_eng;
+
+    // Check image manager
+    if( !_image_man.is_initialized() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot initialize ImageText as ImageMan not init."
+#else
+            ""
+#endif
+        ) );
+    }
+    this->image_man = &_image_man;
+
+    // Check parent block pointer
+    if( parent_block.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot initialize ImageText as parent block ptr is NULL."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Store parameter values
+    this->x_pos = _x_pos;
+    this->y_pos = _y_pos;
+    this->size_in_chars = _size_in_chars;
+    this->char_width_in_pixels = _char_width_in_pixels;
+    this->char_height_in_pixels = _char_height_in_pixels;
+    this->local_palette_id = _local_palette_id;
+    this->justify = _justify;
+
+    // Check for content clipping
+    if( initial_content.size() > size_in_chars )
+    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+        // Issue warning if content too large
+        std::cout << "Warning: initial content of ImageText "
+                  << "instance exceeds specified size of "
+                  << int( this->size_in_chars )
+                  << " characters, content will be clipped."
+                  << std::endl;
+#endif
+
+    }
+
+    // Assign initial content (possibly clipped)
+    this->current_content.assign(
+        initial_content,
+        0,
+        this->size_in_chars
+    );
+
+    // Create new render block
+    try
+    {
+        this->block = this->game_eng->create_empty_render_block(
+                    parent_block,
+                    add_to_front_of_parent_block
+                );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize ImageText as failed " )
+            + std::string( "to create block, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    const uint8_t CONTENT_SIZE = this->current_content.size();
+
+    // Reserve memory for render info structs
+    this->block->render_info.reserve( this->size_in_chars );
+
+    // Getting starting character position for this content,
+    // dependant on justification
+    uint8_t start_char;
+    switch( this->justify )
+    {
+        case MCK::ImageText::LEFT:
+            start_char = 0;
+            break;
+        
+        case MCK::ImageText::RIGHT:
+            start_char = this->size_in_chars - CONTENT_SIZE; 
+            break;
+        
+        case MCK::ImageText::CENTER:
+            start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
+            break;
+    }
+
+    // Create render info structs, and assign to block
+    for( int i = 0; i < this->size_in_chars; i++ )
+    {
+        // Get ASCII value of this char 
+        // (or set as blank if out of chars)
+        char c;
+        if( i < start_char )
+        {
+            c = MCK::BLANK_CHAR;
+        }
+        else if( i < start_char + this->current_content.size() )
+        {
+            c = this->current_content[i - start_char];
+        }
+        else
+        {
+            c = MCK::BLANK_CHAR;
+        }
+
+        try
+        {
+            this->block->render_info.push_back(
+                this->image_man->create_extended_ascii_render_info(
+                    c,
+                    this->local_palette_id,
+                    this->x_pos + i * this->char_width_in_pixels,
+                    this->y_pos,
+                    this->char_width_in_pixels,
+                    this->char_height_in_pixels,
+                    parent_block
+                )
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot initialize ImageText as failed " )
+                + std::string( "to create block, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    // Internal quality check
+    if( this->block->render_info.size() != this->size_in_chars )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize ImageText as block's " )
+            + std::string( "render info list has size " )
+            + std::to_string( this->block->render_info.size() )
+            + std::string( "where as size_in_chars is " )
+            + std::to_string( this->size_in_chars )
+            + std::string( ". These should match! Internal error?." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    this->initialized = true;
+}
+
+void MCK::ImageText::set_content( std::string new_content )
+{
+    if( !this->initialized || this->block.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot set content as ImageText instance not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+    // Issue warning if new content too large
+    if( new_content.size() > this->size_in_chars )
+    {
+        std::cout << "Warning: new content of ImageText instance "
+                  << "exceeds specified size of "
+                  << int( this->size_in_chars )
+                  << ", content will be clipped."
+                  << std::endl;
+    }
+#endif
+
+    // Assign initial content (possibly clipped)
+    this->current_content.assign( new_content, 0, this->size_in_chars );
+
+    const uint8_t CONTENT_SIZE = this->current_content.size();
+
+    // Reserve memory for render info structs
+    this->block->render_info.reserve( this->size_in_chars );
+
+    // Getting starting character position for this content,
+    // dependant on justification
+    uint8_t start_char;
+    switch( this->justify )
+    {
+        case MCK::ImageText::LEFT:
+            start_char = 0;
+            break;
+        
+        case MCK::ImageText::RIGHT:
+            start_char = size_in_chars - CONTENT_SIZE; 
+            break;
+        
+        case MCK::ImageText::CENTER:
+            start_char = ( size_in_chars - CONTENT_SIZE ) / 2;
+            break;
+    }
+
+    // Update render info structs
+    for( int i = 0; i < size_in_chars; i++ )
+    {
+        // Get ASCII value of this char 
+        // (or set as blank if out of chars)
+        char c;
+        if( i < start_char )
+        {
+            c = MCK::BLANK_CHAR;
+        }
+        else if( i < start_char + current_content.size() )
+        {
+            c = current_content[i - start_char];
+        }
+        else
+        {
+            c = MCK::BLANK_CHAR;
+        }
+
+        try
+        {
+            this->image_man->change_render_info_ascii_value(
+                this->block->render_info.at( i ),
+                c,
+                this->local_palette_id
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Failed to assign new ascii texture, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+}
