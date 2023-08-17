@@ -101,6 +101,7 @@ namespace MCK
     static const uint8_t COL_MID_BROWN = 30;
     static const uint8_t COL_DARK_BROWN = 31;
     static const uint8_t TOTAL_CORE_COLORS = 32;
+    
     static const uint8_t COL_INVALID = 255;
 
 }  // End of namespace MCK

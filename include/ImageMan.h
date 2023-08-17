@@ -118,8 +118,8 @@ class ImageMan
             MCK_PAL_ID_TYPE local_palette_id,
             int x_pos,
             int y_pos,
-            uint8_t x_scale,
-            uint8_t y_scale,
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block
         ) const
         {
@@ -129,8 +129,8 @@ class ImageMan
                 local_palette_id,
                 x_pos,
                 y_pos,
-                x_scale,
-                y_scale,
+                width_in_pixels,
+                height_in_pixels,
                 parent_block
             );
         }
@@ -149,8 +149,8 @@ class ImageMan
             MCK_PAL_ID_TYPE local_palette_id,
             int x_pos,
             int y_pos,
-            uint8_t x_scale,
-            uint8_t y_scale,
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block
         ) const;
 

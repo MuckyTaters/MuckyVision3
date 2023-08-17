@@ -111,8 +111,8 @@ int main( int argc, char** argv )
     const int VERT_RANGE = 5;
     const int NUM_ROWS = 8;
     const int NUM_COLS = 256 / NUM_ROWS;
-    const int TEXT_H_SCALE = 2;
-    const int TEXT_V_SCALE = 3;
+    const int TEXT_WIDTH = 16;
+    const int TEXT_HEIGHT = 24;
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
@@ -334,8 +334,8 @@ int main( int argc, char** argv )
                     palette_id,
                     X_POS,
                     Y_POS,
-                    TEXT_H_SCALE,
-                    TEXT_V_SCALE,
+                    TEXT_WIDTH,
+                    TEXT_HEIGHT,
                     ascii_blocks[ BLOCK_ID ]
                 );
             }

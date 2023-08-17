@@ -569,8 +569,8 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
     MCK_PAL_ID_TYPE local_palette_id,
     int x_pos,
     int y_pos,
-    uint8_t x_scale,
-    uint8_t y_scale,
+    uint16_t width_in_pixels,
+    uint16_t height_in_pixels,
     std::shared_ptr<MCK::GameEngRenderBlock> parent_block
 ) const
 {
@@ -637,8 +637,8 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
     const MCK::GameEngRenderInfo::Rect DEST_RECT(
         x_pos,
         y_pos,
-        x_scale * META_DATA->get_pitch_in_pixels(),
-        y_scale * META_DATA->get_height_in_pixels()
+        width_in_pixels,
+        height_in_pixels
     );
 
     // If texture doesn't already exist, create it
