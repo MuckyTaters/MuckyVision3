@@ -38,10 +38,10 @@ MCK::ImageText::ImageText( void )
     this->initialized = false;
     this->game_eng = NULL;
     this->image_man = NULL;
-    this->x_pos = 0;
-    this->y_pos = 0;
+    this->current_content = "";
     this->local_palette_id = MCK::INVALID_PAL_ID; 
-    // this->size_in_chars = 0;
+    this->size_in_chars = 0;
+    this->justification = MCK::ImageText::INVALID;
 }
 
 void MCK::ImageText::init(
@@ -49,13 +49,13 @@ void MCK::ImageText::init(
     ImageMan &_image_man,
     std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
     MCK_PAL_ID_TYPE _local_palette_id,
-    int _x_pos,
-    int _y_pos,
+    int x_pos,
+    int y_pos,
     uint8_t _size_in_chars,
     uint8_t _char_width_in_pixels,
     uint8_t _char_height_in_pixels,
     std::string initial_content,
-    MCK::ImageText::HozJust _justify,
+    MCK::ImageText::HozJust _justification,
     bool add_to_front_of_parent_block
 )
 {
@@ -108,17 +108,44 @@ void MCK::ImageText::init(
         ) );
     }
 
+    // Parameter sanity checks: size
+    if( _size_in_chars == 0
+        || _char_width_in_pixels == 0
+        || _char_height_in_pixels == 0
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize ImageText as number " )
+            + std::string( "of chars and/or char size is zero." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Parameter sanity checks: justification
+    if( _justification == MCK::ImageText::INVALID )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize ImageText as invalid " )
+            + std::string( "justifcation value selected." )
+#else
+            ""
+#endif
+        ) );
+    }
+
     // Store parameter values
-    this->x_pos = _x_pos;
-    this->y_pos = _y_pos;
     this->size_in_chars = _size_in_chars;
     this->char_width_in_pixels = _char_width_in_pixels;
     this->char_height_in_pixels = _char_height_in_pixels;
     this->local_palette_id = _local_palette_id;
-    this->justify = _justify;
+    this->justification = _justification;
 
     // Check for content clipping
-    if( initial_content.size() > size_in_chars )
+    if( initial_content.size() > this->size_in_chars )
     {
 #if defined MCK_STD_OUT && defined MCK_VERBOSE
         // Issue warning if content too large
@@ -167,7 +194,7 @@ void MCK::ImageText::init(
     // Getting starting character position for this content,
     // dependant on justification
     uint8_t start_char;
-    switch( this->justify )
+    switch( this->justification )
     {
         case MCK::ImageText::LEFT:
             start_char = 0;
@@ -180,6 +207,10 @@ void MCK::ImageText::init(
         case MCK::ImageText::CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
             break;
+    
+        default:
+            // Treat invalid value as left justified
+            start_char = 0;
     }
 
     // Create render info structs, and assign to block
@@ -207,8 +238,8 @@ void MCK::ImageText::init(
                 this->image_man->create_extended_ascii_render_info(
                     c,
                     this->local_palette_id,
-                    this->x_pos + i * this->char_width_in_pixels,
-                    this->y_pos,
+                    x_pos + i * this->char_width_in_pixels,
+                    y_pos,
                     this->char_width_in_pixels,
                     this->char_height_in_pixels,
                     parent_block
@@ -249,7 +280,10 @@ void MCK::ImageText::init(
     this->initialized = true;
 }
 
-void MCK::ImageText::set_content( std::string new_content )
+void MCK::ImageText::set_content(
+    std::string new_content,
+    MCK::ImageText::HozJust new_justification
+)
 {
     if( !this->initialized || this->block.get() == NULL )
     {
@@ -274,34 +308,37 @@ void MCK::ImageText::set_content( std::string new_content )
     }
 #endif
 
-    // Assign initial content (possibly clipped)
+    // Assign current content (possibly clipped)
     this->current_content.assign( new_content, 0, this->size_in_chars );
 
-    const uint8_t CONTENT_SIZE = this->current_content.size();
+    // Set new justifcation (if specified)
+    if( new_justification != MCK::ImageText::INVALID )
+    {
+        this->justification = new_justification;
+    }
 
-    // Reserve memory for render info structs
-    this->block->render_info.reserve( this->size_in_chars );
+    const uint8_t CONTENT_SIZE = this->current_content.size();
 
     // Getting starting character position for this content,
     // dependant on justification
     uint8_t start_char;
-    switch( this->justify )
+    switch( this->justification )
     {
         case MCK::ImageText::LEFT:
             start_char = 0;
             break;
         
         case MCK::ImageText::RIGHT:
-            start_char = size_in_chars - CONTENT_SIZE; 
+            start_char = this->size_in_chars - CONTENT_SIZE; 
             break;
         
         case MCK::ImageText::CENTER:
-            start_char = ( size_in_chars - CONTENT_SIZE ) / 2;
+            start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
             break;
     }
 
     // Update render info structs
-    for( int i = 0; i < size_in_chars; i++ )
+    for( int i = 0; i < this->size_in_chars; i++ )
     {
         // Get ASCII value of this char 
         // (or set as blank if out of chars)
@@ -310,9 +347,9 @@ void MCK::ImageText::set_content( std::string new_content )
         {
             c = MCK::BLANK_CHAR;
         }
-        else if( i < start_char + current_content.size() )
+        else if( i < start_char + this->current_content.size() )
         {
-            c = current_content[i - start_char];
+            c = this->current_content[i - start_char];
         }
         else
         {
@@ -338,5 +375,138 @@ void MCK::ImageText::set_content( std::string new_content )
 #endif
             ) );
         }
+    }
+}
+
+void MCK::ImageText::get_top_left_pixel_pos(
+    int &x_pos,
+    int &y_pos,
+    bool include_offset
+) const
+{
+    if( !this->initialized || this->block.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot get top-left pixel pos as ImageText instance not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+   
+    if( this->block->render_info.size() == 0
+        || this->block->render_info.front().get() == NULL
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to get top-left pixel position " )
+            + std::string( "as render info is absent." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get x/y pos from first character
+    x_pos = this->block->render_info.front()->dest_rect.get_x()
+                + this->block->hoz_offset;
+    y_pos = this->block->render_info.front()->dest_rect.get_y()
+                + this->block->vert_offset;
+    
+    // Add offset, if needed
+    if( include_offset )
+    {
+        x_pos += this->block->hoz_offset;
+        y_pos += this->block->vert_offset;
+    }
+}
+
+void MCK::ImageText::set_new_top_left_pixel_pos(
+    int new_x_pos,
+    int new_y_pos
+)
+{
+    if( !this->initialized || this->block.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot move ImageText instance as not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+   
+    if( this->block->render_info.size() == 0
+        || this->block->render_info.front().get() == NULL
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to move ImageText instance " )
+            + std::string( "as render info is absent." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get top-left of first char image
+    const int FIRST_CHAR_X = this->block->render_info.front()->dest_rect.get_x();
+    const int FIRST_CHAR_Y = this->block->render_info.front()->dest_rect.get_y();
+
+    // Calculate and set required offset
+    this->block->hoz_offset = new_x_pos - FIRST_CHAR_X;
+    this->block->vert_offset = new_y_pos - FIRST_CHAR_Y;
+}
+
+void MCK::ImageText::set_char(
+    uint8_t ascii_value,
+    uint8_t char_pos
+)
+{
+    if( !this->initialized || this->block.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot set char as ImageText instance not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( char_pos >= this->block->render_info.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot set char as char_pos is out-of-range."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Update render info struct for this character position
+    try
+    {
+        this->image_man->change_render_info_ascii_value(
+            this->block->render_info.at( char_pos ),
+            ascii_value,
+            this->local_palette_id
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to assign set new char texture, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
     }
 }

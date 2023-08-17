@@ -47,6 +47,7 @@ class ImageText
         /*! Note US spelling of 'center' */
         enum HozJust
         {
+            INVALID,
             LEFT,
             RIGHT,
             CENTER
@@ -67,7 +68,7 @@ class ImageText
             uint8_t _char_width_in_pixels,
             uint8_t _char_height_in_pixels,
             std::string initial_content = "",  // Not pass by ref as r-value typically supplied
-            MCK::ImageText::HozJust _justify = MCK::ImageText::LEFT,
+            MCK::ImageText::HozJust _justification = MCK::ImageText::LEFT,
             bool add_to_front_of_parent_block = true
         );
 
@@ -78,10 +79,48 @@ class ImageText
 
         //! Set new string content
         /*! @param new_content: String containing new content
-         * Note: parameter not passed by reference as r-value
+         *  @param new_justification: New justification (omit to kee p current justifcation)
+         * Note: string parameter not passed by reference as r-value
          *       typically supplied
          */
-        void set_content( std::string new_content );
+        void set_content(
+            std::string new_content,
+            MCK::ImageText::HozJust new_justification
+                = MCK::ImageText::INVALID
+        );
+
+        //! Set individual character
+        /*! @param ascii_value: Value of character
+         *  @param char_pos: Position if character
+         *  Note: No justification is applied, the position
+         *        specified is the actual postion at which 
+         *        the new ASCII value is written.
+         */
+        void set_char(
+            uint8_t ascii_value,
+            uint8_t char_pos
+        );
+
+        //! Get pixel position of top-left corner of text box
+        /*! @param include_offset: Include offset, if any present
+         */
+        void get_top_left_pixel_pos(
+            int &x_pos,
+            int &y_pos,
+            bool include_offset
+        ) const;
+
+        //! Move text box (by changing offset to reach specified position)
+        void set_new_top_left_pixel_pos(
+            int new_x_pos,
+            int new_y_pos
+        );
+
+        //! Returns true if visible
+        bool is_active( void ) const noexcept
+        {
+            return block.get() != NULL && block->active;
+        }
 
         //! Make text visible
         void make_active( void ) noexcept
@@ -101,6 +140,43 @@ class ImageText
             }
         }
 
+        //! Returns justification (left,right,center)
+        MCK::ImageText::HozJust get_justification( void ) const noexcept
+        {
+            return justification;
+        }
+
+        //! Get max number of available character slots
+        /* Note: The actual content may not use all available slots
+         */
+        uint8_t get_max_size_in_chars( void ) const noexcept
+        {
+            return size_in_chars;
+        }
+
+        //! Get width of each character, in pixels
+        uint8_t get_char_width_in_pixels( void ) const noexcept
+        {
+            return char_width_in_pixels;
+        }
+
+        //! Get height of each character, in pixels
+        uint8_t get_char_height_in_pixels( void ) const noexcept
+        {
+            return char_height_in_pixels;
+        }
+
+        //! Get current content, as a string
+        std::string get_current_content( void ) const noexcept
+        {
+            return current_content;
+        }
+
+        //! Get id of local palette used for characters
+        MCK_PAL_ID_TYPE get_local_palette_id( void ) const noexcept
+        {
+            return local_palette_id;
+        }
 
     protected:
 
@@ -110,9 +186,7 @@ class ImageText
 
         ImageMan* image_man;
 
-        MCK::ImageText::HozJust justify;
-        int x_pos;
-        int y_pos;
+        MCK::ImageText::HozJust justification;
         uint8_t size_in_chars;
         uint8_t char_width_in_pixels;
         uint8_t char_height_in_pixels;

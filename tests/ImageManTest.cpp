@@ -399,7 +399,7 @@ int main( int argc, char** argv )
                 CHAR_WIDTH,
                 CHAR_HEIGHT,
                 TEXT,
-                MCK::ImageText::CENTER
+                MCK::ImageText::LEFT
             );
         }
         catch( std::exception &e )
@@ -480,7 +480,14 @@ int main( int argc, char** argv )
                 {
                     try
                     {
-                        image_text_test->set_content( "//////////////////You hit 'A'!/////////////////////" );
+                        image_text_test->set_content(
+                            "You hit 'A'!",
+                            MCK::ImageText::CENTER
+                        );
+                        image_text_test->set_char(
+                            '<',
+                            image_text_test->get_max_size_in_chars() - 1
+                        );
                     }
                     catch( std::exception &e )
                     {
