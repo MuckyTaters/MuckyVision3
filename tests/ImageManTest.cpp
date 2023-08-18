@@ -30,6 +30,7 @@
 #include "GameEng.h"
 #include "ImageMan.h"
 #include "ImageText.h"
+#include "Console.h"
 #include "FancyTypeface.h"
 
 // Calculate vertical pos of text
@@ -408,6 +409,39 @@ int main( int argc, char** argv )
                 std::string( "Failed to create ImageText instance, error: ")
                 + e.what() ) );
         }
+    }
+
+    /////////////////////////////////////////////
+    // TEST CONSOLE
+    std::shared_ptr<MCK::Console> console_test
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        std::string initial_content = "abcdefghijklmnopq";
+        console_test->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            black_yellow_palette_id,
+            0,  // x_pos,
+            0,  // y_pos,
+            6,  // width_in_chars,
+            4,  // height_in_chars,
+            8,  // char_width_in_pixels,
+            8,  // char_height_in_pixels,
+            initial_content,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            2,  // start_line
+            true  // add_to_front_of_parent_block = true
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create Console instance, error: ")
+            + e.what() ) );
     }
 
     /////////////////////////////////////////////

@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/FancyTypeface.o build/ImageText.o build/ImageManTest.o 
+BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/FancyTypeface.o build/ImageText.o build/Console.o build/ImageManTest.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -95,6 +95,10 @@ build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../i
 ## ImageText ##
 build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o build/ImageMan.o 
 	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
+
+## Console ##
+build/Console.o: ../src/Console.cpp ../include/Console.h build/GameEng.o build/ImageMan.o build/ImageText.o
+	$(CC) -c ../src/Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Console.o
 
 ## FancyTypeface ##
 build/FancyTypeface.o: ./FancyTypeface.cpp ./FancyTypeface.h 

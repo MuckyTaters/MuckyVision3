@@ -297,15 +297,11 @@ int main( int argc, char** argv )
         // Note: The order here is important as it
         //       defines the order in which blocks
         //       are rendered. Those placed at the
-        //       front of the list will be rendered
-        //       first, i.e. in the background.
-        //       The border overlay is the *last* sub-block
+        //       front of the block will be rendered
+        //       in front of the rest of the block.
+        //       The border overlay is the front-most sub-block
         //       in prime render block, so that it
         //       is rendered after everything else
-        border_overlay_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),  // 'prime render block' is the topmost block, created automatically by GameEng
-            false  // Add to *back*, see note above
-        );
         biplane_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block()
         );
@@ -313,7 +309,12 @@ int main( int argc, char** argv )
             game_eng.get_prime_render_block()
         );
         background_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block()
+            game_eng.get_prime_render_block(),
+            false  // Add to *back* of block
+        );
+        border_overlay_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),  // 'prime render block' is the topmost block, created automatically by GameEng
+            true  // Add to *front* of block, see note above
         );
     }
     catch( std::exception &e )

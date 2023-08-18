@@ -60,6 +60,20 @@ class ImageText
 
         virtual ~ImageText( void ) {}
 
+        //! Initialization
+        /*! @param _game_eng: GameEng instance
+         *  @param _image_man: ImageMan instance
+         *  @param parent_block: Block to which text box is assigned
+         *  @param _local_palette_id: ID of palette used for text
+         *  @param _x_pos: left of text box, in pixels, relative to parent block
+         *  @param _y_pos: top of text box, in pixels, relative to parent block
+         *  @param _size_in_chars: Size of text box, in characters
+         *  @param _char_width_in_pixels: Pixel width of each character
+         *  @param _char_height_in_pixels: Pixel height of each character
+         *  @param initial_content: String containing characters to display
+         *  @param _justification: Hoz/vert text direction and justification
+         *  @param add_to_front_of_parent_block: If true, appears in front of any other blocks attached to parent block
+         */
         void init(
             GameEng &_game_eng,
             ImageMan &_image_man,
@@ -75,6 +89,7 @@ class ImageText
             bool add_to_front_of_parent_block = true
         );
 
+        //! Returns true if initialized
         bool is_initialized( void ) const noexcept
         {
             return initialized;
@@ -85,6 +100,7 @@ class ImageText
          *  @param new_justification: New justification (omit to kee p current justifcation)
          * Note: string parameter not passed by reference as r-value
          *       typically supplied
+         * Note: Hoz/vert alignment is preserved, even if justification specifies otherwise
          */
         void set_content(
             std::string new_content,

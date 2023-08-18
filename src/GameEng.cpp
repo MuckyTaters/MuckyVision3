@@ -1297,11 +1297,11 @@ std::shared_ptr<MCK::GameEngRenderBlock> MCK::GameEng::create_empty_render_block
     {
         if( add_to_front )
         {
-            parent_block->sub_blocks.push_front( new_block );
+            parent_block->sub_blocks.push_back( new_block );
         }
         else
         {
-            parent_block->sub_blocks.push_back( new_block );
+            parent_block->sub_blocks.push_front( new_block );
         }
     }
 
