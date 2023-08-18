@@ -380,12 +380,12 @@ int main( int argc, char** argv )
 
         const uint8_t CHAR_WIDTH = 16;
         const uint8_t CHAR_HEIGHT = 16;
-        const int PADDING = 5;
+        const int PADDING = 3;
         const uint8_t SIZE_IN_CHARS = TEXT.size() + PADDING;
         const int X = WINDOW_WIDTH_IN_PIXELS
-                        - CHAR_WIDTH * SIZE_IN_CHARS;
+                        - CHAR_WIDTH;
         const int Y = WINDOW_HEIGHT_IN_PIXELS
-                        - CHAR_HEIGHT;
+                        - CHAR_HEIGHT * SIZE_IN_CHARS;
         try
         {
             image_text_test->init(
@@ -399,7 +399,7 @@ int main( int argc, char** argv )
                 CHAR_WIDTH,
                 CHAR_HEIGHT,
                 TEXT,
-                MCK::ImageText::LEFT
+                MCK::ImageText::VERT_TOP
             );
         }
         catch( std::exception &e )

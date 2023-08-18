@@ -43,14 +43,17 @@ class ImageText
 {
     public:
 
-        //!Enumeration for horizontal justification types
+        //! Enumeration for horizontal justification types
         /*! Note US spelling of 'center' */
-        enum HozJust
+        enum Just
         {
             INVALID,
             LEFT,
             RIGHT,
-            CENTER
+            CENTER,
+            VERT_TOP,  // Veritcal text, justified to top
+            VERT_BOTTOM,  // Veritcal text, justified to bottom
+            VERT_CENTER  // Veritcal text, centered
         };
 
         ImageText( void );
@@ -68,7 +71,7 @@ class ImageText
             uint8_t _char_width_in_pixels,
             uint8_t _char_height_in_pixels,
             std::string initial_content = "",  // Not pass by ref as r-value typically supplied
-            MCK::ImageText::HozJust _justification = MCK::ImageText::LEFT,
+            MCK::ImageText::Just _justification = MCK::ImageText::LEFT,
             bool add_to_front_of_parent_block = true
         );
 
@@ -85,7 +88,7 @@ class ImageText
          */
         void set_content(
             std::string new_content,
-            MCK::ImageText::HozJust new_justification
+            MCK::ImageText::Just new_justification
                 = MCK::ImageText::INVALID
         );
 
@@ -141,9 +144,17 @@ class ImageText
         }
 
         //! Returns justification (left,right,center)
-        MCK::ImageText::HozJust get_justification( void ) const noexcept
+        MCK::ImageText::Just get_justification( void ) const noexcept
         {
             return justification;
+        }
+
+        //! Returns true if alignment is horizontal, false if vertical or invalid
+        bool is_horizontal( void ) const noexcept
+        {
+            return justification == MCK::ImageText::LEFT
+                   || justification == MCK::ImageText::RIGHT
+                   || justification == MCK::ImageText::CENTER;
         }
 
         //! Get max number of available character slots
@@ -186,7 +197,7 @@ class ImageText
 
         ImageMan* image_man;
 
-        MCK::ImageText::HozJust justification;
+        MCK::ImageText::Just justification;
         uint8_t size_in_chars;
         uint8_t char_width_in_pixels;
         uint8_t char_height_in_pixels;

@@ -55,7 +55,7 @@ void MCK::ImageText::init(
     uint8_t _char_width_in_pixels,
     uint8_t _char_height_in_pixels,
     std::string initial_content,
-    MCK::ImageText::HozJust _justification,
+    MCK::ImageText::Just _justification,
     bool add_to_front_of_parent_block
 )
 {
@@ -155,7 +155,6 @@ void MCK::ImageText::init(
                   << " characters, content will be clipped."
                   << std::endl;
 #endif
-
     }
 
     // Assign initial content (possibly clipped)
@@ -192,24 +191,52 @@ void MCK::ImageText::init(
     this->block->render_info.reserve( this->size_in_chars );
 
     // Getting starting character position for this content,
-    // dependant on justification
+    // and also x,y pos of character image
+    // both dependant on justification
     uint8_t start_char;
+    int dx, dy;
+    //this->get_start_char_and_xy( i, start_char, x, y );
+    
     switch( this->justification )
     {
         case MCK::ImageText::LEFT:
             start_char = 0;
+            dx = this->char_width_in_pixels;
+            dy = 0;
             break;
         
         case MCK::ImageText::RIGHT:
             start_char = this->size_in_chars - CONTENT_SIZE; 
+            dx = this->char_width_in_pixels;
+            dy = 0;
             break;
         
         case MCK::ImageText::CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
+            dx = this->char_width_in_pixels;
+            dy = 0;
+            break;
+    
+        case MCK::ImageText::VERT_TOP:
+            start_char = 0;
+            dx = 0;
+            dy = this->char_height_in_pixels;
+            break;
+        
+        case MCK::ImageText::VERT_BOTTOM:
+            start_char = this->size_in_chars - CONTENT_SIZE; 
+            dx = 0;
+            dy = this->char_height_in_pixels;
+            break;
+        
+        case MCK::ImageText::VERT_CENTER:
+            start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
+            dx = 0;
+            dy = this->char_height_in_pixels;
             break;
     
         default:
-            // Treat invalid value as left justified
+            // Treat invalid value as left/top justified
             start_char = 0;
     }
 
@@ -238,8 +265,8 @@ void MCK::ImageText::init(
                 this->image_man->create_extended_ascii_render_info(
                     c,
                     this->local_palette_id,
-                    x_pos + i * this->char_width_in_pixels,
-                    y_pos,
+                    x_pos + i * dx,
+                    y_pos + i * dy,
                     this->char_width_in_pixels,
                     this->char_height_in_pixels,
                     parent_block
@@ -282,7 +309,7 @@ void MCK::ImageText::init(
 
 void MCK::ImageText::set_content(
     std::string new_content,
-    MCK::ImageText::HozJust new_justification
+    MCK::ImageText::Just new_justification
 )
 {
     if( !this->initialized || this->block.get() == NULL )
@@ -314,7 +341,50 @@ void MCK::ImageText::set_content(
     // Set new justifcation (if specified)
     if( new_justification != MCK::ImageText::INVALID )
     {
-        this->justification = new_justification;
+        // Automatically convert LEFT to TOP (and visa versa)
+        // and RIGHT to BOTTOM, etc...
+        if( this->is_horizontal() )
+        {
+            // Convert vert justifications to hoz ones
+            switch( new_justification )
+            {
+                case MCK::ImageText::VERT_TOP:
+                    this->justification = MCK::ImageText::LEFT;
+                    break;
+
+                case MCK::ImageText::VERT_BOTTOM:
+                    this->justification = MCK::ImageText::RIGHT;
+                    break;
+
+                case MCK::ImageText::VERT_CENTER:
+                    this->justification = MCK::ImageText::CENTER;
+                    break;
+
+                default:
+                    this->justification = new_justification;
+            }
+        }
+        else
+        {
+            // Convert hoz justifications to vert ones
+            switch( new_justification )
+            {
+                case MCK::ImageText::LEFT:
+                    this->justification = MCK::ImageText::VERT_TOP;
+                    break;
+
+                case MCK::ImageText::RIGHT:
+                    this->justification = MCK::ImageText::VERT_BOTTOM;
+                    break;
+
+                case MCK::ImageText::CENTER:
+                    this->justification = MCK::ImageText::VERT_CENTER;
+                    break;
+
+                default:
+                    this->justification = new_justification;
+            }
+        }
     }
 
     const uint8_t CONTENT_SIZE = this->current_content.size();
@@ -334,6 +404,23 @@ void MCK::ImageText::set_content(
         
         case MCK::ImageText::CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
+            break;
+
+        case MCK::ImageText::VERT_TOP:
+            start_char = 0;
+            break;
+        
+        case MCK::ImageText::VERT_BOTTOM:
+            start_char = this->size_in_chars - CONTENT_SIZE; 
+            break;
+        
+        case MCK::ImageText::VERT_CENTER:
+            start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
+            break;
+            
+        default:
+            // Treat invalid as left justified
+            start_char = 0;
             break;
     }
 

@@ -101,7 +101,7 @@ build/FancyTypeface.o: ./FancyTypeface.cpp ./FancyTypeface.h
 	$(CC) -c ./FancyTypeface.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/FancyTypeface.o
 
 ## ImageManTest ##
-build/ImageManTest.o: ImageManTest.cpp build/FancyTypeface.o build/ImageMan.o build/GameEng.o 
+build/ImageManTest.o: ImageManTest.cpp build/FancyTypeface.o build/ImageMan.o build/GameEng.o build/ImageText.o 
 	$(CC) -c ImageManTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageManTest.o
 
 
