@@ -417,7 +417,8 @@ int main( int argc, char** argv )
         = std::make_shared<MCK::Console>();
     try
     {
-        std::string initial_content = "abcdefghijklmnopq";
+        std::string marker_symbol( 1, uint8_t( 254 ) );
+        std::string initial_content = marker_symbol + "bcdefghijklmnopq";
         console_test->init(
             game_eng,
             image_man,
@@ -427,11 +428,11 @@ int main( int argc, char** argv )
             0,  // y_pos,
             6,  // width_in_chars,
             4,  // height_in_chars,
-            8,  // char_width_in_pixels,
-            8,  // char_height_in_pixels,
+            2 * 8,  // char_width_in_pixels,
+            2 * 8,  // char_height_in_pixels,
             initial_content,
-            0,  // print_speed_in_ticks_per_char,
-            0,  // scroll_speed_in_ticks_per_pixel,
+            1000,  // print_speed_in_ticks_per_char,
+            500,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             2,  // start_line
             true  // add_to_front_of_parent_block = true
@@ -564,6 +565,18 @@ int main( int argc, char** argv )
                     + e.what() ) );
             }
         }
+    
+        try
+        {
+            console_test->update( current_ticks );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Console update failed, error: ")
+                + e.what() ) );
+        }
+
     }
     while( current_ticks < end_ticks );
 

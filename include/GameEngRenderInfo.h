@@ -163,6 +163,15 @@ struct GameEngRenderInfo
 
     private:
 
+        /*
+        // Disable to prevent copying, as
+        // this would cause chaos
+        GameEngRenderInfo(GameEngRenderInfo const&) = delete;
+        void operator=(GameEngRenderInfo const&)  = delete;
+        */
+
+        // const MCK::GameEngRenderBlock* parent_block;
+
         const static uint8_t ROTATION_MASK = 0x03;
         const static uint8_t ROTATION_RSHIFT = 0;
         const static uint8_t FLIP_X_MASK = 0x04;

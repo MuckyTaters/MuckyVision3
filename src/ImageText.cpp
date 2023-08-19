@@ -549,6 +549,26 @@ void MCK::ImageText::set_new_top_left_pixel_pos(
     this->block->vert_offset = new_y_pos - FIRST_CHAR_Y;
 }
 
+void MCK::ImageText::nudge_pixel_pos(
+    int dx,
+    int dy
+)
+{
+    if( !this->initialized || this->block.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot nudge ImageText instance as not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+   
+    this->block->hoz_offset += dx;
+    this->block->vert_offset += dy;
+}
+
 void MCK::ImageText::set_char(
     uint8_t ascii_value,
     uint8_t char_pos

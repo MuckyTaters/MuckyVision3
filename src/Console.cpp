@@ -41,7 +41,11 @@ MCK::Console::Console( void )
     this->print_speed_in_ticks_per_char = 0;
     this->scroll_speed_in_ticks_per_pixel = 0;
     this->hoz_text_alignment = true;
+    // this->scroll_offset = 0;
+    this->next_char_pos = 0;
     this->ticks_at_last_update = 0;
+    this->write_line_x_pos = 0;
+    this->write_line_y_pos = 0;
 }
 
 void MCK::Console::init(
@@ -135,6 +139,10 @@ void MCK::Console::init(
     this->char_width_in_pixels = _char_width_in_pixels;
     this->char_height_in_pixels = _char_height_in_pixels;
     this->local_palette_id = _local_palette_id;
+    this->print_speed_in_ticks_per_char
+            = _print_speed_in_ticks_per_char;
+    this->scroll_speed_in_ticks_per_pixel
+            = _scroll_speed_in_ticks_per_pixel;
     this->hoz_text_alignment = _hoz_text_alignment;
 
     // Create new render block
@@ -180,8 +188,16 @@ void MCK::Console::init(
         justification = MCK::ImageText::VERT_TOP;
     }
     
+    const int LAST_LINE_NUM = int( num_lines - 1 );
+
     // Ensure start line is less than num of lines
-    start_line = std::min( int( start_line ), int( num_lines - 1 ) );
+    start_line = std::min( int( start_line ), LAST_LINE_NUM );
+
+    // Store postion of write line (i.e. last line)
+    // Note: this is used, during scrolling, to initialise
+    //       each new write line
+    this->write_line_x_pos = x_pos + LAST_LINE_NUM * dx;
+    this->write_line_y_pos = y_pos + LAST_LINE_NUM * dy;
 
     // Create lines....
 
@@ -233,24 +249,274 @@ void MCK::Console::init(
         catch( std::exception &e )
         {
             throw( std::runtime_error(
+#if defined MCK_STD_OUT
                 std::string( "Failed to create ImageText instance for line ")
                 + std::to_string( i )
                 + std::string( " of console, error: ")
-                + e.what() ) );
+                + e.what()
+#else
+                ""
+#endif
+            ));
         }
 
         lines.push_back( new_line );
     }
 
-    // TODO... Enqueue any unused initial content in text buffer
-    /*
-       initial_content.substr(
-            std::min(
-                int( initial_content.size() - 1 ),
+    // Enqueue any unused initial content in text buffer
+    {
+        const size_t START_POS
+            = std::min(
+                int( initial_content.size() ),
                 line_len * ( num_lines - start_line )
-            ),
-            std::string::npos
-        );
-    */
+            );
+        const size_t END_POS = initial_content.size();
+
+        // If any unused content, start scrolling process
+        // by setting appropriate scroll offset to 1.
+        if( START_POS < END_POS )
+        {
+            if( hoz_text_alignment )
+            {
+                block->vert_offset = -1;
+            }
+            else
+            {
+                block->hoz_offset = -1;
+            }
+
+            // DEBUG
+            std::cout << "UNUSED CONTENT" << std::endl;
+        }
+
+        // Enqueue unused content
+        for( int i = START_POS; i < END_POS; i++ )
+        {
+            try
+            {
+                text_buffer.push( initial_content.at( i ) );
+            }
+            catch( std::exception &e )
+            {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                std::cout << "Failed to push char to text buffer, error: "
+                          << e.what() << std::endl;
+#endif
+                // If fails, stop here but don't throw exception
+                break;
+            }
+        }
+    }
+
+    initialized = true;
 }
 
+void MCK::Console::update( uint32_t current_ticks )
+{
+    // Initialisation and safety checks
+    if( !this->initialized
+        || this->game_eng == NULL
+        || this->lines.size() == 0
+        || this->block.get() == NULL
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot update Console instance, as not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If no time supplied, get time via GameEng
+    if( current_ticks == 0 )
+    {
+        current_ticks = this->game_eng->get_ticks();
+    }
+
+    // Get ticks since last udpate
+    // Note: if current_ticks < ticks_at_last_update,
+    //       TICKS will be *very* large, resulting
+    //       in all text being pulled from the buffer
+    //       which is the correct outcome, so no need
+    //       to check if current_ticks < ticks_at_last_update
+    uint32_t ticks = current_ticks - this->ticks_at_last_update;
+
+    // Get shortcut to block offset used for scrolling
+    int16_t* const SCROLL_OFFSET
+        = this->hoz_text_alignment ?
+            &this->block->vert_offset :
+            &this->block->hoz_offset;
+
+    // Get max scroll offset
+    const int16_t MAX_SCROLL_OFFSET
+        = this->hoz_text_alignment ?
+            int16_t( this->char_height_in_pixels ) :
+            int16_t( this->char_width_in_pixels );
+
+    // DEBUG
+    //std::cout << "@@ *SCROLL_OFFSET = "
+    //          << *SCROLL_OFFSET << std::endl; 
+
+    // Draw characters from text buffers. and/or scroll console,
+    // until 'ticks' are used up or text buffer is empty
+    // Explainer: The 'while' logic here asks:
+    //  a) Is there text to print, and sufficient time to print
+    //     at least one char?
+    //  OR
+    //  b) Is scrolling in progress, and sifficient time to scroll
+    //     at least one pixel?
+    //  If this evaluates to False, 'ticks' is just added to
+    //  'ticks_at_last_update' when next calculated
+    while( ( ticks >= this->print_speed_in_ticks_per_char
+             && this->text_buffer.size() > 0
+           ) ||
+           ( ticks >= this->scroll_speed_in_ticks_per_pixel
+             && *SCROLL_OFFSET != 0
+           )
+    )
+    {
+        // DEBUG
+        std::cout << "Num lines = " << this->lines.size()
+                  << std::endl;
+
+        // If scrolling has started, scroll one pixel
+        if( ticks >= this->scroll_speed_in_ticks_per_pixel
+            && *SCROLL_OFFSET != 0
+        )
+        {
+            // Check for end of scroll
+            if( *SCROLL_OFFSET == -1 * MAX_SCROLL_OFFSET + 1 )
+            {
+                // Reset scroll offset
+                *SCROLL_OFFSET = 0;
+
+                // Destroy first remaining line
+                // TODO: Keep a history
+                this->lines.pop_front();
+
+                // Change position of all remaining lines
+                const int DX = 200; // -1 * this->char_width_in_pixels
+                                   //   * !this->hoz_text_alignment;
+                const int DY = -1 * this->char_height_in_pixels
+                                      * this->hoz_text_alignment;
+
+                for( std::shared_ptr<MCK::ImageText> ln : this->lines )
+                {
+                    try
+                    {
+                        ln->nudge_pixel_pos( DX, DY );
+                    }
+                    catch( std::exception &e )
+                    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                        std::cout << "Failed to nudge line, error: "
+                                  << e.what() << std::endl;
+#endif
+                        // If fails, skip line but don't throw exception
+                        continue;
+                    }
+
+                }
+
+                // Create new line for writing
+                std::shared_ptr<MCK::ImageText> new_line
+                    = std::make_shared<MCK::ImageText>();
+
+                // Initialise new line
+                try
+                {
+                    new_line->init(
+                        *this->game_eng,
+                        *this->image_man,
+                        this->block,
+                        this->local_palette_id,
+                        this->write_line_x_pos,
+                        this->write_line_y_pos,
+                        this->hoz_text_alignment ?
+                            this->width_in_chars :
+                            this->height_in_chars,
+                        this->char_width_in_pixels,
+                        this->char_height_in_pixels,
+                        "",
+                        this->hoz_text_alignment ?
+                            MCK::ImageText::LEFT :
+                            MCK::ImageText::VERT_TOP
+                    );
+                }
+                catch( std::exception &e )
+                {
+                    throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                        std::string( "Failed to create ImageText instance ")
+                        + std::string( "for new write line, error: ")
+                        + e.what()
+#else
+                        ""
+#endif
+                    ));
+                }
+
+                // Store new write line
+                lines.push_back( new_line );
+            }
+            else
+            {
+                (*SCROLL_OFFSET)--;
+                ticks -= this->scroll_speed_in_ticks_per_pixel;
+                continue;
+            }
+
+            /*
+            if( (*SCROLL_OFFSET)-- > 0 )
+            {
+                continue;
+            }
+            else
+            {
+                // Move ALL lines, delete first line
+            }
+            */
+        }
+
+        if ( ticks >= this->print_speed_in_ticks_per_char
+              && this->text_buffer.size() > 0
+        )
+        {
+            // Get next char
+            const uint8_t C = this->text_buffer.front();
+            this->text_buffer.pop();
+
+            // Print char
+            try
+            {
+                this->lines.back()->set_char( C, this->next_char_pos++ );
+            }
+            catch( std::exception &e )
+            {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                std::cout << "Failed to set char, error: "
+                          << e.what() << std::endl;
+#endif
+                // If fails, just skip char
+                continue;
+            }
+
+            // If ok, decrement ticks and move position for next char
+            ticks -= this->print_speed_in_ticks_per_char;
+            if( this->next_char_pos >= this->width_in_chars )
+            {
+                this->next_char_pos = 0;
+
+                // Setting scroll offset to > 0 triggers scrolling
+                // procedure
+                *SCROLL_OFFSET = 7;
+            }
+        }
+    }
+
+    // Save current ticks for next update, adding any 'unused'
+    // ticks from this update
+    this->ticks_at_last_update = current_ticks - ticks;
+}

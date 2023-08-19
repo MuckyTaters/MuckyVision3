@@ -53,7 +53,7 @@ struct GameEngRenderBlock
     //! Optional vertical offset (in screen pixels)
     int16_t vert_offset;
 
-    //! Vector of textures that form this block
+    //! Vector of render information associated with this block
 
     std::vector<std::shared_ptr<MCK::GameEngRenderInfo>> render_info;
 

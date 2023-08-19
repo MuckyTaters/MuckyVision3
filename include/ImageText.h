@@ -135,6 +135,11 @@ class ImageText
             int new_y_pos
         );
 
+        void nudge_pixel_pos(
+            int dx,
+            int dy
+        );
+
         //! Returns true if visible
         bool is_active( void ) const noexcept
         {

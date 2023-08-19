@@ -34,7 +34,7 @@
 #include <iostream> // For std::cout
 #endif
 
-#include <sstream>
+#include <queue>
 
 #include "ImageText.h"
 
@@ -78,6 +78,10 @@ class Console
         //! Add content to console input buffer
         void add_content( std::string in );
 
+        //! This method animates console and ideally should be called every frame
+        /*! @param current_ticks: If ommited, ticks are obtained from GameEng instance
+         */
+        void update( uint32_t current_ticks = 0 );
 
     protected:
 
@@ -89,7 +93,7 @@ class Console
 
         std::list<std::shared_ptr<MCK::ImageText>> lines;
 
-        // TODO: Add text buffer
+        std::queue<uint8_t> text_buffer;
 
         uint8_t width_in_chars;
         uint8_t height_in_chars;
@@ -98,6 +102,12 @@ class Console
         uint32_t print_speed_in_ticks_per_char;
         uint32_t scroll_speed_in_ticks_per_pixel;
         bool hoz_text_alignment;
+
+        int16_t write_line_x_pos;
+        int16_t write_line_y_pos;
+
+        // uint8_t scroll_offset;
+        uint8_t next_char_pos;
 
         uint32_t ticks_at_last_update;
         
