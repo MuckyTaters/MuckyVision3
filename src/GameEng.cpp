@@ -591,7 +591,8 @@ void MCK::GameEng::init(
 void MCK::GameEng::render_all( 
     std::shared_ptr<MCK::GameEngRenderBlock> render_block,
     int16_t hoz_offset,
-    int16_t vert_offset
+    int16_t vert_offset,
+    bool perform_integrity_check
 ) const
 {
     if( !this->initialized || this->renderer == NULL )
@@ -625,9 +626,35 @@ void MCK::GameEng::render_all(
     // Iterate recursively over subservient blocks
     for( auto sub_block : render_block->sub_blocks )
     {
+        if( perform_integrity_check )
+        {
+            if( sub_block.get() == NULL )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Null sub-block found during render."
+                          << std::endl;
+#endif
+                continue;
+            }
+
+            if( sub_block->parent_block != render_block.get() )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Cuckold sub-block found during render."
+                          << std::endl;
+#endif
+                continue;
+            }
+        }
+
         try
         {
-            this->render_all( sub_block, HOZ_OFFSET, VERT_OFFSET );
+            this->render_all(
+                sub_block,
+                HOZ_OFFSET,
+                VERT_OFFSET,
+                perform_integrity_check
+            );
         }
         catch( std::exception &e )
         {
@@ -652,8 +679,28 @@ void MCK::GameEng::render_all(
         )
         {
             // Ignore NULL textures
-            if( info->tex == NULL )
+            if( info.get() == NULL || info->tex == NULL )
             {
+#if defined MCK_STD_OUT
+                if( perform_integrity_check )
+                {
+                    std::cout << "NULL info found during render"
+                              << std::endl;
+                }
+#endif
+                
+                continue;
+            }
+
+            // Check parentage
+            if( perform_integrity_check 
+                && info->parent_block != render_block.get()
+            )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Cuckold info found during render, ignoring."
+                          << std::endl;
+#endif
                 continue;
             }
 
@@ -734,6 +781,25 @@ void MCK::GameEng::render_all(
             // Ignore NULL pointers and NULL textures
             if( info.get() == NULL || info->tex == NULL )
             {
+#if defined MCK_STD_OUT
+                if( perform_integrity_check )
+                {
+                    std::cout << "NULL info/tex found during render"
+                              << std::endl;
+                }
+#endif
+                continue;
+            }
+
+            // Check parentage
+            if( perform_integrity_check 
+                && info->parent_block != render_block.get()
+            )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Cuckold info found during render, ignoring."
+                          << std::endl;
+#endif
                 continue;
             }
 
@@ -1303,6 +1369,8 @@ std::shared_ptr<MCK::GameEngRenderBlock> MCK::GameEng::create_empty_render_block
         {
             parent_block->sub_blocks.push_front( new_block );
         }
+
+        new_block->parent_block = parent_block.get();
     }
 
     return new_block;
@@ -1405,6 +1473,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_render_info(
     if( parent_block.get() != NULL )
     {
         parent_block->render_info.push_back( new_info );
+        new_info->parent_block = parent_block.get();
     }
 
     return new_info;
@@ -1635,4 +1704,47 @@ void MCK::GameEng::change_render_info_tex(
 
     // Update render info
     info->tex = tex;
+}
+        
+void MCK::GameEng::remove_block(
+    std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove,
+    std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
+)
+{
+    // If block pointer is NULL, ignore
+    if( block_to_start_search.get() == NULL )
+    {
+        return;
+    }
+
+    // Loop over blocks, looking for the one to remove
+    // for( auto block : block_to_start_search->sub_blocks )
+    std::list<std::shared_ptr<MCK::GameEngRenderBlock>>::iterator it;
+    for( it = block_to_start_search->sub_blocks.begin();
+         it != block_to_start_search->sub_blocks.end();
+         it++
+    )
+    {
+        // shared_ptr<MCK::GameEngRenderBlock> block = *it;
+
+        // If block pointer is NULL, or matchs block to be
+        // removed, remove it
+        // Note: Carry on searching after removal, in case
+        //       the block to be removed has multiple entries
+        if( it->get() == NULL
+            || it->get() == block_to_remove.get() 
+        )
+        {
+            // Remove this sub-block
+            block_to_start_search->sub_blocks.erase( it++ );
+        }
+        else
+        {
+            // Call method recursively upon this sub-block
+            GameEng::remove_block(
+                block_to_remove,
+                *it
+            );
+        }
+    }
 }

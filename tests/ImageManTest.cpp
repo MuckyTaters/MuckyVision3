@@ -354,7 +354,7 @@ int main( int argc, char** argv )
     try
     {
         image_man.change_render_info_tex(
-            ascii_blocks[1]->render_info[4], 
+            ascii_blocks[1]->get_render_info( 4 ), 
             fancy_A_image_id,
             fancy_palette_id,
             true  // keep_orig_dest_rect_size
@@ -418,7 +418,7 @@ int main( int argc, char** argv )
     try
     {
         std::string marker_symbol( 1, uint8_t( 254 ) );
-        std::string initial_content = marker_symbol + "bcdefghijklmnopq";
+        std::string initial_content = marker_symbol + "bcdefghijklmnopqrstuvwxyz";
         console_test->init(
             game_eng,
             image_man,
@@ -431,8 +431,8 @@ int main( int argc, char** argv )
             2 * 8,  // char_width_in_pixels,
             2 * 8,  // char_height_in_pixels,
             initial_content,
-            1000,  // print_speed_in_ticks_per_char,
-            500,  // scroll_speed_in_ticks_per_pixel,
+            200,  // print_speed_in_ticks_per_char,
+            100,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             2,  // start_line
             true  // add_to_front_of_parent_block = true
@@ -554,7 +554,8 @@ int main( int argc, char** argv )
                 game_eng.render_all(
                     game_eng.get_prime_render_block(),
                     0,  // Hoz offset
-                    0  // Vert offset
+                    0,  // Vert offset
+                    true  // Integrity checks
                 );
                 game_eng.show();
             }

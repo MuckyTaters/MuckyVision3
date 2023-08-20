@@ -48,6 +48,9 @@
 namespace MCK
 {
 
+// Forward declaration
+class GameEngRenderBlock;
+
 struct GameEngRenderInfo
 {
     //! Friendship so GameEng can access protected/private members
@@ -159,18 +162,22 @@ struct GameEngRenderInfo
         this->flags = 0x00;
         this->tex_id = 0;
         this->tex = NULL;
+        this->parent_block = NULL;
     }
 
-    private:
+    protected:
 
-        /*
-        // Disable to prevent copying, as
+        // Disabled to prevent copying, as
         // this would cause chaos
         GameEngRenderInfo(GameEngRenderInfo const&) = delete;
         void operator=(GameEngRenderInfo const&)  = delete;
-        */
 
-        // const MCK::GameEngRenderBlock* parent_block;
+        // Pointer to parent block, only accessible through
+        // friend access (GameEng). This pointer should only
+        // be used to ensure parent is correct, not to access
+        // the parent (for safety it is best not to actually
+        // dereference this pointer)
+        const MCK::GameEngRenderBlock* parent_block;
 
         const static uint8_t ROTATION_MASK = 0x03;
         const static uint8_t ROTATION_RSHIFT = 0;

@@ -58,7 +58,7 @@ class ImageText
 
         ImageText( void );
 
-        virtual ~ImageText( void ) {}
+        virtual ~ImageText( void );
 
         //! Initialization
         /*! @param _game_eng: GameEng instance

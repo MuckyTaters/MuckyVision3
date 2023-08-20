@@ -397,8 +397,8 @@ void MCK::Console::update( uint32_t current_ticks )
                 this->lines.pop_front();
 
                 // Change position of all remaining lines
-                const int DX = 200; // -1 * this->char_width_in_pixels
-                                   //   * !this->hoz_text_alignment;
+                const int DX = -1 * this->char_width_in_pixels
+                                      * !this->hoz_text_alignment;
                 const int DY = -1 * this->char_height_in_pixels
                                       * this->hoz_text_alignment;
 

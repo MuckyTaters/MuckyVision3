@@ -185,7 +185,8 @@ class GameEng
         void render_all(
             std::shared_ptr<MCK::GameEngRenderBlock> render_block, 
             int16_t hoz_offset = 0,
-            int16_t vert_offset = 0
+            int16_t vert_offset = 0,
+            bool perform_integrity_check = false
         ) const;
 
         //! Set render clearing colo(u)r
@@ -230,6 +231,15 @@ class GameEng
                    | ( MCK_TEX_ID_TYPE( local_palette_id )
                            << std::numeric_limits<MCK_IMG_ID_TYPE>::digits );
         }
+
+        //! Remove GameEngRenderBlock instance from render tree
+        /*! Note: this is static as it only operates on the blocks
+         *        themselves, not GameEng
+         */
+        static void remove_block(
+            std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove, 
+            std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
+        );
 
 
     private:
