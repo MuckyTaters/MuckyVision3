@@ -106,8 +106,9 @@ class Console
         int16_t write_line_x_pos;
         int16_t write_line_y_pos;
 
-        // uint8_t scroll_offset;
         uint8_t next_char_pos;
+
+        bool scroll_in_progress;
 
         uint32_t ticks_at_last_update;
         

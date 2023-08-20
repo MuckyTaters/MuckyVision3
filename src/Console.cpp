@@ -41,7 +41,7 @@ MCK::Console::Console( void )
     this->print_speed_in_ticks_per_char = 0;
     this->scroll_speed_in_ticks_per_pixel = 0;
     this->hoz_text_alignment = true;
-    // this->scroll_offset = 0;
+    this->scroll_in_progress = false;
     this->next_char_pos = 0;
     this->ticks_at_last_update = 0;
     this->write_line_x_pos = 0;
@@ -183,7 +183,7 @@ void MCK::Console::init(
     {
         num_lines = this->width_in_chars;
         line_len = this->height_in_chars;
-        dx = this->char_height_in_pixels;
+        dx = this->char_width_in_pixels;
         dy = 0;
         justification = MCK::ImageText::VERT_TOP;
     }
@@ -276,17 +276,7 @@ void MCK::Console::init(
         // by setting appropriate scroll offset to 1.
         if( START_POS < END_POS )
         {
-            if( hoz_text_alignment )
-            {
-                block->vert_offset = -1;
-            }
-            else
-            {
-                block->hoz_offset = -1;
-            }
-
-            // DEBUG
-            std::cout << "UNUSED CONTENT" << std::endl;
+            this->scroll_in_progress = true;
         }
 
         // Enqueue unused content
@@ -355,6 +345,12 @@ void MCK::Console::update( uint32_t current_ticks )
             int16_t( this->char_height_in_pixels ) :
             int16_t( this->char_width_in_pixels );
 
+    // Get number of chars on line
+    const uint8_t LINE_LEN
+        = this->hoz_text_alignment ?
+            this->width_in_chars :
+            this->height_in_chars;
+
     // DEBUG
     //std::cout << "@@ *SCROLL_OFFSET = "
     //          << *SCROLL_OFFSET << std::endl; 
@@ -371,23 +367,23 @@ void MCK::Console::update( uint32_t current_ticks )
     //  'ticks_at_last_update' when next calculated
     while( ( ticks >= this->print_speed_in_ticks_per_char
              && this->text_buffer.size() > 0
-             && *SCROLL_OFFSET == 0 
+             && !this->scroll_in_progress
+             // && *SCROLL_OFFSET == 0 
            ) ||
            ( ticks >= this->scroll_speed_in_ticks_per_pixel
-             && *SCROLL_OFFSET != 0
+             // && *SCROLL_OFFSET != 0
+             && this->scroll_in_progress
            )
     )
     {
-        // DEBUG
-        std::cout << "Num lines = " << this->lines.size()
-                  << std::endl;
 
         /////////////////////////////////////////////
         // SCROLLING
 
         // If scrolling has started, scroll one pixel
         if( ticks >= this->scroll_speed_in_ticks_per_pixel
-            && *SCROLL_OFFSET != 0
+            // && *SCROLL_OFFSET != 0
+            && this->scroll_in_progress
         )
         {
             // Check for end of scroll
@@ -464,6 +460,9 @@ void MCK::Console::update( uint32_t current_ticks )
 
                 // Store new write line
                 lines.push_back( new_line );
+
+                // End scrolling here
+                this->scroll_in_progress = false;
             }
             else
             {
@@ -489,7 +488,8 @@ void MCK::Console::update( uint32_t current_ticks )
 
         if ( ticks >= this->print_speed_in_ticks_per_char
               && this->text_buffer.size() > 0
-              && *SCROLL_OFFSET == 0 
+              // && *SCROLL_OFFSET == 0 
+              && !this->scroll_in_progress
         )
         {
             // Get next char
@@ -513,13 +513,18 @@ void MCK::Console::update( uint32_t current_ticks )
 
             // If ok, decrement ticks and move position for next char
             ticks -= this->print_speed_in_ticks_per_char;
-            if( this->next_char_pos >= this->width_in_chars )
+            if( this->next_char_pos >= LINE_LEN )
             {
                 this->next_char_pos = 0;
 
+                this->scroll_in_progress = true;
+
                 // Setting scroll offset to < 0 triggers scrolling
                 // procedure
-                *SCROLL_OFFSET = -1;
+                // *SCROLL_OFFSET = -1;
+                
+                // End update here
+                break;
             }
         }
     }

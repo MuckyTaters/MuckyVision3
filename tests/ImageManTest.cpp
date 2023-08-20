@@ -418,7 +418,7 @@ int main( int argc, char** argv )
     try
     {
         std::string marker_symbol( 1, uint8_t( 254 ) );
-        std::string initial_content = marker_symbol + "bcdefghijklmnopqrstuvwxyz";
+        std::string initial_content = marker_symbol + "bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         console_test->init(
             game_eng,
             image_man,
@@ -426,14 +426,14 @@ int main( int argc, char** argv )
             black_yellow_palette_id,
             0,  // x_pos,
             0,  // y_pos,
-            6,  // width_in_chars,
-            4,  // height_in_chars,
-            2 * 8,  // char_width_in_pixels,
+            4,  // width_in_chars,
+            8,  // height_in_chars,
+            4 * 8,  // char_width_in_pixels,
             2 * 8,  // char_height_in_pixels,
             initial_content,
             0,  // 100,  // print_speed_in_ticks_per_char,
-            100, // 25,  // scroll_speed_in_ticks_per_pixel,
-            true,  // hoz_text_alignment
+            25,  // scroll_speed_in_ticks_per_pixel,
+            false, // true,  // hoz_text_alignment
             2,  // start_line
             true  // add_to_front_of_parent_block = true
         );
