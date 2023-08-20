@@ -365,12 +365,13 @@ void MCK::Console::update( uint32_t current_ticks )
     //  a) Is there text to print, and sufficient time to print
     //     at least one char?
     //  OR
-    //  b) Is scrolling in progress, and sifficient time to scroll
+    //  b) Is scrolling in progress, and sufficient time to scroll
     //     at least one pixel?
-    //  If this evaluates to False, 'ticks' is just added to
+    //  If this evaluates to False, 'ticks' is subtracted from
     //  'ticks_at_last_update' when next calculated
     while( ( ticks >= this->print_speed_in_ticks_per_char
              && this->text_buffer.size() > 0
+             && *SCROLL_OFFSET == 0 
            ) ||
            ( ticks >= this->scroll_speed_in_ticks_per_pixel
              && *SCROLL_OFFSET != 0
@@ -380,6 +381,9 @@ void MCK::Console::update( uint32_t current_ticks )
         // DEBUG
         std::cout << "Num lines = " << this->lines.size()
                   << std::endl;
+
+        /////////////////////////////////////////////
+        // SCROLLING
 
         // If scrolling has started, scroll one pixel
         if( ticks >= this->scroll_speed_in_ticks_per_pixel
@@ -480,8 +484,12 @@ void MCK::Console::update( uint32_t current_ticks )
             */
         }
 
+        ///////////////////////////////////////////////////
+        // CHARACTER PRINTING
+
         if ( ticks >= this->print_speed_in_ticks_per_char
               && this->text_buffer.size() > 0
+              && *SCROLL_OFFSET == 0 
         )
         {
             // Get next char
@@ -509,9 +517,9 @@ void MCK::Console::update( uint32_t current_ticks )
             {
                 this->next_char_pos = 0;
 
-                // Setting scroll offset to > 0 triggers scrolling
+                // Setting scroll offset to < 0 triggers scrolling
                 // procedure
-                *SCROLL_OFFSET = 7;
+                *SCROLL_OFFSET = -1;
             }
         }
     }

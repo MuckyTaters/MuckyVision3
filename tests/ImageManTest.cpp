@@ -431,8 +431,8 @@ int main( int argc, char** argv )
             2 * 8,  // char_width_in_pixels,
             2 * 8,  // char_height_in_pixels,
             initial_content,
-            200,  // print_speed_in_ticks_per_char,
-            100,  // scroll_speed_in_ticks_per_pixel,
+            0,  // 100,  // print_speed_in_ticks_per_char,
+            100, // 25,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             2,  // start_line
             true  // add_to_front_of_parent_block = true
