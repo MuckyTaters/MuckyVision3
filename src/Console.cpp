@@ -64,7 +64,8 @@ void MCK::Console::init(
     uint32_t _scroll_speed_in_ticks_per_pixel,
     bool _hoz_text_alignment,
     uint8_t start_line,
-    bool add_to_front_of_parent_block
+    bool add_to_front_of_parent_block,
+    uint8_t underlay_color_id
 )
 {
     if( this->initialized )
@@ -145,12 +146,37 @@ void MCK::Console::init(
             = _scroll_speed_in_ticks_per_pixel;
     this->hoz_text_alignment = _hoz_text_alignment;
 
-    // Create new render block
+    // Create new overlay render block
+    // (the overlay block holds everything)
+    try
+    {
+        this->overlay_block
+            = this->game_eng->create_empty_render_block(
+                parent_block,
+                add_to_front_of_parent_block
+            );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize Console as failed " )
+            + std::string( "to create overlay block, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Create new main render block
+    // This is block to which ImageText lines at attached,
+    // its offsets are used to scroll the console,
     try
     {
         this->block = this->game_eng->create_empty_render_block(
-                    parent_block,
-                    add_to_front_of_parent_block
+                    this->overlay_block,
+                    true  // Display at front
                 );
     }
     catch( std::exception &e )
@@ -166,11 +192,39 @@ void MCK::Console::init(
         ) );
     }
 
+    // Create new underlay render block
+    // This is the block to which a blank self-colo(u)red
+    // image is attached to hide the background that would
+    // otherwise be visible behind the write line.
+    try
+    {
+        this->underlay_block
+            = this->game_eng->create_empty_render_block(
+                this->overlay_block,
+                false  // Display at rear
+            );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize Console as failed " )
+            + std::string( "to create underlay block, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
     /////////////////////////////////////////////////////
     // Calculate various values dependent on alignment...
     uint8_t num_lines, line_len;
     int dx, dy;
     MCK::ImageText::Just justification;
+    uint16_t line_len_in_pixels;
+    uint16_t line_width_in_pixels;
+    uint16_t line_height_in_pixels;
     if( this->hoz_text_alignment )
     {
         num_lines = this->height_in_chars;
@@ -178,6 +232,8 @@ void MCK::Console::init(
         dx = 0;
         dy = this->char_height_in_pixels;
         justification = MCK::ImageText::LEFT;
+        line_width_in_pixels = line_len * this->char_width_in_pixels;
+        line_height_in_pixels = this->char_height_in_pixels;
     }
     else
     {
@@ -186,6 +242,8 @@ void MCK::Console::init(
         dx = this->char_width_in_pixels;
         dy = 0;
         justification = MCK::ImageText::VERT_TOP;
+        line_width_in_pixels = this->char_width_in_pixels;
+        line_height_in_pixels = line_len * this->char_height_in_pixels;
     }
     
     const int LAST_LINE_NUM = int( num_lines - 1 );
@@ -198,6 +256,33 @@ void MCK::Console::init(
     //       each new write line
     this->write_line_x_pos = x_pos + LAST_LINE_NUM * dx;
     this->write_line_y_pos = y_pos + LAST_LINE_NUM * dy;
+
+    // Create underlay for write line
+    try
+    {
+        game_eng->create_blank_tex_render_info(
+            underlay_color_id,
+            underlay_block,
+            MCK::GameEngRenderInfo::Rect(
+                write_line_x_pos,
+                write_line_y_pos,
+                line_width_in_pixels,
+                line_height_in_pixels
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to create underlay for write line")
+            + std::string( " of console, error: ")
+            + e.what()
+#else
+            ""
+#endif
+        ));
+    }
 
     // Create lines....
 

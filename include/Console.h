@@ -64,7 +64,8 @@ class Console
             uint32_t _scroll_speed_in_ticks_per_pixel = 0,
             bool _hoz_text_alignment = true,
             uint8_t start_line = 0,
-            bool add_to_front_of_parent_block = true
+            bool add_to_front_of_parent_block = true,
+            uint8_t underlay_color_id = MCK::COL_BLACK
         );
 
         bool is_initialized( void ) const noexcept
@@ -82,6 +83,17 @@ class Console
         /*! @param current_ticks: If ommited, ticks are obtained from GameEng instance
          */
         void update( uint32_t current_ticks = 0 );
+
+        //! Get pointer to console's overlay render block
+        /*! This render block is useful for attaching borders
+         *  to the console, especially to cover up the scrolling
+         *  of the next line due to be deleted
+         */
+        std::shared_ptr<MCK::GameEngRenderBlock> get_overlay_block( void )
+        {
+            return overlay_block;
+        }
+
 
     protected:
 
@@ -115,6 +127,10 @@ class Console
         MCK_PAL_ID_TYPE local_palette_id;
 
         std::shared_ptr<MCK::GameEngRenderBlock> block;
+        
+        std::shared_ptr<MCK::GameEngRenderBlock> overlay_block;
+        
+        std::shared_ptr<MCK::GameEngRenderBlock> underlay_block;
 };
 
 }  // End of namespace MCK

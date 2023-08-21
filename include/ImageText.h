@@ -210,6 +210,13 @@ class ImageText
             return local_palette_id;
         }
 
+        //! Get pointer to text box's render block
+        std::shared_ptr<MCK::GameEngRenderBlock> get_block( void )
+        {
+            return block;
+        }
+
+
     protected:
 
         bool initialized;

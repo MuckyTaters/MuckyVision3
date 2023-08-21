@@ -100,20 +100,34 @@ int main( int argc, char** argv )
 
     ///////////////////////////////////////////
     // CREATE DEMO PARAMETERS
+    const uint8_t BG_COL = MCK::COL_ROTTING_PURPLE;
+    
+    // Main console
     const uint8_t TILE_WIDTH = 16;
     const uint8_t TILE_HEIGHT = 16;
-    const uint8_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
-    const uint8_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 1;
+    const uint16_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
+    const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 1;
     const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 24;
     const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 10;
     const uint16_t MAIN_CONSOLE_WIDTH_IN_PIXELS
         = TILE_WIDTH * MAIN_CONSOLE_WIDTH_IN_CHARS;
     const uint16_t MAIN_CONSOLE_HEIGHT_IN_PIXELS
         = TILE_HEIGHT * MAIN_CONSOLE_HEIGHT_IN_CHARS;
-    const uint8_t BG_COL = MCK::COL_ROTTING_PURPLE;
+
+    // Mini console
+    const uint8_t MINI_CHAR_WIDTH = 8;
+    const uint8_t MINI_CHAR_HEIGHT = 8;
+    const uint16_t MINI_CONSOLE_LEFT = TILE_WIDTH * 26;
+    const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 1;
+    const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 20;
+    const uint8_t MINI_CONSOLE_HEIGHT_IN_CHARS = 6;
+    const uint16_t MINI_CONSOLE_WIDTH_IN_PIXELS
+        = MINI_CHAR_WIDTH * MINI_CONSOLE_WIDTH_IN_CHARS;
+    const uint16_t MINI_CONSOLE_HEIGHT_IN_PIXELS
+        = MINI_CHAR_HEIGHT * MINI_CONSOLE_HEIGHT_IN_CHARS;
 
     ////////////////////////////////////////////
-    // Set clearing colo(u)r
+    // SET CLEARING COLO(U)R
 
     // Set render clearing colo(u)r for this demo
     try
@@ -127,9 +141,57 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
 
+    //////////////////////////////////////////////
+    // CREATE MINI CONSOLE AND HOLDING BLOCK
+    std::shared_ptr<MCK::GameEngRenderBlock> mini_console_block;
+    try
+    {
+        // This render block holds (no-moving) borders
+        mini_console_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            true  // Display on top of other blocks
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create mini console block, error: ")
+            + e.what() ) );
+    }
+    std::shared_ptr<MCK::Console> mini_console
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        std::string s = "I'm a dinky mini console! I function just like the big console.";
+        mini_console->init(
+            game_eng,
+            image_man,
+            mini_console_block,
+            black_white_palette_id,
+            MINI_CONSOLE_LEFT,  // x_pos,
+            MINI_CONSOLE_TOP,  // y_pos,
+            MINI_CONSOLE_WIDTH_IN_CHARS,
+            MINI_CONSOLE_HEIGHT_IN_CHARS,
+            MINI_CHAR_WIDTH,  // char_width_in_pixels,
+            MINI_CHAR_HEIGHT,  // char_height_in_pixels,
+            s,  // initial_content,
+            100,  // print_speed_in_ticks_per_char,
+            10,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            MINI_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
+            false // true  // add_to_front_of_parent_block = true
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create mini console, error: ")
+            + e.what() ) );
+    }
+
     /////////////////////////////////////////////
-    // TEST CONSOLE
-    std::shared_ptr<MCK::Console> console_test
+    // CREATE MAIN CONSOLE
+    std::shared_ptr<MCK::Console> main_console
         = std::make_shared<MCK::Console>();
     try
     {
@@ -155,7 +217,7 @@ int main( int argc, char** argv )
         s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        console_test->init(
+        main_console->init(
             game_eng,
             image_man,
             game_eng.get_prime_render_block(),
@@ -167,11 +229,12 @@ int main( int argc, char** argv )
             TILE_WIDTH,  // char_width_in_pixels,
             TILE_HEIGHT,  // char_height_in_pixels,
             s,  // initial_content,
-            100,  // print_speed_in_ticks_per_char,
+            10, // 100,  // print_speed_in_ticks_per_char,
             10,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             MAIN_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false // true  // add_to_front_of_parent_block = true
+            false, // true  // add_to_front_of_parent_block = true
+            MCK::COL_BLACK  // Underlay colo(u)r
         );
     }
     catch( std::exception &e )
@@ -180,20 +243,18 @@ int main( int argc, char** argv )
             std::string( "Failed to create main console, error: ")
             + e.what() ) );
     }
+    
 
     ///////////////////////////////////////////
-    // CREATE RENDER BLOCK(S)
+    // CREATE ADDITIONAL RENDER BLOCK(S)
+    /*
     std::shared_ptr<MCK::GameEngRenderBlock> border_overlay_block;
-    std::shared_ptr<MCK::GameEngRenderBlock> underlay_block;
     try
     {
+        // This render block holds (no-moving) borders
         border_overlay_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             true  // Display on top of other blocks
-        );
-        underlay_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),
-            false  // Display behind other blocks
         );
     }
     catch( std::exception &e )
@@ -202,38 +263,34 @@ int main( int argc, char** argv )
             std::string( "Failed to create render block(s), error: ")
             + e.what() ) );
     }
-
+    */
 
     ///////////////////////////////////////////
     // CREATE RENDER INFO
 
-    // Create border overlay render info, 
-    // and associate with border overlay block
     try
     {
-        // Main console write line underlay
+        // Top border for Main console
         game_eng.create_blank_tex_render_info(
-            MCK::COL_BLACK,
-            underlay_block,
+            BG_COL,
+            main_console->get_overlay_block(),
             MCK::GameEngRenderInfo::Rect( 
                 MAIN_CONSOLE_LEFT,  // x pos
-                MAIN_CONSOLE_TOP
-                    + MAIN_CONSOLE_HEIGHT_IN_PIXELS
-                        - TILE_HEIGHT,  // y pos
-                MAIN_CONSOLE_WIDTH_IN_PIXELS,
+                MAIN_CONSOLE_TOP - TILE_HEIGHT,  // y pos
+                MAIN_CONSOLE_WIDTH_IN_PIXELS,  // full width of window 
                 TILE_HEIGHT  // Height, in pixels
             )
         );
-
-        // Top border
+        
+        // Top border for Mini console
         game_eng.create_blank_tex_render_info(
             BG_COL,
-            border_overlay_block,
+            mini_console->get_overlay_block(),
             MCK::GameEngRenderInfo::Rect( 
-                0,  // x pos
-                0,  // y pos
-                WINDOW_WIDTH_IN_PIXELS,  // full width of window 
-                MAIN_CONSOLE_TOP  // Height, in pixels
+                MINI_CONSOLE_LEFT,  // x pos
+                MINI_CONSOLE_TOP - 1 * MINI_CHAR_HEIGHT,  // y pos
+                MINI_CONSOLE_WIDTH_IN_PIXELS,  // full width of minivconsole
+                MINI_CHAR_HEIGHT  // Height, in pixels
             )
         );
     }
@@ -312,15 +369,39 @@ int main( int argc, char** argv )
             }
         }
 
-        // Upate console 
+        // Move mini-console on a figure of eight path
+        {
+            mini_console->get_overlay_block()->vert_offset
+                = 
+                    int( 
+                        cos(
+                            float(
+                                ( current_ticks - start_ticks ) % 3000
+                            ) / 1500.0f * 3.14127f
+                        ) * 50.0f + 0.5f
+                    ) + 50;
+            
+            mini_console->get_overlay_block()->hoz_offset
+                = 
+                    int( 
+                        sin(
+                            float(
+                                ( current_ticks - start_ticks ) % 3000
+                            ) / 750.0f * 3.14127f
+                        ) * 20.0f + 0.5f
+                    ) + 20;
+        }
+
+        // Upate console(s) 
         try
         {
-            console_test->update( current_ticks );
+            main_console->update( current_ticks );
+            mini_console->update( current_ticks );
         }
         catch( std::exception &e )
         {
             throw( std::runtime_error(
-                std::string( "Console update failed, error: ")
+                std::string( "Console update(s) failed, error: ")
                 + e.what() ) );
         }
 
