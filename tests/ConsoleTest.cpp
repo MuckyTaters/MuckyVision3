@@ -78,15 +78,24 @@ int main( int argc, char** argv )
 
 
     ///////////////////////////////////////////
-    // CREATE LOCAL PALETTES
+    // CREATE LOCAL PALETTE(S)
     MCK_PAL_ID_TYPE black_white_palette_id;
+    MCK_PAL_ID_TYPE title_palette_id;
     try
     {
-         black_white_palette_id = image_man.create_local_palette(
+        black_white_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_BLACK,
-                    MCK::COL_WHITE
+                    MCK::COL_WHITE,
+                }
+            )
+        );
+        title_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_YELLOW,
+                    MCK::COL_PURPLE
                 }
             )
         );
@@ -97,6 +106,7 @@ int main( int argc, char** argv )
             std::string( "Failed to create black white palette, error: ")
             + e.what() ) );
     }
+
 
     ///////////////////////////////////////////
     // CREATE DEMO PARAMETERS
@@ -134,7 +144,7 @@ int main( int argc, char** argv )
         = MAIN_CONSOLE_TOP
             + MAIN_CONSOLE_HEIGHT_IN_PIXELS + TILE_HEIGHT;
     const uint8_t LSCAPE_CONSOLE_WIDTH_IN_CHARS = 20;
-    const uint8_t LSCAPE_CONSOLE_HEIGHT_IN_CHARS = 6;
+    const uint8_t LSCAPE_CONSOLE_HEIGHT_IN_CHARS = 7;
     const uint16_t LSCAPE_CONSOLE_WIDTH_IN_PIXELS
         = LSCAPE_CHAR_WIDTH * LSCAPE_CONSOLE_WIDTH_IN_CHARS;
     const uint16_t LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
@@ -154,6 +164,35 @@ int main( int argc, char** argv )
             std::string( "Failed to set clearing color, error: ")
             + e.what() ) );
     }
+
+    //////////////////////////////////////////////
+    // CREATE TITLE TEXT BOX
+    std::shared_ptr<MCK::ImageText> title_text
+        = std::make_shared<MCK::ImageText>();
+    try
+    {
+        std::string CR( 1, uint8_t( 255 ) );
+        title_text->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            black_white_palette_id,
+            TILE_WIDTH,
+            TILE_HEIGHT,
+            38,  // Size in chars
+            16,   // Char width
+            16,  // Char height
+            "CONSOLE DEMO --- " + CR + " MuckyTaters 2023",
+            MCK::ImageText::CENTER
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create black white palette, error: ")
+            + e.what() ) );
+    }
+
 
     //////////////////////////////////////////////
     // CREATE MINI CONSOLE 
@@ -249,9 +288,56 @@ int main( int argc, char** argv )
         = std::make_shared<MCK::Console>();
     try
     {
+        // Ladder ASCII character
+        std::string H( 1, uint8_t( 245 ) );
+
+        // Brick ASCII character
+        std::string B( 1, uint8_t( 247 ) );
+
+        // Empty ASCII character
+        std::string E( 1, uint8_t( 32 ) );
+
+        // Slope Left ASCII character
+        std::string L( 1, uint8_t( 0 ) );
+
+        // Slope Right ASCII character
+        std::string R( 1, uint8_t( 2 ) );
+
+        // Square ASCII character
+        std::string Q( 1, uint8_t( 230 ) );
+
+        // Peak ASCII character
+        std::string P( 1, uint8_t( 1 ) );
+
         std::string s;
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "0123456abcdefg1234567bcdefgh3456789cdefghi";
+        s += E + E + B + E + E + B + E;
+        s += E + E + B + E + E + B + E;
+        s += E + H + H + H + H + B + E;
+        s += E + E + B + E + E + B + E;
+        s += E + E + B + E + E + B + E;
+        s += E + E + B + E + H + H + H;
+        s += E + E + B + E + E + B + E;
+        s += E + E + E + E + E + B + E;
+        s += E + E + E + E + E + B + E;
+        s += E + E + E + E + E + B + E;
+        s += E + E + B + E + E + B + E;
+        s += E + H + H + H + H + B + E;
+        s += E + E + B + E + E + B + E;
+        s += E + E + B + E + E + B + E;
+        s += E + E + E + E + L + Q + Q;
+        s += E + E + E + P + Q + Q + Q;
+        s += E + E + E + L + Q + Q + Q;
+        s += E + E + P + Q + Q + Q + Q;
+        s += E + E + E + R + Q + Q + Q;
+        s += E + E + E + P + Q + Q + Q;
+        s += E + E + E + E + L + Q + Q;
+        s += E + E + E + P + Q + Q + Q;
+        s += E + E + E + L + Q + Q + Q;
+        s += E + E + P + Q + Q + Q + Q;
+        s += E + E + E + R + Q + Q + Q;
+        s += E + E + E + P + Q + Q + Q;
+        s += " 12345abcdef123456bcdefg345678cdefgh";
         s += "012345abcdef123456bcdefg345678cdefgh";
         s += "012345abcdef123456bcdefg345678cdefgh";
         s += "012345abcdef123456bcdefg345678cdefgh";
@@ -282,7 +368,7 @@ int main( int argc, char** argv )
             LSCAPE_CHAR_HEIGHT,  // char_height_in_pixels,
             s,  // initial_content,
             0,  // print_speed_in_ticks_per_char,
-            20,  // scroll_speed_in_ticks_per_pixel,
+            5,  // scroll_speed_in_ticks_per_pixel,
             false,  // vert_text_alignment
             10,  // start_line
             true  // add_to_front_of_parent_block = true
