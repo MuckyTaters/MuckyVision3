@@ -298,12 +298,11 @@ void MCK::Console::init(
         if( i >= start_line )
         {
             const size_t POS = ( i - start_line )
-                            * this->width_in_chars;
+                            * line_len;  // this->width_in_chars;
             if( POS < initial_content.size() )
             {
                 content_pos = POS;
-                // max_content_pos = POS;
-                content_len = this->width_in_chars;
+                content_len = line_len; // this->width_in_chars;
             }
         }
             
@@ -382,6 +381,10 @@ void MCK::Console::init(
             }
         }
     }
+
+    // DEBUG
+    std::cout << "@@ text_buffer.size() = "
+              << text_buffer.size() << std::endl;
 
     initialized = true;
 }

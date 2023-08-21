@@ -106,7 +106,7 @@ int main( int argc, char** argv )
     const uint8_t TILE_WIDTH = 16;
     const uint8_t TILE_HEIGHT = 16;
     const uint16_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
-    const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 1;
+    const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 3;
     const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 24;
     const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 10;
     const uint16_t MAIN_CONSOLE_WIDTH_IN_PIXELS
@@ -118,13 +118,27 @@ int main( int argc, char** argv )
     const uint8_t MINI_CHAR_WIDTH = 8;
     const uint8_t MINI_CHAR_HEIGHT = 8;
     const uint16_t MINI_CONSOLE_LEFT = TILE_WIDTH * 26;
-    const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 1;
+    const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 3;
     const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 20;
     const uint8_t MINI_CONSOLE_HEIGHT_IN_CHARS = 6;
     const uint16_t MINI_CONSOLE_WIDTH_IN_PIXELS
         = MINI_CHAR_WIDTH * MINI_CONSOLE_WIDTH_IN_CHARS;
     const uint16_t MINI_CONSOLE_HEIGHT_IN_PIXELS
         = MINI_CHAR_HEIGHT * MINI_CONSOLE_HEIGHT_IN_CHARS;
+
+    // Lanscape console
+    const uint8_t LSCAPE_CHAR_WIDTH = 32;
+    const uint8_t LSCAPE_CHAR_HEIGHT = 16;
+    const uint16_t LSCAPE_CONSOLE_LEFT = MAIN_CONSOLE_LEFT;
+    const uint16_t LSCAPE_CONSOLE_TOP
+        = MAIN_CONSOLE_TOP
+            + MAIN_CONSOLE_HEIGHT_IN_PIXELS + TILE_HEIGHT;
+    const uint8_t LSCAPE_CONSOLE_WIDTH_IN_CHARS = 20;
+    const uint8_t LSCAPE_CONSOLE_HEIGHT_IN_CHARS = 6;
+    const uint16_t LSCAPE_CONSOLE_WIDTH_IN_PIXELS
+        = LSCAPE_CHAR_WIDTH * LSCAPE_CONSOLE_WIDTH_IN_CHARS;
+    const uint16_t LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
+        = LSCAPE_CHAR_HEIGHT * LSCAPE_CONSOLE_HEIGHT_IN_CHARS;
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -142,22 +156,7 @@ int main( int argc, char** argv )
     }
 
     //////////////////////////////////////////////
-    // CREATE MINI CONSOLE AND HOLDING BLOCK
-    std::shared_ptr<MCK::GameEngRenderBlock> mini_console_block;
-    try
-    {
-        // This render block holds (no-moving) borders
-        mini_console_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),
-            true  // Display on top of other blocks
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create mini console block, error: ")
-            + e.what() ) );
-    }
+    // CREATE MINI CONSOLE 
     std::shared_ptr<MCK::Console> mini_console
         = std::make_shared<MCK::Console>();
     try
@@ -166,7 +165,7 @@ int main( int argc, char** argv )
         mini_console->init(
             game_eng,
             image_man,
-            mini_console_block,
+            game_eng.get_prime_render_block(), // mini_console_block,
             black_white_palette_id,
             MINI_CONSOLE_LEFT,  // x_pos,
             MINI_CONSOLE_TOP,  // y_pos,
@@ -222,8 +221,8 @@ int main( int argc, char** argv )
             image_man,
             game_eng.get_prime_render_block(),
             black_white_palette_id,
-            MAIN_CONSOLE_TOP,  // x_pos,
             MAIN_CONSOLE_LEFT,  // y_pos,
+            MAIN_CONSOLE_TOP,  // x_pos,
             MAIN_CONSOLE_WIDTH_IN_CHARS,
             MAIN_CONSOLE_HEIGHT_IN_CHARS,
             TILE_WIDTH,  // char_width_in_pixels,
@@ -243,31 +242,62 @@ int main( int argc, char** argv )
             std::string( "Failed to create main console, error: ")
             + e.what() ) );
     }
-    
 
-    ///////////////////////////////////////////
-    // CREATE ADDITIONAL RENDER BLOCK(S)
-    /*
-    std::shared_ptr<MCK::GameEngRenderBlock> border_overlay_block;
+    //////////////////////////////////////////////
+    // CREATE LANDSCAPE CONSOLE 
+    std::shared_ptr<MCK::Console> lscape_console
+        = std::make_shared<MCK::Console>();
     try
     {
-        // This render block holds (no-moving) borders
-        border_overlay_block = game_eng.create_empty_render_block(
+        std::string s;
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        s += "012345abcdef123456bcdefg345678cdefgh";
+        lscape_console->init(
+            game_eng,
+            image_man,
             game_eng.get_prime_render_block(),
-            true  // Display on top of other blocks
+            black_white_palette_id,
+            LSCAPE_CONSOLE_LEFT,  // x_pos,
+            LSCAPE_CONSOLE_TOP,  // y_pos,
+            LSCAPE_CONSOLE_WIDTH_IN_CHARS,
+            LSCAPE_CONSOLE_HEIGHT_IN_CHARS,
+            LSCAPE_CHAR_WIDTH,  // char_width_in_pixels,
+            LSCAPE_CHAR_HEIGHT,  // char_height_in_pixels,
+            s,  // initial_content,
+            0,  // print_speed_in_ticks_per_char,
+            20,  // scroll_speed_in_ticks_per_pixel,
+            false,  // vert_text_alignment
+            10,  // start_line
+            true  // add_to_front_of_parent_block = true
         );
     }
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create render block(s), error: ")
+            std::string( "Failed to create mini console, error: ")
             + e.what() ) );
     }
-    */
+
 
     ///////////////////////////////////////////
     // CREATE RENDER INFO
-
     try
     {
         // Top border for Main console
@@ -293,6 +323,45 @@ int main( int argc, char** argv )
                 MINI_CHAR_HEIGHT  // Height, in pixels
             )
         );
+        
+        // left border for lanscape console
+        game_eng.create_blank_tex_render_info(
+            BG_COL,
+            lscape_console->get_overlay_block(),
+            MCK::GameEngRenderInfo::Rect( 
+                0,  // x pos
+                LSCAPE_CONSOLE_TOP,  // y pos
+                LSCAPE_CONSOLE_LEFT, 
+                LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
+            )
+        );
+        
+        // right border for lanscape console
+        game_eng.create_blank_tex_render_info(
+            BG_COL,
+            lscape_console->get_overlay_block(),
+            MCK::GameEngRenderInfo::Rect( 
+                LSCAPE_CONSOLE_LEFT
+                    + LSCAPE_CONSOLE_WIDTH_IN_PIXELS
+                        - LSCAPE_CHAR_WIDTH,  // x pos
+                LSCAPE_CONSOLE_TOP,  // y pos
+                LSCAPE_CHAR_WIDTH, 
+                LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
+            )
+            /*
+            MCK::GameEngRenderInfo::Rect( 
+                LSCAPE_CONSOLE_LEFT
+                    + LSCAPE_CONSOLE_WIDTH_IN_PIXELS
+                        - LSCAPE_CHAR_WIDTH,  // x pos
+                LSCAPE_CONSOLE_TOP,  // y pos
+                WINDOW_WIDTH_IN_PIXELS
+                    - LSCAPE_CONSOLE_LEFT
+                        - LSCAPE_CONSOLE_WIDTH_IN_PIXELS,
+                LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
+            )
+            */
+        );
+        
     }
     catch( std::exception &e )
     {
@@ -397,6 +466,7 @@ int main( int argc, char** argv )
         {
             main_console->update( current_ticks );
             mini_console->update( current_ticks );
+            lscape_console->update( current_ticks );
         }
         catch( std::exception &e )
         {
