@@ -619,8 +619,14 @@ int main( int argc, char** argv )
             // and place the leftmost tower on the right
             if( PREV_OFFSET < city_block->hoz_offset )
             {
-                for( auto block : city_block->sub_blocks )
+                const size_t NUM_SUB_BLOCKS
+                    = city_block->get_sub_block_count();
+
+                for( size_t i = 0; i < NUM_SUB_BLOCKS; i++ )
                 {
+                    std::shared_ptr<MCK::GameEngRenderBlock> block
+                        = city_block->get_sub_block( i );
+
                     block->hoz_offset -= SQUARE_TOTAL_SIZE;
                     if( block->hoz_offset < 0 )
                     {
@@ -648,8 +654,14 @@ int main( int argc, char** argv )
             // and place the leftmost tower on the right
             if( PREV_OFFSET < background_block->hoz_offset )
             {
-                for( auto block : background_block->sub_blocks )
+                const size_t NUM_SUB_BLOCKS
+                    = background_block->get_sub_block_count();
+
+                for( size_t i = 0; i < NUM_SUB_BLOCKS; i++ )
                 {
+                    std::shared_ptr<MCK::GameEngRenderBlock> block
+                        = background_block->get_sub_block( i );
+                
                     block->hoz_offset -= SQUARE_TOTAL_SIZE / 2;
                     if( block->hoz_offset < 0 )
                     {

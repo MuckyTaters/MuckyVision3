@@ -31,7 +31,6 @@
 #include "ImageMan.h"
 #include "ImageText.h"
 #include "Console.h"
-#include "FancyTypeface.h"
 
 // Calculate vertical pos of text
 int calc_vert_offset(
@@ -239,51 +238,7 @@ int main( int argc, char** argv )
             std::string( "Failed to create logo palette, error: ")
             + e.what() ) );
     }
-    
-    MCK_PAL_ID_TYPE fancy_palette_id;
-    try
-    {
-         fancy_palette_id = image_man.create_local_palette(
-            std::make_shared<std::vector<uint8_t>>(
-                std::vector<uint8_t>{
-                    MCK::COL_TRANSPARENT,
-                    MCK::COL_BLACK,
-                    MCK::COL_CYAN,
-                    MCK::COL_SAND
-                }
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create black green palette, error: ")
-            + e.what() ) );
-    }
-    
 
-    /////////////////////////////////////////////
-    // Create custom image(s)
-    MCK_IMG_ID_TYPE fancy_A_image_id;
-    {
-        try
-        {
-            fancy_A_image_id = image_man.create_custom_image(
-                std::make_shared<const std::vector<uint8_t>>(
-                    MCK::FancyTypeface::image_data[0]
-                ),
-                2,  // bits_per_pixel,
-                12,  // pitch_in_pixels,
-                12  // height_in_pixels
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create fancy 'A', error: ")
-                + e.what() ) );
-        }
-    }
 
     ///////////////////////////////////////////
     // CREATE RENDER INFO
@@ -350,57 +305,38 @@ int main( int argc, char** argv )
         }
     }
 
-    // Overwrite 'A', i.e. first render info item in 3rd ASCII block
-    try
-    {
-        image_man.change_render_info_tex(
-            ascii_blocks[1]->get_render_info( 4 ), 
-            fancy_A_image_id,
-            fancy_palette_id,
-            true  // keep_orig_dest_rect_size
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to change 'A', error: ")
-            + e.what() ) );
-    }
+    ////////////////////////////////////////
+    // Create copyright text
 
-    // Create test ImageTest instance
+    // Create test ImageText instance
     std::shared_ptr<MCK::ImageText> image_text_test
         = std::make_shared<MCK::ImageText>();
     {
-        /*
         const std::string COPYRIGHT_SYMBOL( 1, uint8_t( 255 ) );
         const std::string TEXT = COPYRIGHT_SYMBOL + " MuckyTaters 2023";
-        */
-
-        const std::string TEXT = "Hit the 'A' key...";
-
 
         const uint8_t CHAR_WIDTH = 16;
         const uint8_t CHAR_HEIGHT = 16;
-        const int PADDING = 3;
+        const int PADDING = 0;
         const uint8_t SIZE_IN_CHARS = TEXT.size() + PADDING;
         const int X = WINDOW_WIDTH_IN_PIXELS
-                        - CHAR_WIDTH;
+                        - SIZE_IN_CHARS * CHAR_WIDTH;
         const int Y = WINDOW_HEIGHT_IN_PIXELS
-                        - CHAR_HEIGHT * SIZE_IN_CHARS;
+                        - CHAR_HEIGHT;
         try
         {
             image_text_test->init(
                 game_eng,
                 image_man,
                 game_eng.get_prime_render_block(),
-                black_yellow_palette_id,
+                logo_palette_id,
                 X,
                 Y,
                 SIZE_IN_CHARS,
                 CHAR_WIDTH,
                 CHAR_HEIGHT,
                 TEXT,
-                MCK::ImageText::VERT_TOP
+                MCK::ImageText::LEFT
             );
         }
         catch( std::exception &e )
@@ -411,39 +347,6 @@ int main( int argc, char** argv )
         }
     }
 
-    /////////////////////////////////////////////
-    // TEST CONSOLE
-    std::shared_ptr<MCK::Console> console_test
-        = std::make_shared<MCK::Console>();
-    try
-    {
-        std::string marker_symbol( 1, uint8_t( 254 ) );
-        std::string initial_content = marker_symbol + "bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        console_test->init(
-            game_eng,
-            image_man,
-            game_eng.get_prime_render_block(),
-            black_yellow_palette_id,
-            0,  // x_pos,
-            0,  // y_pos,
-            4,  // width_in_chars,
-            8,  // height_in_chars,
-            4 * 8,  // char_width_in_pixels,
-            2 * 8,  // char_height_in_pixels,
-            initial_content,
-            0,  // 100,  // print_speed_in_ticks_per_char,
-            25,  // scroll_speed_in_ticks_per_pixel,
-            false, // true,  // hoz_text_alignment
-            2,  // start_line
-            true  // add_to_front_of_parent_block = true
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create Console instance, error: ")
-            + e.what() ) );
-    }
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
@@ -508,30 +411,6 @@ int main( int argc, char** argv )
                     exit( 0 );
                 }
 
-                // DEMO ONLY
-                if( e.key_code == MCK::KeyEvent::KEY_A
-                    && e.status == MCK::KeyEvent::PRESSED
-                )
-                {
-                    try
-                    {
-                        image_text_test->set_content(
-                            "You hit 'A'!",
-                            MCK::ImageText::CENTER
-                        );
-                        image_text_test->set_char(
-                            '<',
-                            image_text_test->get_max_size_in_chars() - 1
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-                        throw( std::runtime_error(
-                            std::string( "Set content failed, error: ")
-                            + e.what() ) );
-                    }
-                }
-
                 // TODO: Other keyboard input
             }
         }
@@ -546,6 +425,7 @@ int main( int argc, char** argv )
                 );
         }
 
+        ///////////////////////////////////////////
         // Clear, render and present
         {
             try
@@ -567,17 +447,6 @@ int main( int argc, char** argv )
             }
         }
     
-        try
-        {
-            console_test->update( current_ticks );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Console update failed, error: ")
-                + e.what() ) );
-        }
-
     }
     while( current_ticks < end_ticks );
 

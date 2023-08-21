@@ -47,6 +47,9 @@ namespace MCK
     //! Ceiling/invalid value for local palette ids
     const MCK_IMG_ID_TYPE INVALID_PAL_ID = 0xFFFFFFFF;
 
+    //! Ceiling/invalid value for texture ids
+    const MCK_TEX_ID_TYPE INVALID_TEX_ID = 0xFFFFFFFFFFFFFFFF;
+
     //! Safety parameter - max window width
     const uint16_t MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
     
@@ -111,6 +114,9 @@ namespace MCK
 
     // ASCII value of blank character in ImageText
     static const uint8_t BLANK_CHAR = 32;
+
+    // Height and width (in pixels) of blank textures
+    static const uint8_t BLANK_TEX_SIZE = 8;
 
 }  // End of namespace MCK
 

@@ -76,7 +76,30 @@ struct GameEngRenderBlock
     //! Get number of subservient blocks associated with this block
     size_t get_sub_block_count( void ) const noexcept
     {
-        return render_info.size();
+        return this->sub_blocks.size();
+    }
+
+    std::shared_ptr<GameEngRenderBlock> get_sub_block( size_t index )
+    {
+        if( index > this->sub_blocks.size() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Invalid sub block index: " )
+                + std::to_string( index )
+#else
+                ""
+#endif
+            ) );
+        }
+
+        std::list<std::shared_ptr<GameEngRenderBlock>>::iterator it
+            = this->sub_blocks.begin();
+        std::advance<
+            std::list<std::shared_ptr<GameEngRenderBlock>>::iterator,
+            size_t
+        >( it, index );
+        return *it;
     }
 
     //! Reserve memory for pointers to future info render objects
