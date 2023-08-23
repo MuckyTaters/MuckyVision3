@@ -110,8 +110,8 @@ int main( int argc, char** argv )
     const int VERT_RANGE = 5;
     const int NUM_ROWS = 8;
     const int NUM_COLS = 256 / NUM_ROWS;
-    const int TEXT_H_SCALE = 2;
-    const int TEXT_V_SCALE = 3;
+    const int TEXT_WIDTH = 16;
+    const int TEXT_HEIGHT = 24;
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
@@ -236,7 +236,7 @@ int main( int argc, char** argv )
             std::string( "Failed to create logo palette, error: ")
             + e.what() ) );
     }
-    
+
 
     ///////////////////////////////////////////
     // CREATE RENDER INFO
@@ -284,13 +284,13 @@ int main( int argc, char** argv )
             // Create image
             try
             {
-                image_man.create_extended_ascii_image(
+                image_man.create_extended_ascii_render_info(
                     CHAR_ID,
                     palette_id,
                     X_POS,
                     Y_POS,
-                    TEXT_H_SCALE,
-                    TEXT_V_SCALE,
+                    TEXT_WIDTH,
+                    TEXT_HEIGHT,
                     ascii_blocks[ BLOCK_ID ]
                 );
             }
@@ -303,44 +303,6 @@ int main( int argc, char** argv )
         }
     }
 
-    // Create logo as string
-    {
-        const int H_SCALE = 2;
-        const int V_SCALE = 2;
-        const uint8_t COPYRIGHT_SYMBOL = 0xFF;
-        std::string logo_str;
-        logo_str += COPYRIGHT_SYMBOL;
-        logo_str += " MUCKYTATERS 2023";
-        const int LOGO_SIZE = logo_str.size();
-
-        // Loop over chars in logo string, creating an ASCII image
-        // for each char and assigning it to the logo render block
-        int x_pos = WINDOW_WIDTH_IN_PIXELS
-                        - logo_str.size() * 8 * H_SCALE;
-        for( uint8_t c : logo_str )
-        {
-            try
-            {
-                image_man.create_extended_ascii_image(
-                    c,
-                    logo_palette_id,
-                    x_pos,
-                    WINDOW_HEIGHT_IN_PIXELS - 8 * V_SCALE,
-                    H_SCALE,
-                    V_SCALE,
-                    logo_block
-                );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to create logo ascii image, error: ")
-                    + e.what() ) );
-            }
-
-            x_pos += 8 * H_SCALE;
-        }
-    }
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
@@ -419,6 +381,7 @@ int main( int argc, char** argv )
                 );
         }
 
+        ///////////////////////////////////////////
         // Clear, render and present
         {
             try
@@ -427,7 +390,8 @@ int main( int argc, char** argv )
                 game_eng.render_all(
                     game_eng.get_prime_render_block(),
                     0,  // Hoz offset
-                    0  // Vert offset
+                    0,  // Vert offset
+                    true  // Integrity checks
                 );
                 game_eng.show();
             }
@@ -438,6 +402,7 @@ int main( int argc, char** argv )
                     + e.what() ) );
             }
         }
+    
     }
     while( current_ticks < end_ticks );
 

@@ -576,7 +576,54 @@ void MCK::GameEng::init(
     // Create (empty) prime render block
     this->prime_render_block
         = std::make_shared<MCK::GameEngRenderBlock>();
-    
+
+    // Create blank textures
+    blank_textures.resize( MCK::TOTAL_CORE_COLORS, NULL );
+    for( uint8_t i = 0; i < MCK::TOTAL_CORE_COLORS; i++ )
+    {
+        // Define local palette of size 2, with both colours,
+        // set to desired blank colour
+        std::vector<uint8_t> pal = { i, i };
+
+        // Define pixel data, containing just 4x4 pixels,
+        // all set to zero
+        std::vector<uint8_t> pixel( MCK::BLANK_TEX_SIZE * MCK::BLANK_TEX_SIZE, 0 );
+
+        // Create texture
+        try
+        {
+            this->basic_create_texture(
+                MCK::BLANK_TEX_SIZE, // bits_per_pixel,
+                MCK::BLANK_TEX_SIZE, // pitch_in_pixels,
+                MCK::BLANK_TEX_SIZE, // height_in_pixels,
+                pixel,
+                pal,
+                blank_textures[i]
+            );
+        }
+        catch( const std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Failed to create blank SDL texture, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+        if( blank_textures[i] == NULL )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                "SDL texture NULL!"
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
     // Set initialization flag
     this->initialized = true;
 
@@ -591,7 +638,8 @@ void MCK::GameEng::init(
 void MCK::GameEng::render_all( 
     std::shared_ptr<MCK::GameEngRenderBlock> render_block,
     int16_t hoz_offset,
-    int16_t vert_offset
+    int16_t vert_offset,
+    bool perform_integrity_check
 ) const
 {
     if( !this->initialized || this->renderer == NULL )
@@ -625,9 +673,35 @@ void MCK::GameEng::render_all(
     // Iterate recursively over subservient blocks
     for( auto sub_block : render_block->sub_blocks )
     {
+        if( perform_integrity_check )
+        {
+            if( sub_block.get() == NULL )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Null sub-block found during render."
+                          << std::endl;
+#endif
+                continue;
+            }
+
+            if( sub_block->parent_block != render_block.get() )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Cuckold sub-block found during render."
+                          << std::endl;
+#endif
+                continue;
+            }
+        }
+
         try
         {
-            this->render_all( sub_block, HOZ_OFFSET, VERT_OFFSET );
+            this->render_all(
+                sub_block,
+                HOZ_OFFSET,
+                VERT_OFFSET,
+                perform_integrity_check
+            );
         }
         catch( std::exception &e )
         {
@@ -652,8 +726,28 @@ void MCK::GameEng::render_all(
         )
         {
             // Ignore NULL textures
-            if( info->tex == NULL )
+            if( info.get() == NULL || info->tex == NULL )
             {
+#if defined MCK_STD_OUT
+                if( perform_integrity_check )
+                {
+                    std::cout << "NULL info found during render"
+                              << std::endl;
+                }
+#endif
+                
+                continue;
+            }
+
+            // Check parentage
+            if( perform_integrity_check 
+                && info->parent_block != render_block.get()
+            )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Cuckold info found during render, ignoring."
+                          << std::endl;
+#endif
                 continue;
             }
 
@@ -734,6 +828,25 @@ void MCK::GameEng::render_all(
             // Ignore NULL pointers and NULL textures
             if( info.get() == NULL || info->tex == NULL )
             {
+#if defined MCK_STD_OUT
+                if( perform_integrity_check )
+                {
+                    std::cout << "NULL info/tex found during render"
+                              << std::endl;
+                }
+#endif
+                continue;
+            }
+
+            // Check parentage
+            if( perform_integrity_check 
+                && info->parent_block != render_block.get()
+            )
+            {
+#if defined MCK_STD_OUT
+                std::cout << "Cuckold info found during render, ignoring."
+                          << std::endl;
+#endif
                 continue;
             }
 
@@ -888,369 +1001,41 @@ void MCK::GameEng::create_texture(
             )
         );
 
-    // Create new (empty) SDL surface
-    SDL_Surface* surface = NULL;
+    // Declare texture pointer
+    SDL_Texture* texture = NULL;
+
+    // Create texture
     try
     {
-        surface = SDL_CreateRGBSurface(
-            0,  // No flags used (as per SDL instructions)
+        this->basic_create_texture(
+            bits_per_pixel,
             pitch_in_pixels,
             height_in_pixels,
-            32,  // depth in bits
-            // Choice of masks here is arbitrary, can be changed if required
-            0x00FF0000,  // Red mask
-            0x0000FF00,  // Green mask
-            0x000000FF,  // Blue mask
-            0xFF000000   // Alpha mask
+            pixel_data,
+            local_palette,
+            texture
         );
     }
     catch( const std::exception &e )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "Failed to create new SDL surface, SDL error = "
-            + *SDL_GetError()
+            std::string( "Failed to create new SDL texture, error = " )
+            + e.what()
 #else
             ""
 #endif
         ) );
     }
-    if( surface == NULL )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "No throw, but new SDL surface NULL, SDL error = "
-            + *SDL_GetError()
-#else
-            ""
-#endif
-        ) );
-    }
-
-    // Check surface width/height
-    if( surface->w != pitch_in_pixels
-        || surface->h != height_in_pixels )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "New SDL Surface width and/or height does "
-            "not match width/height used to create it."
-#else
-            ""
-#endif
-        ) );
-    }
-
-    // Check surface bit depth
-    const SDL_PixelFormat* const FORMAT = surface->format;
-    if( FORMAT == NULL )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "SDL Surface's format is NULL"
-#else
-            ""
-#endif
-        ) );
-    }
-    if( FORMAT->BitsPerPixel != 32 )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "SDL Surface bit depth is not 32 as specified."
-#else
-            ""
-#endif
-        ) );
-    }
-
-    // Check surface has pixels (if width or height is zero,
-    // this will be NULL)
-    if( surface->pixels == NULL )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "SDL Surface pixel pointer is NULL, perhaps width/height zero?"
-#else
-            ""
-#endif
-        ) );
-    }
-
-    // Check surface pitch (based on image width and 32 bits per pixel)
-    const int EXPECTED_PITCH = pitch_in_pixels * sizeof( uint32_t );
-    if( EXPECTED_PITCH != surface->pitch )
-    {
-#if defined MCK_STD_OUT
-        std::cout << "SDL Surface pitch is "
-            << surface->pitch
-            << ", bytes not "
-            << EXPECTED_PITCH
-            << " bytes as expected. ** This could be a bug in SDL. ** "
-            << "Will override SDL surface pitch value to the "
-            << "correct value, but be mindful of this if further "
-            << "problems occur, particularly "
-            << "the 'shearing' (diagonalization) of images."
-            << std::endl;
-#endif
-        
-        // Try to correct pitch
-        surface->pitch = EXPECTED_PITCH;
-    }
-
-    // Get bit shifts for RGB and alpha
-    const uint8_t RSHIFT = FORMAT->Rshift;
-    const uint8_t GSHIFT = FORMAT->Gshift;
-    const uint8_t BSHIFT = FORMAT->Bshift;
-    const uint8_t ASHIFT = FORMAT->Ashift;
-
-    // Get pitch of pixel array when read as double words (4 bytes) 
-    const std::size_t WORD_PITCH = surface->pitch / 4;
-
-    // Get end of pixel array in memory, for safety checks
-    const uint32_t* const WORD_MAX = (uint32_t*) surface->pixels
-                             + surface->h * WORD_PITCH;
-
-    // Lock surface
-    try
-    {
-        SDL_LockSurface( surface );
-    }
-    catch( const std::exception &e )
-    {
-        throw( std::runtime_error( 
-#if defined MCK_STD_OUT
-            "Unable to lock SDL surface."
-#else
-            ""
-#endif
-        ) );
-    }
-
-    // Loop over pixel data (ignoring any odds bits at the end)
-    uint32_t* surface_word_pos = (uint32_t*) surface->pixels; 
-    uint8_t bit_pos_within_byte = 0;
-    size_t data_pos_in_bytes = 0;
-    uint8_t current_byte = pixel_data[0];  // Checked size > 0
-    const size_t NUM_PIXELS = pixel_data.size() * 8 / bits_per_pixel;
-    for( size_t pixel_pos = 0; pixel_pos < NUM_PIXELS; pixel_pos++ )
-    {
-        // Construct colo(u)r ID from next set of bits in pixel data
-        uint8_t palette_col_id = 0x00;
-        for( uint8_t i = 0; i < bits_per_pixel; i++ )
-        {
-            // Calculate mask used to isolate bit from pixel
-            // data, then increment bit position
-            const uint8_t BIT_MASK = 0x01 << ( 7 - bit_pos_within_byte++ );
-
-            // If current bit set to 1,
-            // set i'th bit of 'palette_col_id'
-            if( current_byte & BIT_MASK )
-            {
-                palette_col_id |= 0x01 << i;
-            }
-
-            // If this is end of byte, 
-            // get next byte (unless this is the last byte)
-            if( bit_pos_within_byte > 7
-                && pixel_pos < NUM_PIXELS - 1
-            )
-            {
-                // Set bit pos back to zero
-                bit_pos_within_byte = 0;
-
-                // Increment byte pos, and check does
-                // not exceed data vector
-                if( ++data_pos_in_bytes >= pixel_data.size() )
-                {
-                    throw( std::runtime_error( 
-#if defined MCK_STD_OUT
-                        "Data pos exceeds pixel data, internal error?"
-#else
-                        ""
-#endif
-                    ) );
-                }
-
-                // Get new pixel data byte
-                current_byte = pixel_data[ data_pos_in_bytes ];
-            }
-        }
-        
-        // Check palette_col_id is valid
-        if( palette_col_id >= local_palette.size() )
-        {
-            throw( std::runtime_error( 
-#if defined MCK_STD_OUT
-                "palette_col_id exceeds local_palette, internal error?"
-#else
-                ""
-#endif
-            ) );
-        }
-
-        // Get colo(u)r ID from local palette
-        const uint8_t COL_ID = local_palette[ palette_col_id ];
-
-        // Get RGBA values for this colo(u)r
-        uint8_t r, g, b, a;
-        try
-        {
-            MCK::GameEng::get_RGBA( COL_ID, r, g, b, a );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error( 
-#if defined MCK_STD_OUT
-                std::string( "Failed to decode colo(u)r ID " )
-                + std::to_string( COL_ID )
-                + std::string( ", error = " )
-                + e.what()
-#else
-                ""
-#endif
-            ) );
-        }
-
-        // Calculate 32bit colo(u)r
-        const uint32_t COL_32
-            = ( r << RSHIFT )
-              | ( g << GSHIFT )
-              | ( b << BSHIFT )
-              | ( a << ASHIFT );
-
-        // Set surface pixel, and increment surface word position
-        if( surface_word_pos < WORD_MAX )
-        {
-            *surface_word_pos++ = COL_32;
-        }
-        else
-        {
-            throw( std::runtime_error( 
-#if defined MCK_STD_OUT
-                "surface_word_pos exceeds WORD_MAX, internal error?"
-#else
-                ""
-#endif
-            ) );
-        }
-    }
-    
-    // Unlock surface
-    try
-    {
-        SDL_UnlockSurface( surface );
-    }
-    catch( const std::exception &e )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "Unable to unlock SDL surface."
-#else
-            ""
-#endif
-        ) );
-    }
-
-    //////////////////////////////////////////////////
-    // Create texture from surface
-    //
-    
-    // Warning, this command will 
-    // produce a segfault if 'renderer' pointer is
-    // set to a junk value
-    SDL_Texture* texture = NULL;
-    try
-    {
-        texture = SDL_CreateTextureFromSurface( this->renderer, surface );
-    }
-    catch( const std::exception &e )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "Unable to create SDL texture, error: " 
-            + *SDL_GetError()
-#else
-            ""
-#endif
-        ) );
-    }
-    catch( ... )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "Create SDL texture has thrown non-exception, error: " 
-            + *SDL_GetError()
-#else
-            ""
-#endif
-        ) );
-    }
-
     if( texture == NULL )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "New SDL texture is NULL."
+            "SDL texture NULL!"
 #else
             ""
 #endif
         ) );
-    }
-    else
-    {
-        // Check texture size matches nominal size
-        // of RAM image surface
-        Uint32 format;
-        int access, w, h;
-        int rc = SDL_QueryTexture(
-            texture,
-            &format,
-            &access,
-            &w,
-            &h );
-        
-        if( rc != 0 )
-        {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                "Unable to query new texture, error code = "
-                + std::to_string( rc ) 
-#else
-                ""
-#endif
-            ) );
-        }
-        else
-        {
-            if( w != surface->w
-                || h != surface->h )
-            {
-                throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                    "Texture size not same as "
-                    "nominal size of source surface."
-#else
-                    ""
-#endif
-                ) );
-            }
-        }
-    }
-   
-    // Destroy surface
-    try
-    {
-        SDL_FreeSurface( surface );
-    }
-    catch( const std::exception &e )
-    {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-        // Issue a warning, but no point throwing exception here
-        std::cout << "Unable to destroy SDL surface, error: " 
-                  << SDL_GetError()
-                  << std::endl;
-#endif
     }
 
     // Store pointer to texture
@@ -1297,12 +1082,14 @@ std::shared_ptr<MCK::GameEngRenderBlock> MCK::GameEng::create_empty_render_block
     {
         if( add_to_front )
         {
-            parent_block->sub_blocks.push_front( new_block );
+            parent_block->sub_blocks.push_back( new_block );
         }
         else
         {
-            parent_block->sub_blocks.push_back( new_block );
+            parent_block->sub_blocks.push_front( new_block );
         }
+
+        new_block->parent_block = parent_block.get();
     }
 
     return new_block;
@@ -1405,6 +1192,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_render_info(
     if( parent_block.get() != NULL )
     {
         parent_block->render_info.push_back( new_info );
+        new_info->parent_block = parent_block.get();
     }
 
     return new_info;
@@ -1568,4 +1356,557 @@ void MCK::GameEng::set_clearing_color( uint8_t global_color_id ) const
                   << std::endl;
 #endif
     }
+}
+
+void MCK::GameEng::change_render_info_tex(
+    std::shared_ptr<MCK::GameEngRenderInfo> info,
+    MCK_TEX_ID_TYPE new_tex_id
+) const
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change render info texture as SDL not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( info.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change render info texture as info pointer is NULL."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get texture
+    SDL_Texture* tex = NULL;
+    {
+        std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::const_iterator it 
+            = this->textures.find( new_tex_id );
+        
+        // If texture does not exist, throw exception
+        if( it == this->textures.end() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot change render info texture as texture with id " )
+                + std::to_string( new_tex_id )
+                + std::string( " does not exist." )
+#else
+                ""
+#endif
+            ) );
+        }
+
+        tex = it->second;
+    }
+
+    if( tex == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texutre as texture with id " )
+            + std::to_string( new_tex_id )
+            + std::string( " is NULL." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Update render info
+    info->tex = tex;
+}
+        
+void MCK::GameEng::remove_block(
+    std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove,
+    std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
+)
+{
+    // If block pointer is NULL, ignore
+    if( block_to_start_search.get() == NULL )
+    {
+        return;
+    }
+
+    // Loop over blocks, looking for the one to remove
+    // for( auto block : block_to_start_search->sub_blocks )
+    std::list<std::shared_ptr<MCK::GameEngRenderBlock>>::iterator it;
+    for( it = block_to_start_search->sub_blocks.begin();
+         it != block_to_start_search->sub_blocks.end();
+         it++
+    )
+    {
+        // shared_ptr<MCK::GameEngRenderBlock> block = *it;
+
+        // If block pointer is NULL, or matchs block to be
+        // removed, remove it
+        // Note: Carry on searching after removal, in case
+        //       the block to be removed has multiple entries
+        if( it->get() == NULL
+            || it->get() == block_to_remove.get() 
+        )
+        {
+            // Remove this sub-block
+            block_to_start_search->sub_blocks.erase( it++ );
+        }
+        else
+        {
+            // Call method recursively upon this sub-block
+            GameEng::remove_block(
+                block_to_remove,
+                *it
+            );
+        }
+    }
+}
+
+void MCK::GameEng::basic_create_texture(
+    uint8_t bits_per_pixel,
+    uint16_t pitch_in_pixels,
+    uint16_t height_in_pixels,
+    const std::vector<uint8_t> &pixel_data,
+    const std::vector<uint8_t> &local_palette,
+    SDL_Texture* &texture
+)
+{
+    // No initialisation check as this is an internal method
+    
+    if( pitch_in_pixels < 8 || height_in_pixels < 8 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Textures must be at least 8x8 pixels."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Create new (empty) SDL surface
+    SDL_Surface* surface = NULL;
+    try
+    {
+        surface = SDL_CreateRGBSurface(
+            0,  // No flags used (as per SDL instructions)
+            pitch_in_pixels,
+            height_in_pixels,
+            32,  // depth in bits
+            // Choice of masks here is arbitrary, can be changed if required
+            0x00FF0000,  // Red mask
+            0x0000FF00,  // Green mask
+            0x000000FF,  // Blue mask
+            0xFF000000   // Alpha mask
+        );
+    }
+    catch( const std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Failed to create new SDL surface, SDL error = "
+            + *SDL_GetError()
+#else
+            ""
+#endif
+        ) );
+    }
+    if( surface == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "No throw, but new SDL surface NULL, SDL error = "
+            + *SDL_GetError()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Check surface width/height
+    if( surface->w != pitch_in_pixels
+        || surface->h != height_in_pixels )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "New SDL Surface width and/or height does "
+            "not match width/height used to create it."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Check surface bit depth
+    const SDL_PixelFormat* const FORMAT = surface->format;
+    if( FORMAT == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "SDL Surface's format is NULL"
+#else
+            ""
+#endif
+        ) );
+    }
+    if( FORMAT->BitsPerPixel != 32 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "SDL Surface bit depth is not 32 as specified."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Check surface has pixels (if width or height is zero,
+    // this will be NULL)
+    if( surface->pixels == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "SDL Surface pixel pointer is NULL, perhaps width/height zero?"
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Check surface pitch (based on image width and 32 bits per pixel)
+    const int EXPECTED_PITCH = pitch_in_pixels * sizeof( uint32_t );
+    if( EXPECTED_PITCH != surface->pitch )
+    {
+#if defined MCK_STD_OUT
+        std::cout << "SDL Surface pitch is "
+            << surface->pitch
+            << ", bytes not "
+            << EXPECTED_PITCH
+            << " bytes as expected. ** This could be a bug in SDL. ** "
+            << "Will override SDL surface pitch value to the "
+            << "correct value, but be mindful of this if further "
+            << "problems occur, particularly "
+            << "the 'shearing' (diagonalization) of images."
+            << std::endl;
+#endif
+        
+        // Try to correct pitch
+        surface->pitch = EXPECTED_PITCH;
+    }
+
+    // Get bit shifts for RGB and alpha
+    const uint8_t RSHIFT = FORMAT->Rshift;
+    const uint8_t GSHIFT = FORMAT->Gshift;
+    const uint8_t BSHIFT = FORMAT->Bshift;
+    const uint8_t ASHIFT = FORMAT->Ashift;
+
+    // Get pitch of pixel array when read as double words (4 bytes) 
+    const std::size_t WORD_PITCH = surface->pitch / 4;
+
+    // Get end of pixel array in memory, for safety checks
+    const uint32_t* const WORD_MAX = (uint32_t*) surface->pixels
+                             + surface->h * WORD_PITCH;
+
+    // Lock surface
+    try
+    {
+        SDL_LockSurface( surface );
+    }
+    catch( const std::exception &e )
+    {
+        throw( std::runtime_error( 
+#if defined MCK_STD_OUT
+            "Unable to lock SDL surface."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Loop over pixel data (ignoring any odds bits at the end)
+    uint32_t* surface_word_pos = (uint32_t*) surface->pixels; 
+    uint8_t bit_pos_within_byte = 0;
+    size_t data_pos_in_bytes = 0;
+    uint8_t current_byte = pixel_data[0];  // Checked size > 0
+    const size_t NUM_PIXELS = pixel_data.size() * 8 / bits_per_pixel;
+    for( size_t pixel_pos = 0; pixel_pos < NUM_PIXELS; pixel_pos++ )
+    {
+        // Construct colo(u)r ID from next set of bits in pixel data
+        uint8_t palette_col_id = 0x00;
+        for( uint8_t i = 0; i < bits_per_pixel; i++ )
+        {
+            // Calculate mask used to isolate bit from pixel
+            // data, then increment bit position
+            const uint8_t BIT_MASK = 0x01 << ( 7 - bit_pos_within_byte++ );
+
+            // If current bit set to 1,
+            // set i'th bit of 'palette_col_id'
+            if( current_byte & BIT_MASK )
+            {
+                palette_col_id |= 0x01 << ( bits_per_pixel - i - 1 );
+            }
+
+            // If this is end of byte, 
+            // get next byte (unless this is the last byte)
+            if( bit_pos_within_byte > 7
+                && pixel_pos < NUM_PIXELS - 1
+            )
+            {
+                // Set bit pos back to zero
+                bit_pos_within_byte = 0;
+
+                // Increment byte pos, and check does
+                // not exceed data vector
+                if( ++data_pos_in_bytes >= pixel_data.size() )
+                {
+                    throw( std::runtime_error( 
+#if defined MCK_STD_OUT
+                        "Data pos exceeds pixel data, internal error?"
+#else
+                        ""
+#endif
+                    ) );
+                }
+
+                // Get new pixel data byte
+                current_byte = pixel_data[ data_pos_in_bytes ];
+            }
+        }
+        
+        // Check palette_col_id is valid
+        if( palette_col_id >= local_palette.size() )
+        {
+            throw( std::runtime_error( 
+#if defined MCK_STD_OUT
+                "palette_col_id exceeds local_palette, internal error?"
+#else
+                ""
+#endif
+            ) );
+        }
+
+        // Get colo(u)r ID from local palette
+        const uint8_t COL_ID = local_palette[ palette_col_id ];
+
+        // Get RGBA values for this colo(u)r
+        uint8_t r, g, b, a;
+        try
+        {
+            MCK::GameEng::get_RGBA( COL_ID, r, g, b, a );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error( 
+#if defined MCK_STD_OUT
+                std::string( "Failed to decode colo(u)r ID " )
+                + std::to_string( COL_ID )
+                + std::string( ", error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+
+        // Calculate 32bit colo(u)r
+        const uint32_t COL_32
+            = ( r << RSHIFT )
+              | ( g << GSHIFT )
+              | ( b << BSHIFT )
+              | ( a << ASHIFT );
+
+        // Set surface pixel, and increment surface word position
+        if( surface_word_pos < WORD_MAX )
+        {
+            *surface_word_pos++ = COL_32;
+        }
+        else
+        {
+            throw( std::runtime_error( 
+#if defined MCK_STD_OUT
+                "surface_word_pos exceeds WORD_MAX, internal error?"
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+    
+    // Unlock surface
+    try
+    {
+        SDL_UnlockSurface( surface );
+    }
+    catch( const std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Unable to unlock SDL surface."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    //////////////////////////////////////////////////
+    // Create texture from surface
+    //
+    
+    // Warning, this command will 
+    // produce a segfault if 'renderer' pointer is
+    // set to a junk value
+    // SDL_Texture* texture = NULL;
+    try
+    {
+        texture = SDL_CreateTextureFromSurface( this->renderer, surface );
+    }
+    catch( const std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Unable to create SDL texture, error: " 
+            + *SDL_GetError()
+#else
+            ""
+#endif
+        ) );
+    }
+    catch( ... )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Create SDL texture has thrown non-exception, error: " 
+            + *SDL_GetError()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( texture == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "New SDL texture is NULL."
+#else
+            ""
+#endif
+        ) );
+    }
+    else
+    {
+        // Check texture size matches nominal size
+        // of RAM image surface
+        Uint32 format;
+        int access, w, h;
+        int rc = SDL_QueryTexture(
+            texture,
+            &format,
+            &access,
+            &w,
+            &h );
+        
+        if( rc != 0 )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                "Unable to query new texture, error code = "
+                + std::to_string( rc ) 
+#else
+                ""
+#endif
+            ) );
+        }
+        else
+        {
+            if( w != surface->w
+                || h != surface->h )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    "Texture size not same as "
+                    "nominal size of source surface."
+#else
+                    ""
+#endif
+                ) );
+            }
+        }
+    }
+   
+    // Destroy surface
+    try
+    {
+        SDL_FreeSurface( surface );
+    }
+    catch( const std::exception &e )
+    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+        // Issue a warning, but no point throwing exception here
+        std::cout << "Unable to destroy SDL surface, error: " 
+                  << SDL_GetError()
+                  << std::endl;
+#endif
+    }
+}
+
+std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_info(
+    uint8_t col_id,
+    std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+    MCK::GameEngRenderInfo::Rect dest_rect
+) const
+{
+    if( !this->initialized | blank_textures.size() == 0 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create blank texture render info texture as SDL not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Constrain texture id
+    const uint8_t BLANK_TEX_ID = col_id % blank_textures.size();
+
+    SDL_Texture* const BLANK_TEX = blank_textures[ col_id ];
+
+    // Check blank texture pointer is non-NULL
+    if( BLANK_TEX == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Blank texture is NULL for color ID " )
+            + std::to_string( col_id )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Create new info instance
+    std::shared_ptr<MCK::GameEngRenderInfo> new_info
+        = std::make_shared<MCK::GameEngRenderInfo>();
+    new_info->tex = BLANK_TEX;
+    new_info->tex_id = MCK::INVALID_TEX_ID;
+    new_info->dest_rect = dest_rect;
+    new_info->clip = false;
+    new_info->flags = 0;
+
+    // Associate info with render block, if render block
+    // supplied (note, always added to end of render block)
+    if( parent_block.get() != NULL )
+    {
+        parent_block->render_info.push_back( new_info );
+        new_info->parent_block = parent_block.get();
+    }
+
+    return new_info;
 }

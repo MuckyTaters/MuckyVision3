@@ -32,6 +32,8 @@
 #ifndef MCK_DEFS_H
 #define MCK_DEFS_H
 
+// #include<cstdint>
+
 // Defines data type used for object IDs
 #define MCK_IMG_ID_TYPE uint32_t
 #define MCK_PAL_ID_TYPE uint32_t
@@ -39,11 +41,36 @@
 
 namespace MCK
 {
+    //! Ceiling/invalid value for image ids
+    const MCK_IMG_ID_TYPE INVALID_IMG_ID = 0xFFFFFFFF;
+
+    //! Ceiling/invalid value for local palette ids
+    const MCK_IMG_ID_TYPE INVALID_PAL_ID = 0xFFFFFFFF;
+
+    //! Ceiling/invalid value for texture ids
+    const MCK_TEX_ID_TYPE INVALID_TEX_ID = 0xFFFFFFFFFFFFFFFF;
+
     //! Safety parameter - max window width
-    const unsigned int MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
+    const uint16_t MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
     
     //! Safety parameter - max window height
-    const unsigned int MAX_WINDOW_HEIGHT_IN_PIXELS = 2048;
+    const uint16_t MAX_WINDOW_HEIGHT_IN_PIXELS = 2048;
+
+    //! Expected max number of local colo(u)r palettes, as a power of 2
+    /* Note: This is a 'soft' upper limit, exceeding it
+     *       is permissible but may reduce efficiency
+     *       during initialization.
+     */
+    const uint16_t MAX_LOCAL_COLOR_PALETTES = 1024; 
+
+    //! Expected max number of images, as a power of 2
+    /* Note: This is a 'soft' upper limit, exceeding it
+     *       is permissible but may cause delays during
+     *       imitialization.
+     * Note: An 'image' here means just pixel data, so many
+     *       textures can be created from one image.
+     */
+    const uint16_t MAX_IMAGES = 2048; 
 
     //! Colo(u)r codes for core palette
     /*! Note US spelling of GRAY used here
@@ -82,6 +109,20 @@ namespace MCK
     static const uint8_t COL_MID_BROWN = 30;
     static const uint8_t COL_DARK_BROWN = 31;
     static const uint8_t TOTAL_CORE_COLORS = 32;
+    
+    static const uint8_t COL_INVALID = 255;
+
+    //! ASCII value of blank character in ImageText
+    static const uint8_t BLANK_CHAR = 32;
+
+    //! Height and width (in pixels) of blank textures
+    static const uint8_t BLANK_TEX_SIZE = 8;
+
+    //! Maximum character spacing, in pixels (max is 255)
+    static const uint8_t MAX_CHAR_SPACING = 32;
+
+    //! Maximum line spacing, in pixels (max is 255)
+    static const uint8_t MAX_LINE_SPACING = 64;
 
 }  // End of namespace MCK
 

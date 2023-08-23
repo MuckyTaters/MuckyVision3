@@ -3,9 +3,9 @@
 ##  ---MUCKY VISION 3 (BASIC ENGINE)---
 ##  -----------------------------------
 ##
-##  makefile_ImageManTest_linux
+##  makefile_ConsoleTest_linux
 ##
-##  Makefile to build test of ImageMan
+##  Makefile to build test of Console
 ##  class on Linux using g++.
 ##
 ##  IMPORTANT:
@@ -37,8 +37,8 @@
 ## DISCLAIMER: Dependencies described herein
 ## are maintained on a best-effort basis and
 ## may not be 100% correct. If in doubt,
-## execute 'make -f makefile_ImageManTest_linux clean'
-## then 'make -f makefile_ImageManTest_linux' to
+## execute 'make -f makefile_ConsoleTest_linux clean'
+## then 'make -f makefile_ConsoleTest_linux' to
 ## rebuild the entire project
 #############################################
 
@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageManTest.o 
+BUILDS := build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/Console.o build/ConsoleTest.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -65,7 +65,7 @@ LINKER_FLAGS := -lSDL2
 INC := -I../include -I.
 
 #OUTPUT specifies the name of our exectuable
-OUTPUT := ImageManTest
+OUTPUT := ConsoleTest
 
 
 #############################################
@@ -92,9 +92,17 @@ build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h
 build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../include/Defs.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageMan.o
 
-## ImageManTest ##
-build/ImageManTest.o: ImageManTest.cpp build/ImageMan.o build/GameEng.o  
-	$(CC) -c ImageManTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageManTest.o
+## ImageText ##
+build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o build/ImageMan.o 
+	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
+
+## Console ##
+build/Console.o: ../src/Console.cpp ../include/Console.h build/GameEng.o build/ImageMan.o build/ImageText.o
+	$(CC) -c ../src/Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Console.o
+
+## ConsoleTest ##
+build/ConsoleTest.o: ConsoleTest.cpp build/Console.o build/GameEng.o build/ImageText.o 
+	$(CC) -c ConsoleTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ConsoleTest.o
 
 
 #############################################

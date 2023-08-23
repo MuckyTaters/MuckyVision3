@@ -105,6 +105,28 @@ class GameEng
          *  @param tex_id: Resulting texture id
          *  @param height_in_pixels: Resulting image height (for quality checks)
          */
+        void create_blank_texture(
+            MCK_IMG_ID_TYPE image_id,
+            MCK_PAL_ID_TYPE local_palette_id,
+            uint8_t bits_per_pixel,
+            uint16_t pitch_in_pixels,
+            const std::vector<uint8_t> &pixel_data,
+            const std::vector<uint8_t> &local_palette,
+            MCK_TEX_ID_TYPE &tex_id,
+            uint16_t &height_in_pixels
+        );
+
+        //! Create texture
+        /*! @param image_id: Arbitrary ID associated with image data
+         *  @param local_palette_id: Arbitrary ID associated with palette
+         *  data
+         *  @param bits_per_pixel: Number of bits in palette ID
+         *  @param pitch in pixels: Width of image in pixels 
+         *  @param pixel_data: Pixel bits, packed sequentially into bytes
+         *  @param local_palette: Vector of colo(u)r IDs
+         *  @param tex_id: Resulting texture id
+         *  @param height_in_pixels: Resulting image height (for quality checks)
+         */
         void create_texture(
             MCK_IMG_ID_TYPE image_id,
             MCK_PAL_ID_TYPE local_palette_id,
@@ -166,6 +188,22 @@ class GameEng
             bool flip_y = false
         ) const;
 
+        //! Create blank textured render info
+        std::shared_ptr<MCK::GameEngRenderInfo> create_blank_tex_render_info(
+            uint8_t col_id,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+            MCK::GameEngRenderInfo::Rect dest_rect
+        ) const;
+
+        //! Change texture of render info object
+        /*! @param info: Pointer to render info object
+         *  @param new_tex_id: ID of the new texture
+         */
+        void change_render_info_tex(
+            std::shared_ptr<MCK::GameEngRenderInfo> info,
+            MCK_TEX_ID_TYPE new_tex_id
+        ) const;
+
         //! Render specified render block (and all sub blocks)
         /*! @param render_block: Highest block to be rendered, e.g. prime_render_block
          *  @param hoz_offset: Horizonal offset, in pixels
@@ -176,7 +214,8 @@ class GameEng
         void render_all(
             std::shared_ptr<MCK::GameEngRenderBlock> render_block, 
             int16_t hoz_offset = 0,
-            int16_t vert_offset = 0
+            int16_t vert_offset = 0,
+            bool perform_integrity_check = false
         ) const;
 
         //! Set render clearing colo(u)r
@@ -222,6 +261,15 @@ class GameEng
                            << std::numeric_limits<MCK_IMG_ID_TYPE>::digits );
         }
 
+        //! Remove GameEngRenderBlock instance from render tree
+        /*! Note: this is static as it only operates on the blocks
+         *        themselves, not GameEng
+         */
+        static void remove_block(
+            std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove, 
+            std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
+        );
+
 
     private:
 
@@ -243,6 +291,16 @@ class GameEng
                 )
             );
         }
+
+        //! Abstraction of image creation process, only used internally
+        void basic_create_texture(
+            uint8_t bits_per_pixel,
+            uint16_t pitch_in_pixels,
+            uint16_t height_in_pixels,
+            const std::vector<uint8_t> &pixel_data,
+            const std::vector<uint8_t> &local_palette,
+            SDL_Texture* &texture
+        );
 
         //! Get RGBA values for a given colo(u)r ID
         static void get_RGBA(
@@ -287,6 +345,9 @@ class GameEng
         
         //! Map linking texture ids to texture pointers
         std::map<MCK_TEX_ID_TYPE,SDL_Texture*> textures;
+
+        //! Vector of blank textures (one for each colo(u)r)
+        std::vector<SDL_Texture*> blank_textures;
 
         //! Top level render block
         std::shared_ptr<MCK::GameEngRenderBlock> prime_render_block;

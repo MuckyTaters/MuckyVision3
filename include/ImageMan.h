@@ -72,6 +72,12 @@ class ImageMan
             GameEng &_game_eng
         );
 
+        //! Returns true if initialized, false otherwise
+        bool is_initialized( void ) const noexcept
+        {
+            return initialized;
+        }
+
         //! Create local colo(u)r palette
         /*! A local palette is a subset of the global colo(u)r
          *  palette containing 2, 4, or 16 colo(u)rs, each 
@@ -91,7 +97,17 @@ class ImageMan
             const std::shared_ptr<std::vector<uint8_t>> global_color_ids
         );
 
-        //! Create an image of an extended ascii character
+        //! Create a custom image, and return its Image ID
+        /*! Note: no checking is done for duplicate images
+         */
+        MCK_IMG_ID_TYPE create_custom_image(
+            std::shared_ptr<const std::vector<uint8_t>> pixel_data,
+            uint8_t bits_per_pixel,
+            uint16_t pitch_in_pixels,
+            uint16_t height_in_pixels
+        );
+
+        //! Create render info for an extended ascii character
         // @param ascii_value: ASCII code (0-255) of desired char
         // @param local_palette_id: ID of existing local colo(u)r palette
         // @param x_pos: Hoz screen pos of image (excluding any block offsets) 
@@ -103,21 +119,145 @@ class ImageMan
         //        First local palette colo(u)r is background
         //        Second local palette colo(u)r is foreground
         //        Any other local palette colo(u)rs are ignored
-        std::shared_ptr<MCK::GameEngRenderInfo> create_extended_ascii_image(
+        std::shared_ptr<MCK::GameEngRenderInfo> create_extended_ascii_render_info(
             uint8_t ascii_value,
             MCK_PAL_ID_TYPE local_palette_id,
             int x_pos,
             int y_pos,
-            uint8_t x_scale,
-            uint8_t y_scale,
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block
+        ) const
+        {
+            // Let calling program handle any exception here
+            return this->create_render_info(
+                MCK_IMG_ID_TYPE( this->ascii_image_id_base + ascii_value ),
+                local_palette_id,
+                x_pos,
+                y_pos,
+                width_in_pixels,
+                height_in_pixels,
+                parent_block
+            );
+        }
+
+        //! Create render info for specified image and colo(u)r palette 
+        // @param image_id: ID of existing image
+        // @param local_palette_id: ID of existing local colo(u)r palette
+        // @param x_pos: Hoz screen pos of image (excluding any block offsets) 
+        // @param x_pos: Vert screen pos of image (excluding any block offsets) 
+        // @param x_scale: Non-zero integer scale applied to image width
+        // @param x_scale: Non-zero integer scale applied to image height
+        // @param owning_block: Pointer to block to which image is assigned (if points to NULL, image will be an *orphan*)
+        // Notes: Orphan images will not be visible until they are assigned to an active block.
+        std::shared_ptr<MCK::GameEngRenderInfo> create_render_info(
+            MCK_IMG_ID_TYPE image_id,
+            MCK_PAL_ID_TYPE local_palette_id,
+            int x_pos,
+            int y_pos,
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block
         ) const;
+
+        //! Change texture of render info object
+        /*! @param info: Pointer to render info object
+         *  @param image_id: ID of (an existing) image that will be used for the new texture
+         *  @param local_palette_id: ID of existing local colo(u)r palette, used for new texture
+         *  @param keep_orignal_dest_rect_size: If true, size of destination rectangle is prevserved, even if new texture is different size
+         */
+        void change_render_info_tex(
+            std::shared_ptr<MCK::GameEngRenderInfo> info,
+            MCK_IMG_ID_TYPE image_id,
+            MCK_PAL_ID_TYPE local_palette_id,
+            bool keep_orig_dest_rect_size = false
+        ) const;
+
+        //! Assign new ASCII texture to render info object, keeping original dest_rect size
+        /*! @param info: Pointer to render info object
+         *  @param ascii_value: ASCII code (0-255) of desired char
+         *  @param local_palette_id: ID of existing local colo(u)r palette, used for new texture
+         */
+        void change_render_info_ascii_value(
+            std::shared_ptr<MCK::GameEngRenderInfo> info,
+            uint8_t ascii_value,
+            MCK_PAL_ID_TYPE local_palette_id
+        ) const
+        {
+            this->change_render_info_tex(
+                info,
+                this->ascii_image_id_base + ascii_value,
+                local_palette_id,
+                true // keep original dest_rect size
+            );
+        }
+
 
 
     private:
 
+        //! Private struct used to store metadata for a sequence of images
+        struct ImageMetaData
+        {
+            std::shared_ptr<const std::vector<uint8_t>> pixel_data;
+
+            //! Default constructor
+            ImageMetaData( void )
+            {
+                this->info = 0;
+            }
+
+            //! Constructor
+            /*! Note: Only valid values for _bits_per_pixel are 1, 2 and 4
+             *  Note: Only lowest 12 bits of pitch and height are used
+             */
+            ImageMetaData(
+                std::shared_ptr<const std::vector<uint8_t>> _pixel_data,
+                uint8_t _bits_per_pixel,
+                uint16_t _pitch_in_pixels,
+                uint16_t _height_in_pixels
+            )
+            {
+                pixel_data = _pixel_data;
+                info = 0 
+                       | _bits_per_pixel
+                       | ( uint32_t( ( _pitch_in_pixels % 0x0FFF ) ) << 8 )
+                       | ( uint32_t( ( _height_in_pixels % 0x0FFF ) ) << 20 );
+            }
+
+            //! Get bits per pixel
+            /* Note:only values 1, 2 and 4 are valid,
+             * all other values should be considered invalid
+             */
+            uint8_t get_bits_per_pixel( void ) const noexcept
+            {
+                return info & 0xFF;
+            }
+
+            //! Get pitch in pixels
+            /* Note: only first 12 bits are used */
+            uint16_t get_pitch_in_pixels( void ) const noexcept
+            {
+                return ( info >> 8 ) & 0x0FFF;
+            }
+
+            //! Get height in pixels
+            /* Note: only first 12 bits are used */
+            uint16_t get_height_in_pixels( void ) const noexcept
+            {
+                return ( info >> 20 ) & 0x0FFF;
+            }
+
+            private:
+
+                // bits 0-7: Bit depth (only values 1, 2 and 4 valid)
+                // bits 8-19: Image width
+                // bits 20-31: Image height
+                uint32_t info;
+        };
+
         //! Extended ASCII images are numbered sequentially from this value
-        static const MCK_IMG_ID_TYPE ASCII_IMAGE_ID_BASE = 0;
+        MCK_IMG_ID_TYPE ascii_image_id_base;
 
         //! Private method for creating texture and render info
         std::shared_ptr<MCK::GameEngRenderInfo> create_texture_and_render_info(
@@ -136,13 +276,10 @@ class ImageMan
         GameEng* game_eng;
 
         //! Store pointers to local palettes, indexed by their id 
-        std::map<MCK_PAL_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> palettes_by_id;
+        std::vector<std::shared_ptr<std::vector<uint8_t>>> palettes_by_id;
 
         //! Store pointers to image data, indexed by image ID
-        std::map<MCK_IMG_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>> image_data_ptrs_by_id;
-
-        //! Next available local palette id
-        MCK_PAL_ID_TYPE next_local_palette_id;
+        std::vector<MCK::ImageMan::ImageMetaData> image_meta_data_by_id;
 
         // Constructor/destructor/copy/assignment/
         // initializer made private to avoid misuse.

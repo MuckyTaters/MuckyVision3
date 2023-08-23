@@ -38,6 +38,7 @@ MCK::ImageMan::ImageMan( void )
 {
     // Set all variables to invalid/default values
     this->game_eng = NULL;
+    this->ascii_image_id_base = MCK::INVALID_IMG_ID;
 }
 
 void MCK::ImageMan::init(
@@ -67,8 +68,25 @@ void MCK::ImageMan::init(
     }
     this->game_eng = &_game_eng;
 
-    // Set palette ID counter
-    this->next_local_palette_id = 0;
+    // Reverse space for local colo(u)r palette index
+    this->palettes_by_id.reserve( MCK::MAX_LOCAL_COLOR_PALETTES );
+
+    // Reserve space for image metadata 
+    this->image_meta_data_by_id.reserve( MCK::MAX_IMAGES ); 
+    
+    // Create meta data for ascii image pixel data
+    this->ascii_image_id_base = image_meta_data_by_id.size();
+    for( const std::vector<uint8_t> &data : MCK::ImageDataASCII::image_data )
+    {
+        this->image_meta_data_by_id.push_back(
+            MCK::ImageMan::ImageMetaData(
+                std::make_shared<const std::vector<uint8_t>>( data ),
+                MCK::ImageDataASCII::BITS_PER_PIXEL,
+                MCK::ImageDataASCII::PITCH_IN_PIXELS,
+                MCK::ImageDataASCII::HEIGHT_IN_PIXELS
+            )
+        );
+    }
 
     this->initialized = true;
 }
@@ -103,10 +121,12 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
     }
 
     // Loop over existing palettes and check for match
-    for( auto it : this->palettes_by_id )
+    const MCK_PAL_ID_TYPE NUM_PAL = palettes_by_id.size();
+    for( MCK_PAL_ID_TYPE id = 0; id < NUM_PAL; id++ )
     {
-        // Get reference to palette
-        const std::shared_ptr<std::vector<uint8_t>> PALETTE = it.second;
+        // Get pointer to palette
+        const std::shared_ptr<std::vector<uint8_t>> PALETTE
+            = palettes_by_id[id];
 
         // Ignore NULL pointers
         if( PALETTE.get() == NULL )
@@ -114,7 +134,7 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
             continue;
         }
 
-        // I different length, no match
+        // If different length, no match
         if( PALETTE->size() != SIZE )
         {
             continue;
@@ -135,12 +155,12 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
         if( match )
         {
             // Return ID of existing palette
-            return it.first;
+            return id;
         }
     }
 
     // Unlikey, but check if we've run out of palette IDs
-    if( next_local_palette_id + 1 == 0 )
+    if( palettes_by_id.size() == MCK::INVALID_IMG_ID )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -153,21 +173,14 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
 
     // If we get to this point, assume this local
     // palette is new, and assign it a new ID
-    // and increment ID counter
-    // We can disregard return value here as no
-    // chance of duplicate key
-    const MCK_PAL_ID_TYPE ID = this->next_local_palette_id++;
-    this->palettes_by_id.insert(
-        std::pair<MCK_PAL_ID_TYPE,std::shared_ptr<std::vector<uint8_t>>>(
-            ID,
-            global_color_ids
-        )
-    );
+    palettes_by_id.push_back( global_color_ids );
 
-    return ID;
+    // Return index of new palette as ID
+    return palettes_by_id.size() - 1;
 }
 
-std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_image(
+/*
+std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_render_info(
     uint8_t ascii_value,
     MCK_PAL_ID_TYPE local_palette_id,
     int x_pos,
@@ -190,7 +203,26 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
 
     // Calculate image ID
     const MCK_IMG_ID_TYPE IMAGE_ID
-        = MCK::ImageMan::ASCII_IMAGE_ID_BASE + ascii_value;
+        = this->ascii_image_id_base + ascii_value;
+
+    // Make sure image ID is valid
+    if( IMAGE_ID >= image_meta_data_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create extended ascii image as image ID " )
+            + std::to_string( IMAGE_ID ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get pointer to image meta data
+    // (safe because of above check)
+    const MCK::ImageMan::ImageMetaData* const META_DATA
+        = &image_meta_data_by_id[ IMAGE_ID ];
 
     // Calculate texture ID
     const MCK_TEX_ID_TYPE TEX_ID
@@ -211,58 +243,22 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
     const MCK::GameEngRenderInfo::Rect DEST_RECT(
         x_pos,
         y_pos,
-        x_scale * MCK::ImageDataASCII::PITCH_IN_PIXELS,
-        y_scale * MCK::ImageDataASCII::HEIGHT_IN_PIXELS
+        x_scale * META_DATA->get_pitch_in_pixels(),
+        y_scale * META_DATA->get_height_in_pixels()
     );
     // If texture doesn't already exist, create it
     if( !this->game_eng->texture_exists( TEX_ID ) )
     {
-        // Get pointer to image data
-        const std::vector<uint8_t>* pixel_data = NULL;
-        try
-        {
-            pixel_data = &MCK::ImageDataASCII::image_data.at( ascii_value );
-        }
-        catch( ... )
-        {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                std::string( "Attempt to access image data for ascii value " )
-                + std::to_string( ascii_value )
-                + std::string( " has raised an exception. Check " )
-                + std::string( "integrity of file ImageDataASCII.h" )
-#else
-                ""
-#endif
-            ) );
-        }
-
-        // Get pointer to local colo(u)r palette
-        std::map<MCK_PAL_ID_TYPE,const std::shared_ptr<std::vector<uint8_t>>>::const_iterator it
-            = this->palettes_by_id.find( local_palette_id );
-        if( it == this->palettes_by_id.end() )
-        {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                "Cannot create extended ascii image as local_palette_id invalid, have you forgetten to use 'create_local_palette'?"
-#else
-                ""
-#endif
-            ) );
-        }
-        const std::shared_ptr<const std::vector<uint8_t>> LOCAL_PALETTE
-            = it->second;
-
         // Create texture (in case it doesn't exist already)
         try
         {
             ans = this->create_texture_and_render_info(
                 IMAGE_ID,
                 local_palette_id,
-                MCK::ImageDataASCII::BITS_PER_PIXEL,
-                MCK::ImageDataASCII::PITCH_IN_PIXELS,
-                MCK::ImageDataASCII::HEIGHT_IN_PIXELS,
-                *pixel_data,
+                META_DATA->get_bits_per_pixel(),
+                META_DATA->get_pitch_in_pixels(),
+                META_DATA->get_height_in_pixels(),
+                *(META_DATA->pixel_data),
                 DEST_RECT, 
                 parent_block
             );
@@ -310,6 +306,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_extended_ascii_ima
 
     return ans;
 }
+*/
 
 std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render_info(
     MCK_IMG_ID_TYPE image_id,
@@ -326,31 +323,41 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "Cannot create image as Image Manager not yet init."
+            "Image Manager not yet init."
 #else
             ""
 #endif
         ) );
     }
 
-    // Get pointer to local colo(u)r palette
-    std::map<
-        MCK_PAL_ID_TYPE,
-        const std::shared_ptr<std::vector<uint8_t>>
-    >::const_iterator it
-        = this->palettes_by_id.find( local_palette_id );
-    if( it == this->palettes_by_id.end() )
+    // Ensure that image ID is not invalid
+    if( image_id == MCK::INVALID_IMG_ID )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "Cannot create image as local_palette_id invalid, have you forgetten to use 'create_local_palette'?"
+            std::string( "Cannot create image as image ID is invalid (" )
+            + std::to_string( MCK::INVALID_IMG_ID )
+            + std::string( ")" )
 #else
             ""
 #endif
         ) );
     }
-    const std::shared_ptr<std::vector<uint8_t>> LOCAL_PALETTE
-        = it->second;
+
+    // Check palette id is valid
+    if( local_palette_id >= palettes_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Local palette ID " )
+            + std::to_string( local_palette_id )
+            + std::string( " is invalid, cannot create ASCII " )
+            + std::string( "character." )
+#else
+            ""
+#endif
+        ) );
+    }
 
     // Create texture
     uint16_t height_in_pixels = 0;
@@ -363,7 +370,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
             bits_per_pixel,
             pitch_in_pixels,
             pixel_data,
-            *LOCAL_PALETTE,
+            *palettes_by_id[ local_palette_id ],
             tex_id,
             height_in_pixels
         );
@@ -422,4 +429,408 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_texture_and_render
     }
 
     return ans;
+}
+
+MCK_IMG_ID_TYPE MCK::ImageMan::create_custom_image(
+    std::shared_ptr<const std::vector<uint8_t>> pixel_data,
+    uint8_t bits_per_pixel,
+    uint16_t pitch_in_pixels,
+    uint16_t height_in_pixels
+)
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Can create custom image as Image Manager not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    ////////////////////////////////////////
+    // Quality checks
+
+    if( pixel_data.get() == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Can create custom image as pixel data pointer is NULL."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( pixel_data->size() == 0 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Can create custom image as pixel data is empty."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( !( 
+            bits_per_pixel == 1
+            || bits_per_pixel == 2
+            || bits_per_pixel == 4
+        )
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create custom image as bits per pixel (" )
+            + std::to_string( bits_per_pixel )
+            + std::string( "is invalid." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( pitch_in_pixels == 0 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create custom image as pitch is zero."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( height_in_pixels == 0 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create custom image as height is zero."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    const size_t BIT_COUNT = pixel_data->size() * 8;
+    const size_t MAX_PERMISSIBLE_BIT_COUNT
+        = bits_per_pixel * pitch_in_pixels * height_in_pixels;
+    const size_t MIN_PERMISSIBLE_BIT_COUNT
+        = bits_per_pixel
+            * pitch_in_pixels
+                * ( height_in_pixels - 1 ) + 1;
+    if( BIT_COUNT > MAX_PERMISSIBLE_BIT_COUNT
+        || BIT_COUNT < MIN_PERMISSIBLE_BIT_COUNT
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create custom image as pixel " )
+            + std::string( "data size is not compatible with " )
+            + std::string( "bits per pixels and/or pitch and/or height." )
+#else
+
+            ""
+#endif
+        ) );
+    }
+
+    try
+    {
+        this->image_meta_data_by_id.push_back(
+            MCK::ImageMan::ImageMetaData(
+                pixel_data,
+                bits_per_pixel,
+                pitch_in_pixels,
+                height_in_pixels
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to create new image meta data entry, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Index of image data just added is image ID
+    return this->image_meta_data_by_id.size() - 1;
+}
+
+std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
+    MCK_IMG_ID_TYPE image_id,
+    MCK_PAL_ID_TYPE local_palette_id,
+    int x_pos,
+    int y_pos,
+    uint16_t width_in_pixels,
+    uint16_t height_in_pixels,
+    std::shared_ptr<MCK::GameEngRenderBlock> parent_block
+) const
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create render info as Image Manager not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Make sure image ID is valid
+    if( image_id >= image_meta_data_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create render info as image ID " )
+            + std::to_string( image_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get pointer to image meta data
+    // (safe because of above check)
+    const MCK::ImageMan::ImageMetaData* const META_DATA
+        = &image_meta_data_by_id[ image_id ];
+
+    // Make sure palette ID is valid
+    if( local_palette_id >= palettes_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texture as local palette ID " )
+            + std::to_string( local_palette_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Calculate texture ID
+    const MCK_TEX_ID_TYPE TEX_ID
+        = this->game_eng->calc_tex_id(
+            image_id,
+            local_palette_id
+        );
+
+    // Declare return value
+    std::shared_ptr<MCK::GameEngRenderInfo> ans;
+
+    // Create destination rectangle
+    // Note: other render info (such as clip, flip
+    // and rotate) can be set manually once the
+    // render info struct has been obtained, however
+    // it makes sense to require a destination rectangle
+    // as texture cannot not be rendered without it.
+    const MCK::GameEngRenderInfo::Rect DEST_RECT(
+        x_pos,
+        y_pos,
+        width_in_pixels,
+        height_in_pixels
+    );
+
+    // If texture doesn't already exist, create it
+    if( !this->game_eng->texture_exists( TEX_ID ) )
+    {
+        // Create texture (in case it doesn't exist already)
+        try
+        {
+            ans = this->create_texture_and_render_info(
+                image_id,
+                local_palette_id,
+                META_DATA->get_bits_per_pixel(),
+                META_DATA->get_pitch_in_pixels(),
+                META_DATA->get_height_in_pixels(),
+                *(META_DATA->pixel_data),
+                DEST_RECT, 
+                parent_block
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Attempt to create render info has failed, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+    else
+    {
+        // If texture exists, just create image
+        try
+        {
+            ans = this->game_eng->create_render_info(
+                TEX_ID,
+                parent_block,
+                DEST_RECT,
+                false  // No clip
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Attempt to create render info has failed, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    return ans;
+}
+
+void MCK::ImageMan::change_render_info_tex(
+    std::shared_ptr<MCK::GameEngRenderInfo> info,
+    MCK_IMG_ID_TYPE image_id,
+    MCK_PAL_ID_TYPE local_palette_id,
+    bool keep_orig_dest_rect_size
+) const
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change render info texture as Image Manager not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Make sure image ID is valid
+    if( image_id >= image_meta_data_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texture as image ID " )
+            + std::to_string( image_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get pointer to image meta data
+    // (safe because of above check)
+    const MCK::ImageMan::ImageMetaData* const META_DATA
+        = &image_meta_data_by_id[ image_id ];
+
+    // Make sure palette ID is valid
+    if( local_palette_id >= palettes_by_id.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change render info texture as local palette ID " )
+            + std::to_string( local_palette_id ) 
+            + std::string( " not recognized." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Calculate texture ID
+    const MCK_TEX_ID_TYPE TEX_ID
+        = this->game_eng->calc_tex_id(
+            image_id,
+            local_palette_id
+        );
+
+    // If texture doesn't already exist, create it
+    if( !this->game_eng->texture_exists( TEX_ID ) )
+    {
+        // Create texture
+        uint16_t height_in_pixels = 0;
+        MCK_TEX_ID_TYPE tex_id;
+        try
+        {
+            this->game_eng->create_texture(
+                image_id,
+                local_palette_id,
+                META_DATA->get_bits_per_pixel(),
+                META_DATA->get_pitch_in_pixels(),
+                *META_DATA->pixel_data,
+                *palettes_by_id[ local_palette_id ],
+                tex_id,
+                height_in_pixels
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot change image texture as texture " )
+                + std::string( "creation failed, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+        if( height_in_pixels != META_DATA->get_height_in_pixels() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot change image texture as texture's " )
+                + std::string( "height in pixels (" )
+                + std::to_string( height_in_pixels )
+                + std::string( ") not as expected (" )
+                + std::to_string( META_DATA->get_height_in_pixels() )
+                + std::string( ")." )
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    // Change render info texture, at GameEng level
+    // (because only GameEng has access to the actual
+    //  texture instance)
+    try
+    {
+        game_eng->change_render_info_tex(
+            info,
+            TEX_ID
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot change image texture as GameEng " )
+            + std::string( "returned error: " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If necessary, update size of destination rect
+    if( !keep_orig_dest_rect_size )
+    {
+        info->dest_rect.set_w( META_DATA->get_pitch_in_pixels() );
+        info->dest_rect.set_h( META_DATA->get_height_in_pixels() );
+    }
 }

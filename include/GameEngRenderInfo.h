@@ -48,6 +48,9 @@
 namespace MCK
 {
 
+// Forward declaration
+class GameEngRenderBlock;
+
 struct GameEngRenderInfo
 {
     //! Friendship so GameEng can access protected/private members
@@ -70,6 +73,18 @@ struct GameEngRenderInfo
 
         //! Get height of rectangle
         int get_h( void ) const noexcept { return r.h; }
+
+        //! Set left position of rectangle
+        void set_x( int val ) noexcept { r.x = val; }
+        
+        //! Set top position of rectangle
+        void set_y( int val ) noexcept { r.y = val; }
+
+        //! Set width of rectangle
+        void set_w( int val ) noexcept { r.w = val; }
+
+        //! Set height of rectangle
+        void set_h( int val ) noexcept { r.h = val; }
 
         //! Default constructor
         Rect( void )
@@ -147,9 +162,22 @@ struct GameEngRenderInfo
         this->flags = 0x00;
         this->tex_id = 0;
         this->tex = NULL;
+        this->parent_block = NULL;
     }
 
-    private:
+    protected:
+
+        // Disabled to prevent copying, as
+        // this would cause chaos
+        GameEngRenderInfo(GameEngRenderInfo const&) = delete;
+        void operator=(GameEngRenderInfo const&)  = delete;
+
+        // Pointer to parent block, only accessible through
+        // friend access (GameEng). This pointer should only
+        // be used to ensure parent is correct, not to access
+        // the parent (for safety it is best not to actually
+        // dereference this pointer)
+        const MCK::GameEngRenderBlock* parent_block;
 
         const static uint8_t ROTATION_MASK = 0x03;
         const static uint8_t ROTATION_RSHIFT = 0;
