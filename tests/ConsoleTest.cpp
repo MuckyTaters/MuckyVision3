@@ -79,11 +79,14 @@ int main( int argc, char** argv )
 
     ///////////////////////////////////////////
     // CREATE LOCAL PALETTE(S)
-    MCK_PAL_ID_TYPE black_white_palette_id;
     MCK_PAL_ID_TYPE title_palette_id;
+    MCK_PAL_ID_TYPE main_console_palette_id;
+    MCK_PAL_ID_TYPE mini_console_palette_id;
+    MCK_PAL_ID_TYPE lscape_console_palette_id;
+    const uint8_t MINI_CONSOLE_BG_COL = MCK::COL_FOREST_GREEN;
     try
     {
-        black_white_palette_id = image_man.create_local_palette(
+        title_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_BLACK,
@@ -91,11 +94,27 @@ int main( int argc, char** argv )
                 }
             )
         );
-        title_palette_id = image_man.create_local_palette(
+        main_console_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
+                    MCK::COL_BLACK,
+                    MCK::COL_RED,
+                }
+            )
+        );
+        mini_console_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MINI_CONSOLE_BG_COL,
+                    MCK::COL_GREEN
+                }
+            )
+        );
+        lscape_console_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_DARK_BLUE,
                     MCK::COL_YELLOW,
-                    MCK::COL_PURPLE
                 }
             )
         );
@@ -111,14 +130,20 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE MAIN CONSOLE PARAMETERS
     const uint8_t BG_COL = MCK::COL_ROTTING_PURPLE;
-    
-    // Main console
+   
+    // General
     const uint8_t TILE_WIDTH = 16;
     const uint8_t TILE_HEIGHT = 16;
+    
+    // Main console
+    const uint8_t MAIN_CHAR_WIDTH = 8;
+    const uint8_t MAIN_CHAR_HEIGHT = 16;
     const uint16_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
     const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 3;
-    const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 24;
+    const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 42;
     const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 8;
+    const uint8_t MAIN_CONSOLE_CHAR_SPACING = 2;
+    const uint8_t MAIN_CONSOLE_LINE_SPACING = 4;
 
     // Mini console
     const uint8_t MINI_CHAR_WIDTH = 8;
@@ -127,6 +152,8 @@ int main( int argc, char** argv )
     const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 3;
     const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 12;
     const uint8_t MINI_CONSOLE_HEIGHT_IN_CHARS = 6;
+    const uint8_t MINI_CONSOLE_CHAR_SPACING = 1;
+    const uint8_t MINI_CONSOLE_LINE_SPACING = 0;
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -145,32 +172,114 @@ int main( int argc, char** argv )
 
     //////////////////////////////////////////////
     // CREATE TITLE TEXT BOX
-    std::shared_ptr<MCK::ImageText> title_text
-        = std::make_shared<MCK::ImageText>();
+    std::shared_ptr<MCK::Console> title_text
+        = std::make_shared<MCK::Console>();
     try
     {
         std::string CR( 1, uint8_t( 255 ) );
+        std::string s = "CONSOLE DEMO  " + CR + " MuckyTaters 2023";
         title_text->init(
             game_eng,
             image_man,
             game_eng.get_prime_render_block(),
-            black_white_palette_id,
-            TILE_WIDTH,
-            TILE_HEIGHT,
-            38,  // Size in chars
-            16,   // Char width
-            16,  // Char height
-            "CONSOLE DEMO --- " + CR + " MuckyTaters 2023",
-            MCK::ImageText::CENTER
+            title_palette_id,
+            MAIN_CONSOLE_LEFT + TILE_WIDTH,  // x_pos,
+            TILE_HEIGHT,  // y_pos,
+            32,  // width in chars
+            1,  // height in chars
+            TILE_WIDTH,  // char_width_in_pixels,
+            TILE_HEIGHT,  // char_height_in_pixels,
+            s,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            0, // start_line
+            true,  // add_to_front_of_parent_block = true
+            MCK::COL_BLACK,  // underlay colo(u)r
+            2,  // char spacing in pixels
+            0  // line spacing in pixels
         );
     }
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create black white palette, error: ")
+            std::string( "Failed to create title text, error: ")
             + e.what() ) );
     }
 
+    //////////////////////////////////////////////
+    // CREATE MESSAGE TEXTS FOR CONSOLES
+    const std::string MSG_1
+        = "THE QUICK BROWN FOX JUMPED OVER THE LAZY SLEEPING DOG. "
+          "the quick brown fox jumped over the lazy sleeping dog. ";
+       
+    std::string msg_2;
+    { 
+        // Ladder ASCII character
+        std::string H( 1, uint8_t( 245 ) );
+
+        // Brick ASCII character
+        std::string B( 1, uint8_t( 247 ) );
+
+        // Empty ASCII character
+        std::string E( 1, uint8_t( 32 ) );
+
+        msg_2 += E + E + B + E + E + B + "T";
+        msg_2 += E + E + B + E + E + B + "H";
+        msg_2 += E + H + H + H + H + B + "E";
+        msg_2 += E + E + B + E + E + B + " ";
+        msg_2 += E + E + B + E + E + B + "Q";
+        msg_2 += E + E + B + E + H + H + "U";
+        msg_2 += E + E + B + E + E + B + "I";
+        msg_2 += E + E + E + E + E + B + "C";
+        msg_2 += E + E + E + E + E + B + "K";
+        msg_2 += E + E + E + E + E + B + " ";
+        msg_2 += E + E + B + E + E + B + "B";
+        msg_2 += E + H + H + H + H + B + "R";
+        msg_2 += E + E + B + E + E + B + "O";
+        msg_2 += E + E + B + E + E + B + "W";
+        msg_2 += E + E + B + E + E + B + "N";
+        msg_2 += E + E + B + E + E + B + " ";
+        msg_2 += E + H + H + H + H + B + "F";
+        msg_2 += E + E + B + E + E + B + "O";
+        msg_2 += E + E + B + E + E + B + "X";
+        msg_2 += E + E + B + E + H + H + " ";
+        msg_2 += E + E + B + E + E + B + "J";
+        msg_2 += E + E + E + E + E + B + "U";
+        msg_2 += E + E + E + E + E + B + "M";
+        msg_2 += E + E + E + E + E + B + "P";
+        msg_2 += E + E + B + E + E + B + "E";
+        msg_2 += E + H + H + H + H + B + "D";
+        msg_2 += E + E + B + E + E + B + " ";
+        msg_2 += E + E + B + E + E + B + "O";
+        msg_2 += E + E + B + E + E + B + "V";
+        msg_2 += E + E + B + E + E + B + "E";
+        msg_2 += E + H + H + H + H + B + "R";
+        msg_2 += E + E + B + E + E + B + " ";
+        msg_2 += E + E + B + E + E + B + "T";
+        msg_2 += E + E + B + E + H + H + "H";
+        msg_2 += E + E + B + E + E + B + "E";
+        msg_2 += E + E + E + E + E + B + " ";
+        msg_2 += E + E + E + E + E + B + "L";
+        msg_2 += E + E + E + E + E + B + "A";
+        msg_2 += E + E + B + E + E + B + "Z";
+        msg_2 += E + H + H + H + H + B + "Y";
+        msg_2 += E + E + B + E + E + B + " ";
+        msg_2 += E + E + B + E + E + B + "S";
+        msg_2 += E + E + B + E + E + B + "L";
+        msg_2 += E + E + B + E + E + B + "E";
+        msg_2 += E + H + H + H + H + B + "E";
+        msg_2 += E + E + B + E + E + B + "P";
+        msg_2 += E + E + B + E + E + B + "I";
+        msg_2 += E + E + B + E + H + H + "N";
+        msg_2 += E + E + B + E + E + B + "G";
+        msg_2 += E + E + E + E + E + B + " ";
+        msg_2 += E + E + E + E + E + B + "D";
+        msg_2 += E + E + E + E + E + B + "O";
+        msg_2 += E + E + B + E + E + B + "G";
+        msg_2 += E + H + H + H + H + B + ".";
+        msg_2 += E + E + B + E + E + B + " ";
+    }
 
     //////////////////////////////////////////////
     // CREATE MINI CONSOLE 
@@ -178,27 +287,26 @@ int main( int argc, char** argv )
         = std::make_shared<MCK::Console>();
     try
     {
-        std::string s = "I'm a dinky mini console! I function just like the big console.";
         mini_console->init(
             game_eng,
             image_man,
             game_eng.get_prime_render_block(), // mini_console_block,
-            black_white_palette_id,
+            mini_console_palette_id,
             MINI_CONSOLE_LEFT,  // x_pos,
             MINI_CONSOLE_TOP,  // y_pos,
             MINI_CONSOLE_WIDTH_IN_CHARS,
             MINI_CONSOLE_HEIGHT_IN_CHARS,
             MINI_CHAR_WIDTH,  // char_width_in_pixels,
             MINI_CHAR_HEIGHT,  // char_height_in_pixels,
-            s,  // initial_content,
+            MSG_1,  // initial_content,
             100,  // print_speed_in_ticks_per_char,
             10,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             MINI_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
             false, // true  // add_to_front_of_parent_block = true
-            MCK::COL_BLACK,  // underlay colo(u)r
-            1,  // char spacing in pixels
-            0  // line spacing in pixels
+            MINI_CONSOLE_BG_COL,  // underlay colo(u)r
+            MINI_CONSOLE_CHAR_SPACING,
+            MINI_CONSOLE_LINE_SPACING
         );
     }
     catch( std::exception &e )
@@ -214,48 +322,26 @@ int main( int argc, char** argv )
         = std::make_shared<MCK::Console>();
     try
     {
-        std::string marker_symbol( 1, uint8_t( 254 ) );
-        std::string s;
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
-        s += "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
         main_console->init(
             game_eng,
             image_man,
             game_eng.get_prime_render_block(),
-            black_white_palette_id,
+            main_console_palette_id,
             MAIN_CONSOLE_LEFT,  // y_pos,
             MAIN_CONSOLE_TOP,  // x_pos,
             MAIN_CONSOLE_WIDTH_IN_CHARS,
             MAIN_CONSOLE_HEIGHT_IN_CHARS,
-            TILE_WIDTH,  // char_width_in_pixels,
-            TILE_HEIGHT,  // char_height_in_pixels,
-            s,  // initial_content,
-            10, // 100,  // print_speed_in_ticks_per_char,
+            MAIN_CHAR_WIDTH,  // char_width_in_pixels,
+            MAIN_CHAR_HEIGHT,  // char_height_in_pixels,
+            MSG_1,  // initial_content,
+            20,  // print_speed_in_ticks_per_char,
             10,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             MAIN_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
             false, // true  // add_to_front_of_parent_block = true
             MCK::COL_BLACK,  // Underlay colo(u)r
-            2,  // char spacing in pixels
-            4  // line spacing in pixels
+            MAIN_CONSOLE_CHAR_SPACING,
+            MAIN_CONSOLE_LINE_SPACING
         );
     }
     catch( std::exception &e )
@@ -284,85 +370,18 @@ int main( int argc, char** argv )
         = std::make_shared<MCK::Console>();
     try
     {
-        // Ladder ASCII character
-        std::string H( 1, uint8_t( 245 ) );
-
-        // Brick ASCII character
-        std::string B( 1, uint8_t( 247 ) );
-
-        // Empty ASCII character
-        std::string E( 1, uint8_t( 32 ) );
-
-        // Slope Left ASCII character
-        std::string L( 1, uint8_t( 0 ) );
-
-        // Slope Right ASCII character
-        std::string R( 1, uint8_t( 2 ) );
-
-        // Square ASCII character
-        std::string Q( 1, uint8_t( 230 ) );
-
-        // Peak ASCII character
-        std::string P( 1, uint8_t( 1 ) );
-
-        std::string s;
-        s += "0123456abcdefg1234567bcdefgh3456789cdefghi";
-        s += E + E + B + E + E + B + E;
-        s += E + E + B + E + E + B + E;
-        s += E + H + H + H + H + B + E;
-        s += E + E + B + E + E + B + E;
-        s += E + E + B + E + E + B + E;
-        s += E + E + B + E + H + H + H;
-        s += E + E + B + E + E + B + E;
-        s += E + E + E + E + E + B + E;
-        s += E + E + E + E + E + B + E;
-        s += E + E + E + E + E + B + E;
-        s += E + E + B + E + E + B + E;
-        s += E + H + H + H + H + B + E;
-        s += E + E + B + E + E + B + E;
-        s += E + E + B + E + E + B + E;
-        s += E + E + E + E + L + Q + Q;
-        s += E + E + E + P + Q + Q + Q;
-        s += E + E + E + L + Q + Q + Q;
-        s += E + E + P + Q + Q + Q + Q;
-        s += E + E + E + R + Q + Q + Q;
-        s += E + E + E + P + Q + Q + Q;
-        s += E + E + E + E + L + Q + Q;
-        s += E + E + E + P + Q + Q + Q;
-        s += E + E + E + L + Q + Q + Q;
-        s += E + E + P + Q + Q + Q + Q;
-        s += E + E + E + R + Q + Q + Q;
-        s += E + E + E + P + Q + Q + Q;
-        s += " 12345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
-        s += "012345abcdef123456bcdefg345678cdefgh";
         lscape_console->init(
             game_eng,
             image_man,
             game_eng.get_prime_render_block(),
-            black_white_palette_id,
+            lscape_console_palette_id,
             LSCAPE_CONSOLE_LEFT,  // x_pos,
             LSCAPE_CONSOLE_TOP,  // y_pos,
             LSCAPE_CONSOLE_WIDTH_IN_CHARS,
             LSCAPE_CONSOLE_HEIGHT_IN_CHARS,
             LSCAPE_CHAR_WIDTH,  // char_width_in_pixels,
             LSCAPE_CHAR_HEIGHT,  // char_height_in_pixels,
-            s,  // initial_content,
+            msg_2,  // initial_content,
             0,  // print_speed_in_ticks_per_char,
             5,  // scroll_speed_in_ticks_per_pixel,
             false,  // vert_text_alignment
@@ -388,21 +407,24 @@ int main( int argc, char** argv )
             main_console->get_overlay_block(),
             MCK::GameEngRenderInfo::Rect( 
                 MAIN_CONSOLE_LEFT,  // x pos
-                MAIN_CONSOLE_TOP - TILE_HEIGHT,  // y pos
+                MAIN_CONSOLE_TOP
+                    - main_console->get_max_vert_scroll_offset(),  // y pos
                 main_console->get_width_in_pixels(),
-                TILE_HEIGHT  // Height, in pixels
+                TILE_HEIGHT + MAIN_CONSOLE_LINE_SPACING // Height, in pixels
             )
         );
         
-        // Top border for Mini console
+        // Top border for Mini console,
+        // to cover offset during scrolling
         game_eng.create_blank_tex_render_info(
             BG_COL,
             mini_console->get_overlay_block(),
             MCK::GameEngRenderInfo::Rect( 
                 MINI_CONSOLE_LEFT,  // x pos
-                MINI_CONSOLE_TOP - 1 * MINI_CHAR_HEIGHT,  // y pos
-                mini_console->get_width_in_pixels(),
-                MINI_CHAR_HEIGHT  // Height, in pixels
+                MINI_CONSOLE_TOP
+                    - mini_console->get_max_vert_scroll_offset(), // y pos
+                mini_console->get_width_in_pixels(),  // Width
+                MINI_CHAR_HEIGHT + MINI_CONSOLE_LINE_SPACING  // Height, in pixels
             )
         );
         
@@ -543,7 +565,7 @@ int main( int argc, char** argv )
                     ) + 20;
         }
 
-        // Upate console(s) 
+        // Update console(s) 
         try
         {
             main_console->update( current_ticks );
@@ -555,6 +577,57 @@ int main( int argc, char** argv )
             throw( std::runtime_error(
                 std::string( "Console update(s) failed, error: ")
                 + e.what() ) );
+        }
+
+        // Add more content to main console, if required
+        if( main_console->get_text_buffer_size()
+                < MAIN_CONSOLE_WIDTH_IN_CHARS
+        )
+        {
+            try
+            {
+                main_console->add_content( MSG_1 );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to add content to main console, error: ")
+                    + e.what() ) );
+            }
+        }
+
+        // Add more content to mini console, if required
+        if( mini_console->get_text_buffer_size()
+                < MINI_CONSOLE_WIDTH_IN_CHARS
+        )
+        {
+            try
+            {
+                mini_console->add_content( MSG_1 );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to add content to mini console, error: ")
+                    + e.what() ) );
+            }
+        }
+
+        // Add more content to landscape console, if required
+        if( lscape_console->get_text_buffer_size()
+                < LSCAPE_CONSOLE_HEIGHT_IN_CHARS
+        )
+        {
+            try
+            {
+                lscape_console->add_content( msg_2 );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to add content to lscape console, error: ")
+                    + e.what() ) );
+            }
         }
 
         // Clear, render and present
@@ -579,6 +652,4 @@ int main( int argc, char** argv )
         }
     }
     while( current_ticks < end_ticks );
-
-
 }

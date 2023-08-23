@@ -59,7 +59,7 @@ class Console
             uint8_t _height_in_chars,
             uint8_t _char_width_in_pixels,
             uint8_t _char_height_in_pixels,
-            std::string &initial_content,
+            const std::string &initial_content,
             uint32_t _print_speed_in_ticks_per_char = 0,
             uint32_t _scroll_speed_in_ticks_per_pixel = 0,
             bool _hoz_text_alignment = true,
@@ -75,11 +75,8 @@ class Console
             return initialized;
         }
 
-        //! Process any temporal changes
-        void update( void );
-
         //! Add content to console input buffer
-        void add_content( std::string in );
+        void add_content( const std::string &in );
 
         //! This method animates console and ideally should be called every frame
         /*! @param current_ticks: If ommited, ticks are obtained from GameEng instance
@@ -118,6 +115,43 @@ class Console
                         );
         }
 
+        //! Get maximum number of vertical pixels by which console is offset during scrollong
+        /*! This is useful for creating an overlay to cover the edage of the console during the offset 
+         */
+        uint8_t get_max_vert_scroll_offset( void ) const noexcept
+        {
+            if( this->hoz_text_alignment )
+            {
+                return this->char_height_in_pixels
+                        + this->line_spacing_in_pixels;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        //! Get maximum number of horizontal pixels by which console is offset during scrollong
+        /*! This is useful for creating an overlay to cover the edage of the console during the offset 
+         */
+        uint8_t get_max_hoz_scroll_offset( void ) const noexcept
+        {
+            if( !this->hoz_text_alignment )
+            {
+                return this->char_width_in_pixels
+                        + this->char_spacing_in_pixels;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        //! Get number of chars *yet to be written* to console
+        size_t get_text_buffer_size( void ) const noexcept
+        {
+            return this->text_buffer.size();
+        }
 
     protected:
 

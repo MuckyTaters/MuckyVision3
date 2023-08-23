@@ -73,6 +73,7 @@ class ImageText
          *  @param initial_content: String containing characters to display
          *  @param _justification: Hoz/vert text direction and justification
          *  @param add_to_front_of_parent_block: If true, appears in front of any other blocks attached to parent block
+            @param _char_spacing_in_pixels: Space between characters
          */
         void init(
             GameEng &_game_eng,
@@ -224,7 +225,7 @@ class ImageText
         }
 
         //! Get total width in pixels
-        uint16_t get_total_width_in_pixels( void ) const noexcept
+        uint16_t get_width_in_pixels( void ) const noexcept
         {
             if( size_in_chars == 0
                 || justification ==  MCK::ImageText::INVALID
@@ -247,7 +248,7 @@ class ImageText
         }
 
         //! Get total height in pixels
-        uint16_t get_total_height_in_pixels( void ) const noexcept
+        uint16_t get_height_in_pixels( void ) const noexcept
         {
             if( size_in_chars == 0
                 || justification ==  MCK::ImageText::INVALID

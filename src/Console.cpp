@@ -61,7 +61,7 @@ void MCK::Console::init(
     uint8_t _height_in_chars,
     uint8_t _char_width_in_pixels,
     uint8_t _char_height_in_pixels,
-    std::string &initial_content,
+    const std::string &initial_content,
     uint32_t _print_speed_in_ticks_per_char,
     uint32_t _scroll_speed_in_ticks_per_pixel,
     bool _hoz_text_alignment,
@@ -653,4 +653,25 @@ void MCK::Console::update( uint32_t current_ticks )
     // Save current ticks for next update, adding any 'unused'
     // ticks from this update
     this->ticks_at_last_update = current_ticks - ticks;
+}
+
+void MCK::Console::add_content( const std::string &in )
+{
+    // Initialisation and safety checks
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot update Console instance, as not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Let calling method catch any exception here
+    for( char c : in )
+    {
+        text_buffer.push( c );
+    }
 }
