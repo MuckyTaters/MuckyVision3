@@ -57,7 +57,8 @@ This will eventually become a library, potentially with bindings to other
 languages.
 
 MuckyVision's source code is organised in layers. The current commit 
-comprises the lowest layer: "GameEng", and the layer above "ImageMan".
+comprises the lowest layer: "GameEng", the layer above "ImageMan",
+and the utility classes "ImageText" and "Console".
 
 GameEng acts as a wrapper for SDL, so that higher layers have no need
 to use SDL commands. This will make it easy to swap out SDL for another
@@ -66,6 +67,17 @@ library, should that be necessary in future.
 ImageMan is an image manager, it maintains pointers to binary image data
 and colo(u)r palette information, and provides a less cumbersome way of
 creating images (although only for ASCII characters at present).
+
+ImageText converts C++ strings into ASCII images, with option for text
+spacing and left/right/center justification. Text can be updated
+dynamically.
+
+Console combines one or more ImageText objects to produce a smooth scrolling
+text console, with text and line spacing. The developer can 'dump' text into the
+console, as a C++ string, and this will be fed automatically, character by
+character, into the console. Character printing speed and scroll speed can be
+controlled, and text can be added either in rows or columns, scrolling up
+or left respectively.
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
@@ -114,15 +126,18 @@ Classes/structs included in this commit:
 
     ImageDataASCII: An extended ASCII set of 256 8x8 pixel images.
 
+    ImageText: A 'text box' that visualizes C++ strings.
+
+    Console: A 'window' of smooth scrolling text, printed one character at a time.
+
 
 3. Future Plans
 
-Next on the TODO list is providing ImageMan with an interface for storing
-custom image data. After that, creating text and number objects that manage
-multiple ASCII images in a sensible way.
+Next on the TODO list is apply custom ASCII sets for Console and ImageText.
+After that, sprites and collision detection.
 
-Provision of C64 SID chip style audio (using dynamically generated waveforms)
-is also a high priority.
+Provision audio is also a high priority, but I will probably look at this
+once the major graphic elements are complete.
 
 
 4. Building the Supplied Demos
@@ -150,6 +165,12 @@ For the ImageManTest demo, replace all references to 'GameEng' below
 with 'ImageMan', including where it is part of a larger word. Hence 
 'makefile_GameEngTest_linux' becomes 'makefile_ImageManTest_linux'
 and so on. Note that lines numbers in the ImageMan makefile may 
+differ slightly.
+
+For the ConsoleTest demo, replace all references to 'GameEng' below
+with 'Console', including where it is part of a larger word. Hence 
+'makefile_GameEngTest_linux' becomes 'makefile_ConsoleTest_linux'
+and so on. Note that lines numbers in the Console makefile may 
 differ slightly.
 
 
@@ -211,7 +232,7 @@ Suggestions for Windows (MinGW):
     If successful, you should see a file called GameEngTest.exe, which 
     when executed will create a new window showing a small white biplane
     moving over a city of scrolling purple blocks. The demo will run for
-    about fourteen seconds, then close automatically.
+    a while, then close automatically.
 
     For crisp pixelated graphics, you may need to disable "high-DPI 
     scaling" within the executable's compatibility properties. MuckyVision asks

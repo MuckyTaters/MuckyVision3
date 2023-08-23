@@ -100,22 +100,29 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE IMAGE DATA
 
-    // 4x4 black pixels
-    // Note the { 0 , 0 } here represents 16 binary digits,
-    // i.e. 1 digit per pixel for 4 rows of 4 pixels,
+    // 8x8 black pixels
+    // Note the { 0, 0, 0, 0, 0, 0, 0, 0 } here represents 64 binary digits,
+    // i.e. 1 digit per pixel for 8 rows of 8 pixels,
     // all set to zero.
-    const MCK_IMG_ID_TYPE IMAGE_BLANK_1BIT_4x4_ID = 0;
-    const std::vector<uint8_t> IMAGE_BLANK_1BIT_4x4 = { 0, 0 };
+    const MCK_IMG_ID_TYPE IMAGE_BLANK_1BIT_8x8_ID = 0;
+    const std::vector<uint8_t> IMAGE_BLANK_1BIT_8x8 
+	    = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    // Square made of 4x4 pixels and 2 colo(u)rs
-    // Note the two 8bit binary literals here represent 4x4
+    // Square made of 8x8 pixels and 2 colo(u)rs
+    // Note the two 8bit binary literals here represent 8x8
     // 1bit pixels (similar to above). In effect, each
     // 8bit number is split in half to give 4 bits per line.
-    const MCK_IMG_ID_TYPE IMAGE_SQUARE_1BIT_4x4_ID = 1;
-    const std::vector<uint8_t> IMAGE_SQUARE_1BIT_4x4 =
+    const MCK_IMG_ID_TYPE IMAGE_SQUARE_1BIT_8x8_ID = 1;
+    const std::vector<uint8_t> IMAGE_SQUARE_1BIT_8x8 =
     {
-        0b11111001,
-        0b10011111
+        0b11111111,
+        0b11111111,
+        0b11000011,
+        0b11000011,
+        0b11000011,
+        0b11000011,
+        0b11111111,
+        0b11111111
     };
 
     // Biplane made of 8x8 pixels and 2 colo(u)rs
@@ -147,11 +154,11 @@ int main( int argc, char** argv )
         try
         {
             game_eng.create_texture(
-                IMAGE_BLANK_1BIT_4x4_ID,
+                IMAGE_BLANK_1BIT_8x8_ID,
                 PALETTE_1BIT_BLACK_WHITE_ID,
                 1,  // bits_per_pixel,
-                4,  // pitch_in_pixels,
-                IMAGE_BLANK_1BIT_4x4,
+                8,  // pitch_in_pixels,
+                IMAGE_BLANK_1BIT_8x8,
                 PALETTE_1BIT_BLACK_WHITE,
                 black_tex_id,
                 height_in_pixels
@@ -160,11 +167,11 @@ int main( int argc, char** argv )
         catch( std::exception &e )
         {
             throw( std::runtime_error(
-                std::string( "Failed to create biplane texture, error: ")
+                std::string( "Failed to create blank texture, error: ")
                 + e.what() ) );
         }
 
-        if( height_in_pixels != 4 )
+        if( height_in_pixels != 8 )
         {
             throw( std::runtime_error(
                 std::string( "Black texture has incorrect height")
@@ -212,11 +219,11 @@ int main( int argc, char** argv )
         try
         {
             game_eng.create_texture(
-                IMAGE_SQUARE_1BIT_4x4_ID,
+                IMAGE_SQUARE_1BIT_8x8_ID,
                 PALETTE_1BIT_CYAN_PURP_ID,
                 1,  // bits_per_pixel,
-                4,  // pitch_in_pixels,
-                IMAGE_SQUARE_1BIT_4x4,
+                8,  // pitch_in_pixels,
+                IMAGE_SQUARE_1BIT_8x8,
                 PALETTE_1BIT_CYAN_PURP,
                 square_tex_id,
                 height_in_pixels
@@ -229,7 +236,7 @@ int main( int argc, char** argv )
                 + e.what() ) );
         }
 
-        if( height_in_pixels != 4 )
+        if( height_in_pixels != 8 )
         {
             throw( std::runtime_error(
                 std::string( "Square texture has incorrect height")
@@ -244,11 +251,11 @@ int main( int argc, char** argv )
         try
         {
             game_eng.create_texture(
-                IMAGE_SQUARE_1BIT_4x4_ID,
+                IMAGE_SQUARE_1BIT_8x8_ID,
                 PALETTE_1BIT_GRAY_ID,
                 1,  // bits_per_pixel,
-                4,  // pitch_in_pixels,
-                IMAGE_SQUARE_1BIT_4x4,
+                8,  // pitch_in_pixels,
+                IMAGE_SQUARE_1BIT_8x8,
                 PALETTE_1BIT_GRAY,
                 gray_square_tex_id,
                 height_in_pixels
@@ -261,7 +268,7 @@ int main( int argc, char** argv )
                 + e.what() ) );
         }
 
-        if( height_in_pixels != 4 )
+        if( height_in_pixels != 8 )
         {
             throw( std::runtime_error(
                 std::string( "Square texture has incorrect height")

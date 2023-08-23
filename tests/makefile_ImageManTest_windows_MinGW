@@ -138,4 +138,4 @@ build\ImageManTest.o: ImageManTest.cpp build\ImageMan.o build\GameEng.o
 
 .PHONY: clean
 clean:
-	del build\*.o
+	rm build/*.o

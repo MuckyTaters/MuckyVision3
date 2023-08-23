@@ -3,9 +3,9 @@
 ##  ---MUCKY VISION 3 (BASIC ENGINE)---
 ##  -----------------------------------
 ##
-##  makefile_GameEngTest_windows_MinGW
+##  makefile_ConsoleTest_windows_MinGW
 ##
-##  Makefile to build test for GameEng 
+##  Makefile to build test for Console 
 ##  class on Windows using MinGW.
 ##
 ##  Before running this file, please 
@@ -36,8 +36,8 @@
 ## DISCLAIMER: Dependencies described herein
 ## are maintained on a best-effort basis and
 ## may not be 100% correct. If in doubt, execute
-## 'make -f makefile_GameEngTest_windows_MinGW clean' 
-## then 'make -f makefile_GameEngTest_windows_MinGW'
+## 'make -f makefile_ConsoleTest_windows_MinGW clean' 
+## then 'make -f makefile_ConsoleTest_windows_MinGW'
 ## to rebuild the entire project
 #############################################
 
@@ -46,7 +46,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build\GameEng.o build\GameEngTest.o
+BUILDS := build\GameEng.o build\ImageDataASCII.o build\ImageMan.o build\ImageText.o build\Console.o build\ConsoleTest.o 
 
 #CC specifies which compiler we're using
 #Note: MinGW (or Windows) seems to automatically
@@ -74,11 +74,11 @@ SDL_PATH := ???
 MINGW_PATH := ???
 
 ifeq '$(SDL_PATH)' '???'
-    $(error SDL_PATH must be set by you! You need to edit makefile_GameEngTest_windows_MinGW )
+    $(error SDL_PATH must be set by you! You need to edit makefile_ImageManTest_windows_MinGW )
 endif
 
 ifeq '$(MING_PATH)' '???'
-    $(error MINGW_PATH must be set by you! You need to edit makefile_GameEngTest_windows_MinGW )
+    $(error MINGW_PATH must be set by you! You need to edit makefile_ImageManTest_windows_MinGW )
 endif
 
 $(info SDL_PATH set as $(SDL_PATH) )
@@ -101,7 +101,7 @@ $(info LINKER_FLAGS = $(LINKER_FLAGS) )
 $(info INC = $(INC) )
 
 #OUTPUT specifies the name of our exectuable
-OUTPUT := GameEngTest
+OUTPUT := ConsoleTest
 
 
 #############################################
@@ -119,9 +119,25 @@ all: $(BUILDS)
 build\GameEng.o: ..\src\GameEng.cpp ..\include\GameEng.h ..\include\Defs.h ..\include\KeyEvent.h ..\include\Version.h ..\include\GameEngRenderInfo.h ..\include\GameEngRenderBlock.h 
 	$(CC) -c ..\src\GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\GameEng.o
 
-## GameEngTest ##
-build\GameEngTest.o: GameEngTest.cpp build\GameEng.o 
-	$(CC) -c GameEngTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\GameEngTest.o
+## ImageDataASCII ##
+build\ImageDataASCII.o: ..\src\ImageDataASCII.cpp ..\include\ImageDataASCII.h  
+	$(CC) -c ..\src\ImageDataASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\ImageDataASCII.o
+
+## ImageMan ##
+build\ImageMan.o: ..\src\ImageMan.cpp ..\include\ImageMan.h build\ImageDataASCII.o build\GameEng.o 
+	$(CC) -c ..\src\ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\ImageMan.o
+
+## ImageText ##
+build\ImageText.o: ..\src\ImageText.cpp ..\include\ImageText.h build\GameEng.o build\ImageMan.o 
+	$(CC) -c ..\src\ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\ImageText.o
+
+## Console ##
+build\Console.o: ..\src\Console.cpp ..\include\Console.h build\GameEng.o build\ImageMan.o build\ImageText.o
+	$(CC) -c ..\src\Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\Console.o
+
+## ConsoleTest ##
+build\ConsoleTest.o: ConsoleTest.cpp build\Console.o build\GameEng.o build\ImageText.o 
+	$(CC) -c ConsoleTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\ConsoleTest.o
 
 
 #############################################
