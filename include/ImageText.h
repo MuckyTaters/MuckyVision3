@@ -86,7 +86,8 @@ class ImageText
             uint8_t _char_height_in_pixels,
             std::string initial_content = "",  // Not pass by ref as r-value typically supplied
             MCK::ImageText::Just _justification = MCK::ImageText::LEFT,
-            bool add_to_front_of_parent_block = true
+            bool add_to_front_of_parent_block = true,
+            uint8_t _char_spacing_in_pixels = 0
         );
 
         //! Returns true if initialized
@@ -197,6 +198,12 @@ class ImageText
         {
             return char_height_in_pixels;
         }
+        
+        //! Get character spacing, in pixels
+        uint8_t get_char_spacing_in_pixels( void ) const noexcept
+        {
+            return char_spacing_in_pixels;
+        }
 
         //! Get current content, as a string
         std::string get_current_content( void ) const noexcept
@@ -216,6 +223,51 @@ class ImageText
             return block;
         }
 
+        //! Get total width in pixels
+        uint16_t get_total_width_in_pixels( void ) const noexcept
+        {
+            if( size_in_chars == 0
+                || justification ==  MCK::ImageText::INVALID
+            )
+            {
+                return 0;
+            }
+            else if( justification ==  MCK::ImageText::LEFT
+                || justification ==  MCK::ImageText::RIGHT
+                || justification ==  MCK::ImageText::CENTER
+            )
+            {
+                return char_width_in_pixels * size_in_chars
+                        + char_spacing_in_pixels * ( size_in_chars - 1 );
+            }
+            else
+            {
+                return char_width_in_pixels;
+            }
+        }
+
+        //! Get total height in pixels
+        uint16_t get_total_height_in_pixels( void ) const noexcept
+        {
+            if( size_in_chars == 0
+                || justification ==  MCK::ImageText::INVALID
+            )
+            {
+                return 0;
+            }
+            else if( justification ==  MCK::ImageText::LEFT
+                || justification ==  MCK::ImageText::RIGHT
+                || justification ==  MCK::ImageText::CENTER
+            )
+            {
+                return char_height_in_pixels;
+            }
+            else
+            {
+                return char_height_in_pixels * size_in_chars
+                        + char_spacing_in_pixels * ( size_in_chars - 1 );
+            }
+        }
 
     protected:
 
@@ -229,6 +281,7 @@ class ImageText
         uint8_t size_in_chars;
         uint8_t char_width_in_pixels;
         uint8_t char_height_in_pixels;
+        uint8_t char_spacing_in_pixels;
 
         std::string current_content;
 

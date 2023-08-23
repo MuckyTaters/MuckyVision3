@@ -109,7 +109,7 @@ int main( int argc, char** argv )
 
 
     ///////////////////////////////////////////
-    // CREATE DEMO PARAMETERS
+    // CREATE MAIN CONSOLE PARAMETERS
     const uint8_t BG_COL = MCK::COL_ROTTING_PURPLE;
     
     // Main console
@@ -118,37 +118,15 @@ int main( int argc, char** argv )
     const uint16_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
     const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 3;
     const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 24;
-    const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 10;
-    const uint16_t MAIN_CONSOLE_WIDTH_IN_PIXELS
-        = TILE_WIDTH * MAIN_CONSOLE_WIDTH_IN_CHARS;
-    const uint16_t MAIN_CONSOLE_HEIGHT_IN_PIXELS
-        = TILE_HEIGHT * MAIN_CONSOLE_HEIGHT_IN_CHARS;
+    const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 8;
 
     // Mini console
     const uint8_t MINI_CHAR_WIDTH = 8;
     const uint8_t MINI_CHAR_HEIGHT = 8;
-    const uint16_t MINI_CONSOLE_LEFT = TILE_WIDTH * 26;
+    const uint16_t MINI_CONSOLE_LEFT = TILE_WIDTH * 29;
     const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 3;
-    const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 20;
+    const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 12;
     const uint8_t MINI_CONSOLE_HEIGHT_IN_CHARS = 6;
-    const uint16_t MINI_CONSOLE_WIDTH_IN_PIXELS
-        = MINI_CHAR_WIDTH * MINI_CONSOLE_WIDTH_IN_CHARS;
-    const uint16_t MINI_CONSOLE_HEIGHT_IN_PIXELS
-        = MINI_CHAR_HEIGHT * MINI_CONSOLE_HEIGHT_IN_CHARS;
-
-    // Lanscape console
-    const uint8_t LSCAPE_CHAR_WIDTH = 32;
-    const uint8_t LSCAPE_CHAR_HEIGHT = 16;
-    const uint16_t LSCAPE_CONSOLE_LEFT = MAIN_CONSOLE_LEFT;
-    const uint16_t LSCAPE_CONSOLE_TOP
-        = MAIN_CONSOLE_TOP
-            + MAIN_CONSOLE_HEIGHT_IN_PIXELS + TILE_HEIGHT;
-    const uint8_t LSCAPE_CONSOLE_WIDTH_IN_CHARS = 20;
-    const uint8_t LSCAPE_CONSOLE_HEIGHT_IN_CHARS = 7;
-    const uint16_t LSCAPE_CONSOLE_WIDTH_IN_PIXELS
-        = LSCAPE_CHAR_WIDTH * LSCAPE_CONSOLE_WIDTH_IN_CHARS;
-    const uint16_t LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
-        = LSCAPE_CHAR_HEIGHT * LSCAPE_CONSOLE_HEIGHT_IN_CHARS;
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -217,7 +195,10 @@ int main( int argc, char** argv )
             10,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             MINI_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false // true  // add_to_front_of_parent_block = true
+            false, // true  // add_to_front_of_parent_block = true
+            MCK::COL_BLACK,  // underlay colo(u)r
+            1,  // char spacing in pixels
+            0  // line spacing in pixels
         );
     }
     catch( std::exception &e )
@@ -272,7 +253,9 @@ int main( int argc, char** argv )
             true,  // hoz_text_alignment
             MAIN_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
             false, // true  // add_to_front_of_parent_block = true
-            MCK::COL_BLACK  // Underlay colo(u)r
+            MCK::COL_BLACK,  // Underlay colo(u)r
+            2,  // char spacing in pixels
+            4  // line spacing in pixels
         );
     }
     catch( std::exception &e )
@@ -281,6 +264,19 @@ int main( int argc, char** argv )
             std::string( "Failed to create main console, error: ")
             + e.what() ) );
     }
+
+    //////////////////////////////////////////////
+    // MORE DEMO PARAMETERS
+
+    // Lanscape console
+    const uint8_t LSCAPE_CHAR_WIDTH = 32;
+    const uint8_t LSCAPE_CHAR_HEIGHT = 16;
+    const uint16_t LSCAPE_CONSOLE_LEFT = MAIN_CONSOLE_LEFT;
+    const uint16_t LSCAPE_CONSOLE_TOP
+        = MAIN_CONSOLE_TOP
+            + main_console->get_height_in_pixels() + TILE_HEIGHT;
+    const uint8_t LSCAPE_CONSOLE_WIDTH_IN_CHARS = 20;
+    const uint8_t LSCAPE_CONSOLE_HEIGHT_IN_CHARS = 7;
 
     //////////////////////////////////////////////
     // CREATE LANDSCAPE CONSOLE 
@@ -393,7 +389,7 @@ int main( int argc, char** argv )
             MCK::GameEngRenderInfo::Rect( 
                 MAIN_CONSOLE_LEFT,  // x pos
                 MAIN_CONSOLE_TOP - TILE_HEIGHT,  // y pos
-                MAIN_CONSOLE_WIDTH_IN_PIXELS,  // full width of window 
+                main_console->get_width_in_pixels(),
                 TILE_HEIGHT  // Height, in pixels
             )
         );
@@ -405,7 +401,7 @@ int main( int argc, char** argv )
             MCK::GameEngRenderInfo::Rect( 
                 MINI_CONSOLE_LEFT,  // x pos
                 MINI_CONSOLE_TOP - 1 * MINI_CHAR_HEIGHT,  // y pos
-                MINI_CONSOLE_WIDTH_IN_PIXELS,  // full width of minivconsole
+                mini_console->get_width_in_pixels(),
                 MINI_CHAR_HEIGHT  // Height, in pixels
             )
         );
@@ -418,7 +414,7 @@ int main( int argc, char** argv )
                 0,  // x pos
                 LSCAPE_CONSOLE_TOP,  // y pos
                 LSCAPE_CONSOLE_LEFT, 
-                LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
+                lscape_console->get_height_in_pixels()
             )
         );
         
@@ -428,11 +424,11 @@ int main( int argc, char** argv )
             lscape_console->get_overlay_block(),
             MCK::GameEngRenderInfo::Rect( 
                 LSCAPE_CONSOLE_LEFT
-                    + LSCAPE_CONSOLE_WIDTH_IN_PIXELS
+                    + lscape_console->get_width_in_pixels()
                         - LSCAPE_CHAR_WIDTH,  // x pos
                 LSCAPE_CONSOLE_TOP,  // y pos
                 LSCAPE_CHAR_WIDTH, 
-                LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
+                lscape_console->get_height_in_pixels()
             )
             /*
             MCK::GameEngRenderInfo::Rect( 

@@ -29,8 +29,6 @@
 
 #include "GameEng.h"
 #include "ImageMan.h"
-#include "ImageText.h"
-#include "Console.h"
 
 // Calculate vertical pos of text
 int calc_vert_offset(
@@ -302,48 +300,6 @@ int main( int argc, char** argv )
                     std::string( "Failed to create ascii image, error: ")
                     + e.what() ) );
             }
-        }
-    }
-
-    ////////////////////////////////////////
-    // Create copyright text
-
-    // Create test ImageText instance
-    std::shared_ptr<MCK::ImageText> image_text_test
-        = std::make_shared<MCK::ImageText>();
-    {
-        const std::string COPYRIGHT_SYMBOL( 1, uint8_t( 255 ) );
-        const std::string TEXT = COPYRIGHT_SYMBOL + " MuckyTaters 2023";
-
-        const uint8_t CHAR_WIDTH = 16;
-        const uint8_t CHAR_HEIGHT = 16;
-        const int PADDING = 0;
-        const uint8_t SIZE_IN_CHARS = TEXT.size() + PADDING;
-        const int X = WINDOW_WIDTH_IN_PIXELS
-                        - SIZE_IN_CHARS * CHAR_WIDTH;
-        const int Y = WINDOW_HEIGHT_IN_PIXELS
-                        - CHAR_HEIGHT;
-        try
-        {
-            image_text_test->init(
-                game_eng,
-                image_man,
-                game_eng.get_prime_render_block(),
-                logo_palette_id,
-                X,
-                Y,
-                SIZE_IN_CHARS,
-                CHAR_WIDTH,
-                CHAR_HEIGHT,
-                TEXT,
-                MCK::ImageText::LEFT
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create ImageText instance, error: ")
-                + e.what() ) );
         }
     }
 

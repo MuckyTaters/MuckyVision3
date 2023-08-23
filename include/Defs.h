@@ -112,11 +112,17 @@ namespace MCK
     
     static const uint8_t COL_INVALID = 255;
 
-    // ASCII value of blank character in ImageText
+    //! ASCII value of blank character in ImageText
     static const uint8_t BLANK_CHAR = 32;
 
-    // Height and width (in pixels) of blank textures
+    //! Height and width (in pixels) of blank textures
     static const uint8_t BLANK_TEX_SIZE = 8;
+
+    //! Maximum character spacing, in pixels (max is 255)
+    static const uint8_t MAX_CHAR_SPACING = 32;
+
+    //! Maximum line spacing, in pixels (max is 255)
+    static const uint8_t MAX_LINE_SPACING = 64;
 
 }  // End of namespace MCK
 

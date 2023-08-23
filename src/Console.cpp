@@ -46,6 +46,8 @@ MCK::Console::Console( void )
     this->ticks_at_last_update = 0;
     this->write_line_x_pos = 0;
     this->write_line_y_pos = 0;
+    this->char_spacing_in_pixels = 0;
+    this->line_spacing_in_pixels = 0;
 }
 
 void MCK::Console::init(
@@ -65,7 +67,9 @@ void MCK::Console::init(
     bool _hoz_text_alignment,
     uint8_t start_line,
     bool add_to_front_of_parent_block,
-    uint8_t underlay_color_id
+    uint8_t underlay_color_id,
+    uint8_t _char_spacing_in_pixels,
+    uint8_t _line_spacing_in_pixels
 )
 {
     if( this->initialized )
@@ -122,12 +126,16 @@ void MCK::Console::init(
         || _height_in_chars == 0
         || _char_width_in_pixels == 0
         || _char_height_in_pixels == 0
+        || _char_spacing_in_pixels > MCK::MAX_CHAR_SPACING
+        || _line_spacing_in_pixels > MCK::MAX_LINE_SPACING
     )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            std::string( "Cannot initialize Console as size " )
-            + std::string( "and/or char size is zero." )
+            std::string( "Cannot initialize Console as size is zero, " )
+            + std::string( "and/or char size is zero, " )
+            + std::string( "and/or char spacing is too large, " )
+            + std::string( "and/or line spacing is too large." )
 #else
             ""
 #endif
@@ -145,6 +153,13 @@ void MCK::Console::init(
     this->scroll_speed_in_ticks_per_pixel
             = _scroll_speed_in_ticks_per_pixel;
     this->hoz_text_alignment = _hoz_text_alignment;
+    this->char_spacing_in_pixels = _char_spacing_in_pixels;
+    this->line_spacing_in_pixels = _line_spacing_in_pixels;
+
+    // DEBUG
+    std::cout << "@@@ " << int( this->char_spacing_in_pixels )
+              << ", " << int( this->line_spacing_in_pixels )
+              << std::endl;
 
     // Create new overlay render block
     // (the overlay block holds everything)
@@ -223,27 +238,37 @@ void MCK::Console::init(
     int dx, dy;
     MCK::ImageText::Just justification;
     uint16_t line_len_in_pixels;
-    uint16_t line_width_in_pixels;
-    uint16_t line_height_in_pixels;
+    uint16_t console_width_in_pixels;
+    uint16_t console_height_in_pixels;
     if( this->hoz_text_alignment )
     {
         num_lines = this->height_in_chars;
         line_len = this->width_in_chars;
         dx = 0;
-        dy = this->char_height_in_pixels;
+        dy = this->char_height_in_pixels
+                + this->line_spacing_in_pixels;
         justification = MCK::ImageText::LEFT;
-        line_width_in_pixels = line_len * this->char_width_in_pixels;
-        line_height_in_pixels = this->char_height_in_pixels;
+        console_width_in_pixels
+            = line_len * this->char_width_in_pixels
+                + ( line_len - 1 ) * this->char_spacing_in_pixels;
+        console_height_in_pixels
+            = num_lines * this->char_height_in_pixels
+                + ( num_lines - 1 ) * this->line_spacing_in_pixels;
     }
     else
     {
         num_lines = this->width_in_chars;
         line_len = this->height_in_chars;
-        dx = this->char_width_in_pixels;
+        dx = this->char_width_in_pixels
+                + this->line_spacing_in_pixels;
         dy = 0;
         justification = MCK::ImageText::VERT_TOP;
-        line_width_in_pixels = this->char_width_in_pixels;
-        line_height_in_pixels = line_len * this->char_height_in_pixels;
+        console_width_in_pixels
+            = num_lines * this->char_width_in_pixels
+                + ( num_lines - 1 ) * this->char_spacing_in_pixels;
+        console_height_in_pixels
+            = line_len * this->char_height_in_pixels
+                + ( line_len - 1 ) * this->line_spacing_in_pixels;
     }
     
     const int LAST_LINE_NUM = int( num_lines - 1 );
@@ -257,17 +282,17 @@ void MCK::Console::init(
     this->write_line_x_pos = x_pos + LAST_LINE_NUM * dx;
     this->write_line_y_pos = y_pos + LAST_LINE_NUM * dy;
 
-    // Create underlay for write line
+    // Create underlay
     try
     {
         game_eng->create_blank_tex_render_info(
             underlay_color_id,
             underlay_block,
             MCK::GameEngRenderInfo::Rect(
-                write_line_x_pos,
-                write_line_y_pos,
-                line_width_in_pixels,
-                line_height_in_pixels
+                x_pos,
+                y_pos,
+                console_width_in_pixels,
+                console_height_in_pixels
             )
         );
     }
@@ -327,7 +352,9 @@ void MCK::Console::init(
                     content_pos,
                     content_len
                 ),
-                justification
+                justification, 
+                true,  // Add to front
+                this->char_spacing_in_pixels
             );
         }
         catch( std::exception &e )
@@ -430,8 +457,10 @@ void MCK::Console::update( uint32_t current_ticks )
     // Get max scroll offset
     const int16_t MAX_SCROLL_OFFSET
         = this->hoz_text_alignment ?
-            int16_t( this->char_height_in_pixels ) :
-            int16_t( this->char_width_in_pixels );
+            int16_t( this->char_height_in_pixels )
+                + int16_t( this->line_spacing_in_pixels ) :
+            int16_t( this->char_width_in_pixels )
+                + int16_t( this->line_spacing_in_pixels );
 
     // Get number of chars on line
     const uint8_t LINE_LEN
@@ -485,10 +514,12 @@ void MCK::Console::update( uint32_t current_ticks )
                 this->lines.pop_front();
 
                 // Change position of all remaining lines
-                const int DX = -1 * this->char_width_in_pixels
-                                      * !this->hoz_text_alignment;
-                const int DY = -1 * this->char_height_in_pixels
-                                      * this->hoz_text_alignment;
+                const int DX = -1 * ( this->char_width_in_pixels
+                                        + this->line_spacing_in_pixels 
+                                    ) * !this->hoz_text_alignment;
+                const int DY = -1 * ( this->char_height_in_pixels
+                                        + this->line_spacing_in_pixels
+                                    ) * this->hoz_text_alignment;
 
                 for( std::shared_ptr<MCK::ImageText> ln : this->lines )
                 {
@@ -530,7 +561,9 @@ void MCK::Console::update( uint32_t current_ticks )
                         "",
                         this->hoz_text_alignment ?
                             MCK::ImageText::LEFT :
-                            MCK::ImageText::VERT_TOP
+                            MCK::ImageText::VERT_TOP,
+                        true,  // Render on top
+                        this->char_spacing_in_pixels
                     );
                 }
                 catch( std::exception &e )

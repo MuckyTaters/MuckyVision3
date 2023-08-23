@@ -65,7 +65,9 @@ class Console
             bool _hoz_text_alignment = true,
             uint8_t start_line = 0,
             bool add_to_front_of_parent_block = true,
-            uint8_t underlay_color_id = MCK::COL_BLACK
+            uint8_t underlay_color_id = MCK::COL_BLACK,
+            uint8_t _char_spacing_in_pixels = 0,
+            uint8_t _line_spacing_in_pixels = 0
         );
 
         bool is_initialized( void ) const noexcept
@@ -94,6 +96,28 @@ class Console
             return overlay_block;
         }
 
+        //! Get console width in pixels
+        uint16_t get_width_in_pixels( void ) const noexcept
+        {
+            return this->width_in_chars * this->char_width_in_pixels
+                    + ( this->width_in_chars - 1 )
+                        * ( this->hoz_text_alignment ?
+                                this->char_spacing_in_pixels :
+                                    this->line_spacing_in_pixels
+                        );
+        }
+
+        //! Get console height in pixels
+        uint16_t get_height_in_pixels( void ) const noexcept
+        {
+            return this->height_in_chars * this->char_height_in_pixels
+                    + ( this->height_in_chars - 1 )
+                        * ( this->hoz_text_alignment ?
+                                this->line_spacing_in_pixels :
+                                    this->char_spacing_in_pixels
+                        );
+        }
+
 
     protected:
 
@@ -111,6 +135,8 @@ class Console
         uint8_t height_in_chars;
         uint8_t char_width_in_pixels;
         uint8_t char_height_in_pixels;
+        uint8_t char_spacing_in_pixels;
+        uint8_t line_spacing_in_pixels;
         uint32_t print_speed_in_ticks_per_char;
         uint32_t scroll_speed_in_ticks_per_pixel;
         bool hoz_text_alignment;

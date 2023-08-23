@@ -81,7 +81,8 @@ void MCK::ImageText::init(
     uint8_t _char_height_in_pixels,
     std::string initial_content,
     MCK::ImageText::Just _justification,
-    bool add_to_front_of_parent_block
+    bool add_to_front_of_parent_block,
+    uint8_t _char_spacing_in_pixels
 )
 {
     if( this->initialized )
@@ -137,12 +138,15 @@ void MCK::ImageText::init(
     if( _size_in_chars == 0
         || _char_width_in_pixels == 0
         || _char_height_in_pixels == 0
+        || _char_spacing_in_pixels > MAX_CHAR_SPACING 
     )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
             std::string( "Cannot initialize ImageText as number " )
-            + std::string( "of chars and/or char size is zero." )
+            + std::string( "of chars is zero, " )
+            + std::string( "and/or char size is zero, " )
+            + std::string( "and/or char spacing is too large." )
 #else
             ""
 #endif
@@ -166,6 +170,7 @@ void MCK::ImageText::init(
     this->size_in_chars = _size_in_chars;
     this->char_width_in_pixels = _char_width_in_pixels;
     this->char_height_in_pixels = _char_height_in_pixels;
+    this->char_spacing_in_pixels = _char_spacing_in_pixels;
     this->local_palette_id = _local_palette_id;
     this->justification = _justification;
 
@@ -227,38 +232,38 @@ void MCK::ImageText::init(
     {
         case MCK::ImageText::LEFT:
             start_char = 0;
-            dx = this->char_width_in_pixels;
+            dx = this->char_width_in_pixels + char_spacing_in_pixels;
             dy = 0;
             break;
         
         case MCK::ImageText::RIGHT:
             start_char = this->size_in_chars - CONTENT_SIZE; 
-            dx = this->char_width_in_pixels;
+            dx = this->char_width_in_pixels + char_spacing_in_pixels;
             dy = 0;
             break;
         
         case MCK::ImageText::CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
-            dx = this->char_width_in_pixels;
+            dx = this->char_width_in_pixels + char_spacing_in_pixels;
             dy = 0;
             break;
     
         case MCK::ImageText::VERT_TOP:
             start_char = 0;
             dx = 0;
-            dy = this->char_height_in_pixels;
+            dy = this->char_height_in_pixels + char_spacing_in_pixels;
             break;
         
         case MCK::ImageText::VERT_BOTTOM:
             start_char = this->size_in_chars - CONTENT_SIZE; 
             dx = 0;
-            dy = this->char_height_in_pixels;
+            dy = this->char_height_in_pixels + char_spacing_in_pixels;
             break;
         
         case MCK::ImageText::VERT_CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
             dx = 0;
-            dy = this->char_height_in_pixels;
+            dy = this->char_height_in_pixels + char_spacing_in_pixels;
             break;
     
         default:
