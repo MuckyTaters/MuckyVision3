@@ -144,17 +144,6 @@ class GameEng
             return textures.find( tex_id ) != textures.end();
         }
         
-        //! Returns true if texture with this image ID and palette ID already exists
-        bool texture_exists(
-            MCK_IMG_ID_TYPE image_id,
-            MCK_PAL_ID_TYPE local_palette_id
-        ) const
-        {
-            return texture_exists(
-                MCK::GameEng::calc_tex_id( image_id, local_palette_id )
-            );
-        }
-
         //! Create empty render block
         /*! @param parent_block: if empty pointer supplied, block has no parent and thus will not be rendered
          *  @param add_to_front: if True render before all sibling blocks, if false render after all sibling blocks
@@ -189,6 +178,10 @@ class GameEng
         ) const;
 
         //! Create blank textured render info
+        /*! @param col_id: Core colo(u)r ID (i.e. MCK::COL_....)
+         *  @param parent_block: Block to attach this texture to
+         *  @param dest_rect: Window pixel coordinates
+         */ 
         std::shared_ptr<MCK::GameEngRenderInfo> create_blank_tex_render_info(
             uint8_t col_id,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
@@ -208,7 +201,10 @@ class GameEng
         /*! @param render_block: Highest block to be rendered, e.g. prime_render_block
          *  @param hoz_offset: Horizonal offset, in pixels
          *  @param hoz_offset: Vertical offset, in pixels
-         *  Note: nothing will be displayed onscreen
+         *  This is typcially called once per frame.
+         *  When called with render_block set to GameEng's
+         *  prime render block, *everything* active is rendered.
+         *  However, nothing will be displayed onscreen
          *  until 'show()' is called.
          */
         void render_all(
@@ -219,6 +215,8 @@ class GameEng
         ) const;
 
         //! Set render clearing colo(u)r
+        /*! @param global_col_id: Core colo(u)r ID (i.e. MCK::COL_....)
+         */
         void set_clearing_color( uint8_t global_color_id ) const;
 
         //! Clears screen
@@ -246,11 +244,16 @@ class GameEng
         }
 
         //! Get vector of new keyboard events, in the order they occurred.
+        /*! @param key_events: Vector that will hold the resulting events.
+         */
         void get_pending_keyboard_actions(
             std::vector< KeyEvent > &key_events
         );
      
         //! Calculate texture id from image id and palette id
+        /*! @param image_id: Image ID (ImageMan manages these IDs)
+         *  @param local_palette_id: Local palette ID (ImageMan manages these IDs)
+         */
         static MCK_TEX_ID_TYPE calc_tex_id(
             MCK_IMG_ID_TYPE image_id,
             MCK_PAL_ID_TYPE local_palette_id
@@ -262,8 +265,12 @@ class GameEng
         }
 
         //! Remove GameEngRenderBlock instance from render tree
-        /*! Note: this is static as it only operates on the blocks
-         *        themselves, not GameEng
+        /*! @param block_to_remove: Render block to be removed
+         *  @param block_to_start_search: Render block at which start searching for 'block_to_remove'
+         *  If unsure, to 'block_to_start_search' to prime render
+         *  block, then all blocks will be searched.
+         *  Note: this method is static as it only operates on
+         *  the blocks themselves, not GameEng
          */
         static void remove_block(
             std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove, 
@@ -302,7 +309,7 @@ class GameEng
             SDL_Texture* &texture
         );
 
-        //! Get RGBA values for a given colo(u)r ID
+        //! Get RGBA values for a given colo(u)r ID, only used internally
         static void get_RGBA(
             uint8_t col_id,
             uint8_t &r,

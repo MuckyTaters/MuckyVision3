@@ -79,7 +79,9 @@ class ImageMan
         }
 
         //! Create local colo(u)r palette
-        /*! A local palette is a subset of the global colo(u)r
+        /*! @params global_color_ids: Pointer to a vector of length 2, 4 or 16, each element being a global colo(u)r ID.
+         *  @returns ID of new (or existing) local palette.
+         *  A local palette is a subset of the global colo(u)r
          *  palette containing 2, 4, or 16 colo(u)rs, each 
          *  referenced by their ID in the global palette.
          *  Local palettes are used to assign colo(u)rs to
@@ -90,20 +92,24 @@ class ImageMan
          *  {0,1} and {1,0} will produce mutally inverted images.
          *  If a local palette already exists, ID of existing
          *  palette will be returned.
-         *  @params global_color_ids: Pointer to a vector of length 2, 4 or 16, each element being a global colo(u)r ID.
-         *  @returns ID of new (or existing) local palette
          */
         MCK_PAL_ID_TYPE create_local_palette(
             const std::shared_ptr<std::vector<uint8_t>> global_color_ids
         );
 
         //! Create a custom image, and return its Image ID
-        /*! Note: no checking is done for duplicate images
+        /*! @param pixel_data: Pointer to byte vector holding pixel data.
+         *  @param pitch_per_pixel: Image width in pixels.
+         *  @param pitch_per_pixel: Image height in pixels.
+         *  Note: no checking is done for duplicate images, if you are
+         *        not careful you could have the same image registered
+         *        under different image IDs. It is your responsibility
+         *        to avoid this happening.
          */
         MCK_IMG_ID_TYPE create_custom_image(
             std::shared_ptr<const std::vector<uint8_t>> pixel_data,
             uint8_t bits_per_pixel,
-            uint16_t pitch_in_pixels,
+            uint16_t width_in_pixels,
             uint16_t height_in_pixels
         );
 
@@ -112,8 +118,8 @@ class ImageMan
         // @param local_palette_id: ID of existing local colo(u)r palette
         // @param x_pos: Hoz screen pos of image (excluding any block offsets) 
         // @param x_pos: Vert screen pos of image (excluding any block offsets) 
-        // @param x_scale: Non-zero integer scale applied to image width
-        // @param x_scale: Non-zero integer scale applied to image height
+        // @param width_in_pixels: image width, in window pixels
+        // @param height_in_pixels: image height, in window pixels
         // @param owning_block: Pointer to block to which image is assigned (if points to NULL, image will be an *orphan*)
         // Notes: Orphan images will not be visible until they are assigned to an active block.
         //        First local palette colo(u)r is background
@@ -146,8 +152,8 @@ class ImageMan
         // @param local_palette_id: ID of existing local colo(u)r palette
         // @param x_pos: Hoz screen pos of image (excluding any block offsets) 
         // @param x_pos: Vert screen pos of image (excluding any block offsets) 
-        // @param x_scale: Non-zero integer scale applied to image width
-        // @param x_scale: Non-zero integer scale applied to image height
+        // @param width_in_pixels: image width, in window pixels
+        // @param height_in_pixels: image height, in window pixels
         // @param owning_block: Pointer to block to which image is assigned (if points to NULL, image will be an *orphan*)
         // Notes: Orphan images will not be visible until they are assigned to an active block.
         std::shared_ptr<MCK::GameEngRenderInfo> create_render_info(
@@ -164,7 +170,7 @@ class ImageMan
         /*! @param info: Pointer to render info object
          *  @param image_id: ID of (an existing) image that will be used for the new texture
          *  @param local_palette_id: ID of existing local colo(u)r palette, used for new texture
-         *  @param keep_orignal_dest_rect_size: If true, size of destination rectangle is prevserved, even if new texture is different size
+         *  @param keep_orignal_dest_rect_size: If true, size of destination rectangle is preserved, even if new texture is a different size
          */
         void change_render_info_tex(
             std::shared_ptr<MCK::GameEngRenderInfo> info,
@@ -193,7 +199,6 @@ class ImageMan
         }
 
 
-
     private:
 
         //! Private struct used to store metadata for a sequence of images
@@ -218,8 +223,8 @@ class ImageMan
                 uint16_t _height_in_pixels
             )
             {
-                pixel_data = _pixel_data;
-                info = 0 
+                this->pixel_data = _pixel_data;
+                this->info = 0 
                        | _bits_per_pixel
                        | ( uint32_t( ( _pitch_in_pixels % 0x0FFF ) ) << 8 )
                        | ( uint32_t( ( _height_in_pixels % 0x0FFF ) ) << 20 );
@@ -231,21 +236,21 @@ class ImageMan
              */
             uint8_t get_bits_per_pixel( void ) const noexcept
             {
-                return info & 0xFF;
+                return this->info & 0xFF;
             }
 
             //! Get pitch in pixels
             /* Note: only first 12 bits are used */
             uint16_t get_pitch_in_pixels( void ) const noexcept
             {
-                return ( info >> 8 ) & 0x0FFF;
+                return ( this->info >> 8 ) & 0x0FFF;
             }
 
             //! Get height in pixels
             /* Note: only first 12 bits are used */
             uint16_t get_height_in_pixels( void ) const noexcept
             {
-                return ( info >> 20 ) & 0x0FFF;
+                return ( this->info >> 20 ) & 0x0FFF;
             }
 
             private:

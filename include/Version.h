@@ -37,7 +37,7 @@
 //  A = 2 (to distinguish from the original MuckyVision engine)
 //  B = 0 or 1 (0 is pre-production, 1 is production)
 //  C = iteration (starts at 1)
-#define MCK_VERSION 2.0.1
+#define MCK_VERSION 2.0.3
 
 // Keep this commented OUT unless you are
 // cross compiling for Windows *on Linux*

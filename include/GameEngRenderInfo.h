@@ -63,36 +63,36 @@ struct GameEngRenderInfo
         friend class GameEng;
        
         //! Get left position of rectangle
-        int get_x( void ) const noexcept { return r.x; }
+        int get_x( void ) const noexcept { return this->r.x; }
         
         //! Get top position of rectangle
-        int get_y( void ) const noexcept { return r.y; }
+        int get_y( void ) const noexcept { return this->r.y; }
 
         //! Get width of rectangle
-        int get_w( void ) const noexcept { return r.w; }
+        int get_w( void ) const noexcept { return this->r.w; }
 
         //! Get height of rectangle
-        int get_h( void ) const noexcept { return r.h; }
+        int get_h( void ) const noexcept { return this->r.h; }
 
         //! Set left position of rectangle
-        void set_x( int val ) noexcept { r.x = val; }
+        void set_x( int val ) noexcept { this->r.x = val; }
         
         //! Set top position of rectangle
-        void set_y( int val ) noexcept { r.y = val; }
+        void set_y( int val ) noexcept { this->r.y = val; }
 
         //! Set width of rectangle
-        void set_w( int val ) noexcept { r.w = val; }
+        void set_w( int val ) noexcept { this->r.w = val; }
 
         //! Set height of rectangle
-        void set_h( int val ) noexcept { r.h = val; }
+        void set_h( int val ) noexcept { this->r.h = val; }
 
         //! Default constructor
         Rect( void )
         {
-            r.x = 0;
-            r.y = 0;
-            r.w = 0;
-            r.h = 0;
+            this->r.x = 0;
+            this->r.y = 0;
+            this->r.w = 0;
+            this->r.h = 0;
         }
 
         //! Constructor
@@ -103,10 +103,10 @@ struct GameEngRenderInfo
          */
         Rect( int _x, int _y, int _w, int _h )
         {
-            r.x = _x;
-            r.y = _y;
-            r.w = _w;
-            r.h = _h;
+            this->r.x = _x;
+            this->r.y = _y;
+            this->r.w = _w;
+            this->r.h = _h;
         }
         
         private:
@@ -139,20 +139,20 @@ struct GameEngRenderInfo
     //! Get rotation, as multiple of 90 degrees
     int get_rotation( void ) const noexcept
     {
-        return ( flags & MCK::GameEngRenderInfo::ROTATION_MASK ) 
+        return ( this->flags & MCK::GameEngRenderInfo::ROTATION_MASK ) 
                     >> ROTATION_RSHIFT;
     }
 
     //! Get flip x
     bool get_flip_x( void ) const noexcept
     {
-        return ( flags & MCK::GameEngRenderInfo::FLIP_X_MASK ) > 0;
+        return ( this->flags & MCK::GameEngRenderInfo::FLIP_X_MASK ) > 0;
     }
 
     //! Get flip y
     bool get_flip_y( void ) const noexcept
     {
-        return ( flags & MCK::GameEngRenderInfo::FLIP_Y_MASK ) > 0;
+        return ( this->flags & MCK::GameEngRenderInfo::FLIP_Y_MASK ) > 0;
     }
 
     //! Default constructor
@@ -167,8 +167,8 @@ struct GameEngRenderInfo
 
     protected:
 
-        // Disabled to prevent copying, as
-        // this would cause chaos
+        // Disabled to prevent copying,
+        // as this would cause chaos
         GameEngRenderInfo(GameEngRenderInfo const&) = delete;
         void operator=(GameEngRenderInfo const&)  = delete;
 

@@ -34,7 +34,7 @@
 #ifndef IMG_DATA_ASCII_H
 #define IMG_DATA_ASCII_H
 
-#include <cstdint>  // For uint8_t
+#include <cstdint>  // For uint8_t et al
 #include <vector>
 
 namespace MCK

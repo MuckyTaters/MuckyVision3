@@ -54,7 +54,7 @@ MCK::ImageText::~ImageText( void )
         {
             MCK::GameEng::remove_block(
                 this->block,
-                game_eng->get_prime_render_block()
+                this->game_eng->get_prime_render_block()
             );
         }
         catch( std::exception &e )
@@ -218,7 +218,6 @@ void MCK::ImageText::init(
     const uint8_t CONTENT_SIZE = this->current_content.size();
 
     // Reserve memory for render info structs
-    //this->block->render_info.reserve( this->size_in_chars );
     this->block->reserve_space_for_info_render( this->size_in_chars );
 
     // Getting starting character position for this content,
@@ -226,44 +225,43 @@ void MCK::ImageText::init(
     // both dependant on justification
     uint8_t start_char;
     int dx, dy;
-    //this->get_start_char_and_xy( i, start_char, x, y );
     
     switch( this->justification )
     {
         case MCK::ImageText::LEFT:
             start_char = 0;
-            dx = this->char_width_in_pixels + char_spacing_in_pixels;
+            dx = this->char_width_in_pixels + this->char_spacing_in_pixels;
             dy = 0;
             break;
         
         case MCK::ImageText::RIGHT:
             start_char = this->size_in_chars - CONTENT_SIZE; 
-            dx = this->char_width_in_pixels + char_spacing_in_pixels;
+            dx = this->char_width_in_pixels + this->char_spacing_in_pixels;
             dy = 0;
             break;
         
         case MCK::ImageText::CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
-            dx = this->char_width_in_pixels + char_spacing_in_pixels;
+            dx = this->char_width_in_pixels + this->char_spacing_in_pixels;
             dy = 0;
             break;
     
         case MCK::ImageText::VERT_TOP:
             start_char = 0;
             dx = 0;
-            dy = this->char_height_in_pixels + char_spacing_in_pixels;
+            dy = this->char_height_in_pixels + this->char_spacing_in_pixels;
             break;
         
         case MCK::ImageText::VERT_BOTTOM:
             start_char = this->size_in_chars - CONTENT_SIZE; 
             dx = 0;
-            dy = this->char_height_in_pixels + char_spacing_in_pixels;
+            dy = this->char_height_in_pixels + this->char_spacing_in_pixels;
             break;
         
         case MCK::ImageText::VERT_CENTER:
             start_char = ( this->size_in_chars - CONTENT_SIZE ) / 2;
             dx = 0;
-            dy = this->char_height_in_pixels + char_spacing_in_pixels;
+            dy = this->char_height_in_pixels + this->char_spacing_in_pixels;
             break;
     
         default:
@@ -302,7 +300,6 @@ void MCK::ImageText::init(
                 this->char_height_in_pixels,
                 block
             );
-            //);
         }
         catch( std::exception &e )
         {
@@ -572,8 +569,10 @@ void MCK::ImageText::set_new_top_left_pixel_pos(
     }
 
     // Get top-left of first char image
-    const int FIRST_CHAR_X = this->block->get_render_info( 0 )->dest_rect.get_x();
-    const int FIRST_CHAR_Y = this->block->get_render_info( 0 )->dest_rect.get_y();
+    const int FIRST_CHAR_X
+        = this->block->get_render_info( 0 )->dest_rect.get_x();
+    const int FIRST_CHAR_Y
+        = this->block->get_render_info( 0 )->dest_rect.get_y();
 
     // Calculate and set required offset
     this->block->hoz_offset = new_x_pos - FIRST_CHAR_X;

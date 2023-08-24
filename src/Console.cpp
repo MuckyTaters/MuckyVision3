@@ -48,6 +48,7 @@ MCK::Console::Console( void )
     this->write_line_y_pos = 0;
     this->char_spacing_in_pixels = 0;
     this->line_spacing_in_pixels = 0;
+    this->local_palette_id = MCK::INVALID_PAL_ID;
 }
 
 void MCK::Console::init(
@@ -156,11 +157,6 @@ void MCK::Console::init(
     this->char_spacing_in_pixels = _char_spacing_in_pixels;
     this->line_spacing_in_pixels = _line_spacing_in_pixels;
 
-    // DEBUG
-    std::cout << "@@@ " << int( this->char_spacing_in_pixels )
-              << ", " << int( this->line_spacing_in_pixels )
-              << std::endl;
-
     // Create new overlay render block
     // (the overlay block holds everything)
     try
@@ -190,9 +186,9 @@ void MCK::Console::init(
     try
     {
         this->block = this->game_eng->create_empty_render_block(
-                    this->overlay_block,
-                    true  // Display at front
-                );
+                          this->overlay_block,
+                          true  // Display at front
+                      );
     }
     catch( std::exception &e )
     {
@@ -244,13 +240,17 @@ void MCK::Console::init(
     {
         num_lines = this->height_in_chars;
         line_len = this->width_in_chars;
+        
         dx = 0;
         dy = this->char_height_in_pixels
                 + this->line_spacing_in_pixels;
+        
         justification = MCK::ImageText::LEFT;
+        
         console_width_in_pixels
             = line_len * this->char_width_in_pixels
                 + ( line_len - 1 ) * this->char_spacing_in_pixels;
+        
         console_height_in_pixels
             = num_lines * this->char_height_in_pixels
                 + ( num_lines - 1 ) * this->line_spacing_in_pixels;
@@ -259,13 +259,17 @@ void MCK::Console::init(
     {
         num_lines = this->width_in_chars;
         line_len = this->height_in_chars;
+        
         dx = this->char_width_in_pixels
                 + this->line_spacing_in_pixels;
         dy = 0;
+        
         justification = MCK::ImageText::VERT_TOP;
+        
         console_width_in_pixels
             = num_lines * this->char_width_in_pixels
                 + ( num_lines - 1 ) * this->char_spacing_in_pixels;
+        
         console_height_in_pixels
             = line_len * this->char_height_in_pixels
                 + ( line_len - 1 ) * this->line_spacing_in_pixels;
@@ -287,7 +291,7 @@ void MCK::Console::init(
     {
         game_eng->create_blank_tex_render_info(
             underlay_color_id,
-            underlay_block,
+            this->underlay_block,
             MCK::GameEngRenderInfo::Rect(
                 x_pos,
                 y_pos,
@@ -371,7 +375,7 @@ void MCK::Console::init(
             ));
         }
 
-        lines.push_back( new_line );
+        this->lines.push_back( new_line );
     }
 
     // Enqueue any unused initial content in text buffer
@@ -395,7 +399,7 @@ void MCK::Console::init(
         {
             try
             {
-                text_buffer.push( initial_content.at( i ) );
+                this->text_buffer.push( initial_content.at( i ) );
             }
             catch( std::exception &e )
             {
@@ -413,7 +417,7 @@ void MCK::Console::init(
     std::cout << "@@ text_buffer.size() = "
               << text_buffer.size() << std::endl;
 
-    initialized = true;
+    this->initialized = true;
 }
 
 void MCK::Console::update( uint32_t current_ticks )
@@ -468,10 +472,6 @@ void MCK::Console::update( uint32_t current_ticks )
             this->width_in_chars :
             this->height_in_chars;
 
-    // DEBUG
-    //std::cout << "@@ *SCROLL_OFFSET = "
-    //          << *SCROLL_OFFSET << std::endl; 
-
     // Draw characters from text buffers. and/or scroll console,
     // until 'ticks' are used up or text buffer is empty
     // Explainer: The 'while' logic here asks:
@@ -480,15 +480,13 @@ void MCK::Console::update( uint32_t current_ticks )
     //  OR
     //  b) Is scrolling in progress, and sufficient time to scroll
     //     at least one pixel?
-    //  If this evaluates to False, 'ticks' is subtracted from
+    //  If this evaluates to false, 'ticks' is subtracted from
     //  'ticks_at_last_update' when next calculated
     while( ( ticks >= this->print_speed_in_ticks_per_char
              && this->text_buffer.size() > 0
              && !this->scroll_in_progress
-             // && *SCROLL_OFFSET == 0 
            ) ||
            ( ticks >= this->scroll_speed_in_ticks_per_pixel
-             // && *SCROLL_OFFSET != 0
              && this->scroll_in_progress
            )
     )
@@ -580,7 +578,7 @@ void MCK::Console::update( uint32_t current_ticks )
                 }
 
                 // Store new write line
-                lines.push_back( new_line );
+                this->lines.push_back( new_line );
 
                 // End scrolling here
                 this->scroll_in_progress = false;
@@ -591,17 +589,6 @@ void MCK::Console::update( uint32_t current_ticks )
                 ticks -= this->scroll_speed_in_ticks_per_pixel;
                 continue;
             }
-
-            /*
-            if( (*SCROLL_OFFSET)-- > 0 )
-            {
-                continue;
-            }
-            else
-            {
-                // Move ALL lines, delete first line
-            }
-            */
         }
 
         ///////////////////////////////////////////////////
@@ -609,7 +596,6 @@ void MCK::Console::update( uint32_t current_ticks )
 
         if ( ticks >= this->print_speed_in_ticks_per_char
               && this->text_buffer.size() > 0
-              // && *SCROLL_OFFSET == 0 
               && !this->scroll_in_progress
         )
         {
@@ -639,10 +625,6 @@ void MCK::Console::update( uint32_t current_ticks )
                 this->next_char_pos = 0;
 
                 this->scroll_in_progress = true;
-
-                // Setting scroll offset to < 0 triggers scrolling
-                // procedure
-                // *SCROLL_OFFSET = -1;
                 
                 // End update here
                 break;
@@ -672,6 +654,6 @@ void MCK::Console::add_content( const std::string &in )
     // Let calling method catch any exception here
     for( char c : in )
     {
-        text_buffer.push( c );
+        this->text_buffer.push( c );
     }
 }

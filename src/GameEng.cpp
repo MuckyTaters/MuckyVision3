@@ -578,7 +578,7 @@ void MCK::GameEng::init(
         = std::make_shared<MCK::GameEngRenderBlock>();
 
     // Create blank textures
-    blank_textures.resize( MCK::TOTAL_CORE_COLORS, NULL );
+    this->blank_textures.resize( MCK::TOTAL_CORE_COLORS, NULL );
     for( uint8_t i = 0; i < MCK::TOTAL_CORE_COLORS; i++ )
     {
         // Define local palette of size 2, with both colours,
@@ -598,7 +598,7 @@ void MCK::GameEng::init(
                 MCK::BLANK_TEX_SIZE, // height_in_pixels,
                 pixel,
                 pal,
-                blank_textures[i]
+                this->blank_textures[i]
             );
         }
         catch( const std::exception &e )
@@ -612,7 +612,7 @@ void MCK::GameEng::init(
 #endif
             ) );
         }
-        if( blank_textures[i] == NULL )
+        if( this->blank_textures[i] == NULL )
         {
             throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -984,8 +984,8 @@ void MCK::GameEng::create_texture(
     // If this texture already exists, do nothing
     {
         std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::iterator it 
-            = textures.find( tex_id );
-        if( it != textures.end() )
+            = this->textures.find( tex_id );
+        if( it != this->textures.end() )
         {
             return;
         }
@@ -1002,7 +1002,7 @@ void MCK::GameEng::create_texture(
         );
 
     // Declare texture pointer
-    SDL_Texture* texture = NULL;
+    SDL_Texture* tex = NULL;
 
     // Create texture
     try
@@ -1013,7 +1013,7 @@ void MCK::GameEng::create_texture(
             height_in_pixels,
             pixel_data,
             local_palette,
-            texture
+            tex
         );
     }
     catch( const std::exception &e )
@@ -1027,7 +1027,7 @@ void MCK::GameEng::create_texture(
 #endif
         ) );
     }
-    if( texture == NULL )
+    if( tex == NULL )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -1045,7 +1045,7 @@ void MCK::GameEng::create_texture(
         this->textures.insert(
             std::pair<MCK_TEX_ID_TYPE,SDL_Texture*>(
                 tex_id,
-                texture
+                tex
             )
         );
     }
@@ -1300,8 +1300,8 @@ void MCK::GameEng::get_pending_keyboard_actions(
 
         // Determine key code (leave as invalid if not recognised)
         std::map<SDL_Scancode,MCK::KeyEvent::Keys>::const_iterator it 
-            = scancodes.find( e.key.keysym.scancode );
-        if( it != scancodes.end() )
+            = this->scancodes.find( e.key.keysym.scancode );
+        if( it != this->scancodes.end() )
         {
             key_ev.key_code = it->second;
         }
@@ -1340,10 +1340,10 @@ void MCK::GameEng::set_clearing_color( uint8_t global_color_id ) const
     // (black, for clearing window)
     int rc = SDL_SetRenderDrawColor(
         this->renderer,
-        CORE_PALETTE_REDS[ global_color_id ],
-        CORE_PALETTE_GREENS[ global_color_id ],
-        CORE_PALETTE_BLUES[ global_color_id ],
-        CORE_PALETTE_ALPHAS[ global_color_id ]
+        MCK::GameEng::CORE_PALETTE_REDS[ global_color_id ],
+        MCK::GameEng::CORE_PALETTE_GREENS[ global_color_id ],
+        MCK::GameEng::CORE_PALETTE_BLUES[ global_color_id ],
+        MCK::GameEng::CORE_PALETTE_ALPHAS[ global_color_id ]
     );
     // -ve return code indicates failure
     if ( rc < 0 )
@@ -1437,15 +1437,12 @@ void MCK::GameEng::remove_block(
     }
 
     // Loop over blocks, looking for the one to remove
-    // for( auto block : block_to_start_search->sub_blocks )
     std::list<std::shared_ptr<MCK::GameEngRenderBlock>>::iterator it;
     for( it = block_to_start_search->sub_blocks.begin();
          it != block_to_start_search->sub_blocks.end();
          it++
     )
     {
-        // shared_ptr<MCK::GameEngRenderBlock> block = *it;
-
         // If block pointer is NULL, or matchs block to be
         // removed, remove it
         // Note: Carry on searching after removal, in case
@@ -1586,10 +1583,10 @@ void MCK::GameEng::basic_create_texture(
 #if defined MCK_STD_OUT
         std::cout << "SDL Surface pitch is "
             << surface->pitch
-            << ", bytes not "
+            << " bytes, not "
             << EXPECTED_PITCH
             << " bytes as expected. ** This could be a bug in SDL. ** "
-            << "Will override SDL surface pitch value to the "
+            << "I will override SDL surface pitch value to the "
             << "correct value, but be mindful of this if further "
             << "problems occur, particularly "
             << "the 'shearing' (diagonalization) of images."
@@ -1761,7 +1758,6 @@ void MCK::GameEng::basic_create_texture(
     // Warning, this command will 
     // produce a segfault if 'renderer' pointer is
     // set to a junk value
-    // SDL_Texture* texture = NULL;
     try
     {
         texture = SDL_CreateTextureFromSurface( this->renderer, surface );
@@ -1862,7 +1858,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_in
     MCK::GameEngRenderInfo::Rect dest_rect
 ) const
 {
-    if( !this->initialized | blank_textures.size() == 0 )
+    if( !this->initialized | this->blank_textures.size() == 0 )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -1874,9 +1870,9 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_in
     }
 
     // Constrain texture id
-    const uint8_t BLANK_TEX_ID = col_id % blank_textures.size();
+    const uint8_t BLANK_TEX_ID = col_id % this->blank_textures.size();
 
-    SDL_Texture* const BLANK_TEX = blank_textures[ col_id ];
+    SDL_Texture* const BLANK_TEX = this->blank_textures[ col_id ];
 
     // Check blank texture pointer is non-NULL
     if( BLANK_TEX == NULL )

@@ -136,7 +136,7 @@ Classes/structs included in this commit:
 Next on the TODO list is apply custom ASCII sets for Console and ImageText.
 After that, sprites and collision detection.
 
-Provision audio is also a high priority, but I will probably look at this
+Provision of audio is a high priority, but I will probably look at this
 once the major graphic elements are complete.
 
 
@@ -156,7 +156,7 @@ DISCLAIMER: Please do not install any software, or change your machine's
             DO NOT PROCEED.
 
 The 'MuckyVision3/tests' folder contains all the files required to 
-build two live demo programs, either on Linux or Windows (using MinGW).
+build three live demo programs, either on Linux or Windows (using MinGW).
 Note the file MuckyVision3/include/Version.h provides control over certain
 aspects of the build process, although the default settings should work
 for both Linux and Windows (MinGW).
@@ -187,7 +187,7 @@ Suggestions for Linux:
     You should see a file called GameEngTest, which when executed
     will create a new window showing a small white biplane moving
     over a city of scrolling purple blocks. The demo will run for
-    about fourteen seconds, then close automatically. You made need to give
+    a while, then close automatically. You made need to give
     this file run permission in order to execute it.
 
 Suggestions for Windows (MinGW):

@@ -48,6 +48,35 @@ class Console
         Console( void );
         virtual ~Console( void ) {}
 
+        //! Initialize Console instance
+        /*!
+         *  @param _game_eng: GameEng singleton instance
+         *  @param _image_man: ImageMan singleton instance
+         *  @param parent_block: Block to which console will be attaced
+         *  @param _local_palette_id: ID of palette used to colo(u)r the ASCII images
+         *  @param x_pos: Left of console, in pixels
+         *  @param y_pos: Top of console, in pixels
+         *  @param _width_in_chars: Width of console, in characters
+         *  @param _height_in_chars: Height of console, in characters
+         *  @param _char_width_in_pixels: Width of single character, in pixels
+         *  @param _char_height_in_pixels: Height of single character, in pixels
+         *  @param initial_content: Character content, as string
+         *  @param _print_speed_in_ticks_per_char: Ticks between each new character appearing, see notes below
+         *  @param _scroll_speed_in_ticks_per_pixel: Ticks between each scroll of one pixel, see notes below
+         *  @param _hoz_text_alignment: If true, chars print left to right, scrolling up. If false, chars print top to bottom, scrolling left. 
+         *  @param start_line: Index of first line at which initial content is displayed
+         *  @param add_to_front_of_parent_block: If true appears in front of all other blocks currently in parent block, behind if false.
+         *  @param underlay_color_id: Spaced chars/lines leave gaps, the underlay fills those gaps, choose its colo(u)r here.
+         *  @param _char_spacing_in_pixels: Additional spacing (padding) in pixel(s), between each character on line.
+         *  @param _line_spacing_in_pixels: Additional spacing (padding), in pixel(s), between lines.
+         *  Note: For speeds measured in 'ticks per..', the lower
+         *        number the faster, with zero being instantaneous.
+         *        For smooth scrolling, choose a number that is
+         *        a factor of the frame length (in ticks), e.g.
+         *        100fps = frame length 10 ticks, so best scroll
+         *        speeds are 5, 2, 1, or any integer multiple 
+         *        of 10.
+         */
         void init(
             GameEng &_game_eng,
             ImageMan &_image_man,
@@ -70,12 +99,15 @@ class Console
             uint8_t _line_spacing_in_pixels = 0
         );
 
+        //! Returns true if Console instance is initialized
         bool is_initialized( void ) const noexcept
         {
-            return initialized;
+            return this->initialized;
         }
 
         //! Add content to console input buffer
+        /*! @param in: A string containing chars that will be printed to the console once the current buffer contents have printed.
+         */
         void add_content( const std::string &in );
 
         //! This method animates console and ideally should be called every frame
@@ -90,7 +122,7 @@ class Console
          */
         std::shared_ptr<MCK::GameEngRenderBlock> get_overlay_block( void )
         {
-            return overlay_block;
+            return this->overlay_block;
         }
 
         //! Get console width in pixels
@@ -115,8 +147,8 @@ class Console
                         );
         }
 
-        //! Get maximum number of vertical pixels by which console is offset during scrollong
-        /*! This is useful for creating an overlay to cover the edage of the console during the offset 
+        //! Get maximum number of vertical pixels by which console is offset during scrolling
+        /*! This is useful for creating an overlay to cover the edge of the console during the offset 
          */
         uint8_t get_max_vert_scroll_offset( void ) const noexcept
         {
@@ -131,8 +163,8 @@ class Console
             }
         }
 
-        //! Get maximum number of horizontal pixels by which console is offset during scrollong
-        /*! This is useful for creating an overlay to cover the edage of the console during the offset 
+        //! Get maximum number of horizontal pixels by which console is offset during scrolling
+        /*! This is useful for creating an overlay to cover the edge of the console during the offset 
          */
         uint8_t get_max_hoz_scroll_offset( void ) const noexcept
         {

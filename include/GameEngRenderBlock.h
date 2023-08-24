@@ -70,7 +70,7 @@ struct GameEngRenderBlock
      */
     size_t get_render_info_count( void ) const noexcept
     {
-        return render_info.size();
+        return this->render_info.size();
     }
 
     //! Get number of subservient blocks associated with this block
@@ -110,9 +110,9 @@ struct GameEngRenderBlock
      */
     void reserve_space_for_info_render( size_t num )
     {
-        if( num > render_info.size() )
+        if( num > this->render_info.size() )
         {
-            render_info.reserve( num );
+            this->render_info.reserve( num );
         }
     }
 
@@ -122,7 +122,7 @@ struct GameEngRenderBlock
      */
     std::shared_ptr<MCK::GameEngRenderInfo> get_render_info( size_t index )
     {
-        if( render_info.size() <= index )
+        if( this->render_info.size() <= index )
         {
             throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -134,15 +134,15 @@ struct GameEngRenderBlock
             ) );
         }
 
-        return render_info[index];
+        return this->render_info[index];
     }
 
     //! Remove last render info item from this block
     void remove_last_render_info( void )
     {
-        if( render_info.size() > 0 )
+        if( this->render_info.size() > 0 )
         {
-            render_info.pop_back();
+            this->render_info.pop_back();
         }
     }
 

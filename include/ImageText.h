@@ -112,7 +112,7 @@ class ImageText
 
         //! Set individual character
         /*! @param ascii_value: Value of character
-         *  @param char_pos: Position if character
+         *  @param char_pos: Position of character
          *  Note: No justification is applied, the position
          *        specified is the actual postion at which 
          *        the new ASCII value is written.
@@ -128,7 +128,7 @@ class ImageText
         void get_top_left_pixel_pos(
             int &x_pos,
             int &y_pos,
-            bool include_offset
+            bool include_offset = true
         ) const;
 
         //! Move text box (by changing offset to reach specified position)
@@ -137,47 +137,51 @@ class ImageText
             int new_y_pos
         );
 
+        //! Change hoz and/or vert offset of text by relative amount
+        /*! @param dx: Change in hoz offset
+         *  @param dy: Change in vert offset
+         */
         void nudge_pixel_pos(
             int dx,
             int dy
         );
 
-        //! Returns true if visible
+        //! Returns true if visible, false if invisible
         bool is_active( void ) const noexcept
         {
-            return block.get() != NULL && block->active;
+            return this->block.get() != NULL && this->block->active;
         }
 
         //! Make text visible
         void make_active( void ) noexcept
         {
-            if( block.get() != NULL )
+            if( this->block.get() != NULL )
             {
-                block->active = true;
+                this->block->active = true;
             }
         }
 
         //! Make text invisible
         void make_inactive( void ) noexcept
         {
-            if( block.get() != NULL )
+            if( this->block.get() != NULL )
             {
-                block->active = false;
+                this->block->active = false;
             }
         }
 
-        //! Returns justification (left,right,center)
+        //! Returns justification (left, right, center, etc.)
         MCK::ImageText::Just get_justification( void ) const noexcept
         {
-            return justification;
+            return this->justification;
         }
 
         //! Returns true if alignment is horizontal, false if vertical or invalid
         bool is_horizontal( void ) const noexcept
         {
-            return justification == MCK::ImageText::LEFT
-                   || justification == MCK::ImageText::RIGHT
-                   || justification == MCK::ImageText::CENTER;
+            return this->justification == MCK::ImageText::LEFT
+                   || this->justification == MCK::ImageText::RIGHT
+                   || this->justification == MCK::ImageText::CENTER;
         }
 
         //! Get max number of available character slots
@@ -185,90 +189,91 @@ class ImageText
          */
         uint8_t get_max_size_in_chars( void ) const noexcept
         {
-            return size_in_chars;
+            return this->size_in_chars;
         }
 
         //! Get width of each character, in pixels
         uint8_t get_char_width_in_pixels( void ) const noexcept
         {
-            return char_width_in_pixels;
+            return this->char_width_in_pixels;
         }
 
         //! Get height of each character, in pixels
         uint8_t get_char_height_in_pixels( void ) const noexcept
         {
-            return char_height_in_pixels;
+            return this->char_height_in_pixels;
         }
         
         //! Get character spacing, in pixels
         uint8_t get_char_spacing_in_pixels( void ) const noexcept
         {
-            return char_spacing_in_pixels;
+            return this->char_spacing_in_pixels;
         }
 
         //! Get current content, as a string
         std::string get_current_content( void ) const noexcept
         {
-            return current_content;
+            return this->current_content;
         }
 
         //! Get id of local palette used for characters
         MCK_PAL_ID_TYPE get_local_palette_id( void ) const noexcept
         {
-            return local_palette_id;
+            return this->local_palette_id;
         }
 
         //! Get pointer to text box's render block
         std::shared_ptr<MCK::GameEngRenderBlock> get_block( void )
         {
-            return block;
+            return this->block;
         }
 
         //! Get total width in pixels
         uint16_t get_width_in_pixels( void ) const noexcept
         {
-            if( size_in_chars == 0
-                || justification ==  MCK::ImageText::INVALID
+            if( this->size_in_chars == 0
+                || this->justification ==  MCK::ImageText::INVALID
             )
             {
                 return 0;
             }
-            else if( justification ==  MCK::ImageText::LEFT
-                || justification ==  MCK::ImageText::RIGHT
-                || justification ==  MCK::ImageText::CENTER
+            else if( this->justification ==  MCK::ImageText::LEFT
+                || this->justification ==  MCK::ImageText::RIGHT
+                || this->justification ==  MCK::ImageText::CENTER
             )
             {
-                return char_width_in_pixels * size_in_chars
-                        + char_spacing_in_pixels * ( size_in_chars - 1 );
+                return this->char_width_in_pixels * this->size_in_chars
+                        + this->char_spacing_in_pixels * ( this->size_in_chars - 1 );
             }
             else
             {
-                return char_width_in_pixels;
+                return this->char_width_in_pixels;
             }
         }
 
         //! Get total height in pixels
         uint16_t get_height_in_pixels( void ) const noexcept
         {
-            if( size_in_chars == 0
-                || justification ==  MCK::ImageText::INVALID
+            if( this->size_in_chars == 0
+                || this->justification ==  MCK::ImageText::INVALID
             )
             {
                 return 0;
             }
-            else if( justification ==  MCK::ImageText::LEFT
-                || justification ==  MCK::ImageText::RIGHT
-                || justification ==  MCK::ImageText::CENTER
+            else if( this->justification ==  MCK::ImageText::LEFT
+                || this->justification ==  MCK::ImageText::RIGHT
+                || this->justification ==  MCK::ImageText::CENTER
             )
             {
-                return char_height_in_pixels;
+                return this->char_height_in_pixels;
             }
             else
             {
-                return char_height_in_pixels * size_in_chars
-                        + char_spacing_in_pixels * ( size_in_chars - 1 );
+                return this->char_height_in_pixels * this->size_in_chars
+                        + this->char_spacing_in_pixels * ( this->size_in_chars - 1 );
             }
         }
+
 
     protected:
 
