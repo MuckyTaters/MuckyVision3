@@ -452,18 +452,6 @@ int main( int argc, char** argv )
                 LSCAPE_CHAR_WIDTH, 
                 lscape_console->get_height_in_pixels()
             )
-            /*
-            MCK::GameEngRenderInfo::Rect( 
-                LSCAPE_CONSOLE_LEFT
-                    + LSCAPE_CONSOLE_WIDTH_IN_PIXELS
-                        - LSCAPE_CHAR_WIDTH,  // x pos
-                LSCAPE_CONSOLE_TOP,  // y pos
-                WINDOW_WIDTH_IN_PIXELS
-                    - LSCAPE_CONSOLE_LEFT
-                        - LSCAPE_CONSOLE_WIDTH_IN_PIXELS,
-                LSCAPE_CONSOLE_HEIGHT_IN_PIXELS
-            )
-            */
         );
         
     }
