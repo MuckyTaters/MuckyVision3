@@ -38,6 +38,9 @@
 #ifndef MCK_GAME_ENG_AUDIO_H
 #define MCK_GAME_ENG_AUDIO_H
 
+// This include must come first
+#include "Version.h"
+
 // SDL includes
 #ifdef MCK_MINGW
 // This is required if cross-compiling for Windows *on Linux*
@@ -130,6 +133,8 @@ class GameEngAudio
         static uint16_t bytes_per_sample;
         static uint8_t bytes_per_channel;
 
+        static MCK::AudioDataType data_type;
+
         //! Ring buffer, for communication with main thread
         /*! This is composed of 'n' entries containing 8 bytes each
          *  where 'n' is set at compile time and defined in Defs.h.
@@ -150,6 +155,7 @@ class GameEngAudio
         static uint64_t chunk_buffer[];
 
         static uint8_t master_volume;
+        static float master_volume_on_unit_interval;
 
         static std::vector<uint8_t> channel_volumes;
 

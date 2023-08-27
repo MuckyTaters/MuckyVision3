@@ -148,6 +148,13 @@ namespace MCK
     //! Default volume for individual channels (0x00 = mute, 0xFF = max)
     static const uint8_t AUDIO_DEFAULT_CHANNEL_VOLUME = 0x80;
 
+    enum class AudioDataType
+    {
+        UNKNOWN,
+        SIGNED_16_BIT_INT,
+        SIGNED_32_BIT_FLOAT
+    };
+
 }  // End of namespace MCK
 
 #endif

@@ -41,6 +41,8 @@
 bool MCK::GameEngAudio::initialized = false;
 uint64_t MCK::GameEngAudio::sample_counter = 0;
 uint8_t MCK::GameEngAudio::master_volume = 0xFF;
+float MCK::GameEngAudio::master_volume_on_unit_interval
+    = MCK::GameEngAudio::master_volume / float( 0xFF );
 std::vector<uint8_t> MCK::GameEngAudio::channel_volumes(
     8,  // Always 8 channels
     AUDIO_DEFAULT_CHANNEL_VOLUME
@@ -55,6 +57,8 @@ uint32_t MCK::GameEngAudio::buffer_size_in_bytes;
 uint16_t MCK::GameEngAudio::bytes_per_sample;
 uint8_t MCK::GameEngAudio::bytes_per_channel;
 uint64_t MCK::GameEngAudio::chunk_buffer[ MCK::AUDIO_CHUNK_BUFFER_SIZE ];
+MCK::AudioDataType MCK::GameEngAudio::data_type
+    = MCK::AudioDataType::UNKNOWN;
 
 void MCK::GameEngAudio::init( uint8_t _master_volume )
 {
@@ -64,7 +68,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
             std::string( "Failed to initialized SDL audio " )
-            + std::string( "as already initialized!" );
+            + std::string( "as already initialized!" )
 #else
             ""
 #endif
@@ -79,7 +83,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
             throw( std::runtime_error(
 #if defined MCK_STD_OUT
                 std::string( "Failed to initialized SDL audio, " )
-                + std::string( "error message = " );
+                + std::string( "error message = " )
                 + SDL_GetError()
 #else
                 ""
@@ -173,7 +177,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
               << "\n>> Format = "
               << MCK::GameEngAudio::format
               << "\n>> Number of channels = "
-              << MCK::GameEngAudio::num_channels
+              << int( MCK::GameEngAudio::num_channels )
               << "\n>> Silence byte value = "
               << int( MCK::GameEngAudio::silence_byte_value )
               << "\n>> Buffer size (in samples)  = "
@@ -183,10 +187,48 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
               << "\n>> Bytes per sample = "
               << MCK::GameEngAudio::bytes_per_sample
               << "\n>> Bytes per channel = "
-              << MCK::GameEngAudio::bytes_per_channel
+              << int( MCK::GameEngAudio::bytes_per_channel )
               << std::endl;
 #endif
 
+    // Set simplified indicator of data format
+    {
+        
+
+        const bool FLOAT = SDL_AUDIO_ISFLOAT( MCK::GameEngAudio::format );
+        const bool SIGNED = SDL_AUDIO_ISSIGNED( MCK::GameEngAudio::format );
+        
+        if( !FLOAT
+            && SIGNED
+            && MCK::GameEngAudio::bytes_per_channel == 2
+        )
+        {
+            MCK::GameEngAudio::data_type
+                = MCK::AudioDataType::SIGNED_16_BIT_INT;
+        }
+        else if( FLOAT
+                 && SIGNED
+                 && MCK::GameEngAudio::bytes_per_channel == 4
+        )
+        {
+            MCK::GameEngAudio::data_type
+                = MCK::AudioDataType::SIGNED_32_BIT_FLOAT;
+        }
+        else
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Apologies, your audio data format " )
+                + std::string( "is not supported by MuckyVision v3." )
+                + std::string( " Audio initialization failed." )
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    // Set master volume
     MCK::GameEngAudio::master_volume = _master_volume;
 
     SDL_PauseAudio(0); // Start audio by default
@@ -222,17 +264,81 @@ void MCK::GameEngAudio::callback(
     int bytes
 )
 {
+    // Get number of samples required
     const int LENGTH = bytes / MCK::GameEngAudio::bytes_per_sample;
 
+    // Calculate end sample count
+    const long END_SAMPLE_COUNT = MCK::GameEngAudio::sample_counter + LENGTH;
+    
+    // Keep track of samples filled, in case we need to pad with
+    // silence bytes
+    int num_of_samples_filled = 0;
+
+    // Get signed 16bit integer pointer to actual buffer array
+    int16_t *int16_buffer = (int16_t*)raw_buffer;
+
+    // Get signed (32bit?) float pointer to actual buffer array
+    float *float_buffer = (float*)raw_buffer;
+
+    // Create a reference tone
+    for( int sample_index = 0; sample_index < LENGTH; sample_index++ )
     {
-        // If no game engine instance, set buffer to zero
-        for( int i = 0; i < bytes; i++ )
+        // Get sample value as float, in range [-1, 1]
+
+        // TEST: Generate reference tone at 440Hz
+        const float VAL
+            = sin(
+                float ( MCK::GameEngAudio::sample_counter + sample_index ) 
+                    / float( MCK::GameEngAudio::samples_per_second )
+                        * 440.0f  // 440Hz
+                        / 2.0f * 3.14127f  // period of sin
+            ) / 8.0f  // 8 channels
+              * MCK::GameEngAudio::master_volume_on_unit_interval;
+
+        // Short integer (16 bit signed)
+        if( data_type == MCK::AudioDataType::SIGNED_16_BIT_INT )
         {
-            // As seeting all bytes to zero,
-            // no need to determine data type
-            raw_buffer[i] = MCK::GameEngAudio::silence_byte_value;
+            // Calculate amplitude adjusted sample value
+            const int16_t NORM_VAL = int16_t( VAL * 32767.0f + 0.5f ) ;
+
+            // Duplicate sample across all channels
+            for( int ch = 0;
+                 ch < MCK::GameEngAudio::num_channels;
+                 ch++
+            )
+            {
+                int16_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
+                    = NORM_VAL;
+            }
         }
-        // Return here as no more to do
-        return;
+        else if( data_type == MCK::AudioDataType::SIGNED_32_BIT_FLOAT )
+        {
+            // Duplicate sample across all channels
+            for( int ch = 0;
+                 ch < MCK::GameEngAudio::num_channels;
+                 ch++
+            )
+            {
+                float_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
+                    = VAL;  // No need to normalize
+            }
+        }
+    
+        num_of_samples_filled++;
     }
+
+    // Fill any unused bytes with silence
+    for( int i = num_of_samples_filled * MCK::GameEngAudio::bytes_per_sample; 
+         i < bytes;
+         i++
+    )
+    {
+        // As setting all bytes to zero,
+        // no need to determine data type
+        raw_buffer[i] = MCK::GameEngAudio::silence_byte_value;
+    }
+    
+    // Set new sample count
+    MCK::GameEngAudio::sample_counter = END_SAMPLE_COUNT;
+    
 }
