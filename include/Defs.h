@@ -124,6 +124,30 @@ namespace MCK
     //! Maximum line spacing, in pixels (max is 255)
     static const uint8_t MAX_LINE_SPACING = 64;
 
+    ////////////////////////////////
+    // AUDIO
+    
+    //! First choice of audio format
+    static const int AUDIO_WANT_FORMAT = AUDIO_S16SYS; // signed short integer
+
+    //! First choice of audio sample rate
+    static const int AUDIO_WANT_SAMPLE_RATE = 44100;
+
+    //! First choice for number of audio channels 
+    static const int AUDIO_WANT_CHANNELS = 1;  // Mono
+
+    //! First choice of audio buffer size (choice is usually linked to audio format)
+    static const int AUDIO_WANT_BUFFER_SIZE = 2048;
+
+    //! Size (in ticks) of chunk buffer, must be power of 2
+    /* Do not change these unless you know what you are doing */
+    static const size_t AUDIO_CHUNK_BUFFER_SIZE = 0X200;
+    static const size_t AUDIO_CHUNK_BUFFER_SIZE_MASK
+        = AUDIO_CHUNK_BUFFER_SIZE - 1;
+   
+    //! Default volume for individual channels (0x00 = mute, 0xFF = max)
+    static const uint8_t AUDIO_DEFAULT_CHANNEL_VOLUME = 0x80;
+
 }  // End of namespace MCK
 
 #endif

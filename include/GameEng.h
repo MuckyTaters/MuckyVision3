@@ -48,6 +48,7 @@
 #endif
 
 #include <cmath>  // For ceil
+#include <stdexcept>  // For exceptions
 #include <limits>  // For numeric_limits, size of data type in bits
 #include <list>  // For list
 #include <map>  // For map
