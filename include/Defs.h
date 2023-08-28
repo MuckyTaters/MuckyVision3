@@ -126,24 +126,62 @@ namespace MCK
 
     ////////////////////////////////
     // AUDIO
-    
+   
+    // Virtual audio channels are software generated,
+    // and are not related to system audio channels.
+    // Each virtual channel can play one 'chunk' (sound)
+    // at a time. You can have 1, 2, 4 or 8 virtual
+    // channels in MuckyVision v3. The higher the number
+    // the more sounds to be played simulatenously, but
+    // individual sounds are quieter when more virtual
+    // channels used. This is because speaker bandwith
+    // is shared between all virtual channels, even
+    // those not producing sound at that time.
+#define MCK_NUM_VIRTUAL_AUDIO_CHANNELS 8
+
+    // This is an internal data type used by GameEngAudio,
+    // and it is dependent on the number of virtual channels
+#if MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 8
+#define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint64_t
+#elif MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 4
+#define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint32_t
+#elif MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 2
+#define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint16_t
+#elif MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 1
+#define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint8_t
+#endif
+
+    //! This is calculated at compile time, do not alter
+    static const size_t AUDIO_NUM_VIRTUAL_CHANNELS_MASK
+        = ( uint8_t( 1 ) << MCK_NUM_VIRTUAL_AUDIO_CHANNELS ) - 1;
+   
     //! First choice of audio format
     static const int AUDIO_WANT_FORMAT = AUDIO_S16SYS; // signed short integer
 
     //! First choice of audio sample rate
     static const int AUDIO_WANT_SAMPLE_RATE = 44100;
 
-    //! First choice for number of audio channels 
-    static const int AUDIO_WANT_CHANNELS = 1;  // Mono
+    //! First choice for number of system audio channels
+    /* This should be set to 1 (mono), as MuckyVision v3
+     * does not currently support stereo. */
+    static const int AUDIO_WANT_CHANNELS = 1;
 
     //! First choice of audio buffer size (choice is usually linked to audio format)
     static const int AUDIO_WANT_BUFFER_SIZE = 2048;
 
-    //! Size (in ticks) of chunk buffer, must be power of 2
-    /* Do not change these unless you know what you are doing */
-    static const size_t AUDIO_CHUNK_BUFFER_SIZE = 0X200;
-    static const size_t AUDIO_CHUNK_BUFFER_SIZE_MASK
-        = AUDIO_CHUNK_BUFFER_SIZE - 1;
+    //! Size (in game ticks) of ring buffer in GameEngAudio
+    /* This buffer enables GameEngAudio to take instructions
+     * from the main program. It is synchronised with game time,
+     * and each element represents one 'tick' (millisecond).
+     * The size (which must be a power of 2) should be set 
+     * to be comfortably larger than the maximum expected gap
+     * (in milliseconds) between audio callbacks.
+     * ** This number must be power of 2. **/
+    static const size_t AUDIO_RING_BUFFER_SIZE = 0X200;
+
+    //! This is calculated at compile time, do not alter
+    static const size_t AUDIO_RING_BUFFER_SIZE_MASK
+        = AUDIO_RING_BUFFER_SIZE - 1;
    
     //! Default volume for individual channels (0x00 = mute, 0xFF = max)
     static const uint8_t AUDIO_DEFAULT_CHANNEL_VOLUME = 0x80;

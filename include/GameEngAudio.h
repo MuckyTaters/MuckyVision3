@@ -152,7 +152,7 @@ class GameEngAudio
          *           Do not alter the buffering
          *           code unless you know what you are doing.
          */
-        static uint64_t chunk_buffer[];
+        static MCK_AUDIO_RING_BUFFER_DATA_TYPE ring_buffer[];
 
         static uint8_t master_volume;
         static float master_volume_on_unit_interval;

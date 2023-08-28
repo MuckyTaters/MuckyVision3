@@ -44,7 +44,7 @@ uint8_t MCK::GameEngAudio::master_volume = 0xFF;
 float MCK::GameEngAudio::master_volume_on_unit_interval
     = MCK::GameEngAudio::master_volume / float( 0xFF );
 std::vector<uint8_t> MCK::GameEngAudio::channel_volumes(
-    8,  // Always 8 channels
+    MCK_NUM_VIRTUAL_AUDIO_CHANNELS,
     AUDIO_DEFAULT_CHANNEL_VOLUME
 );
 // These will be set by 'init' method
@@ -56,7 +56,7 @@ uint16_t MCK::GameEngAudio::buffer_size_in_samples;
 uint32_t MCK::GameEngAudio::buffer_size_in_bytes;
 uint16_t MCK::GameEngAudio::bytes_per_sample;
 uint8_t MCK::GameEngAudio::bytes_per_channel;
-uint64_t MCK::GameEngAudio::chunk_buffer[ MCK::AUDIO_CHUNK_BUFFER_SIZE ];
+MCK_AUDIO_RING_BUFFER_DATA_TYPE MCK::GameEngAudio::ring_buffer[ MCK::AUDIO_RING_BUFFER_SIZE ];
 MCK::AudioDataType MCK::GameEngAudio::data_type
     = MCK::AudioDataType::UNKNOWN;
 
@@ -153,7 +153,8 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
     MCK::GameEngAudio::silence_byte_value = have.silence;
     MCK::GameEngAudio::buffer_size_in_samples = have.samples;
     MCK::GameEngAudio::buffer_size_in_bytes = have.size;
-    MCK::GameEngAudio::bytes_per_channel = ( have.format & SDL_AUDIO_MASK_BITSIZE ) / 8;
+    MCK::GameEngAudio::bytes_per_channel
+        = ( have.format & SDL_AUDIO_MASK_BITSIZE ) / 8;  // here 8 = bits per byte
     MCK::GameEngAudio::bytes_per_sample = have.size / have.samples;
 
     // Check 'bytes_per_channel' matches 'bytes_per_samples'
@@ -198,6 +199,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
         const bool FLOAT = SDL_AUDIO_ISFLOAT( MCK::GameEngAudio::format );
         const bool SIGNED = SDL_AUDIO_ISSIGNED( MCK::GameEngAudio::format );
         
+        // Check for signed 16bit integer
         if( !FLOAT
             && SIGNED
             && MCK::GameEngAudio::bytes_per_channel == 2
@@ -206,6 +208,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
             MCK::GameEngAudio::data_type
                 = MCK::AudioDataType::SIGNED_16_BIT_INT;
         }
+        // Check for float
         else if( FLOAT
                  && SIGNED
                  && MCK::GameEngAudio::bytes_per_channel == 4
@@ -214,6 +217,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
             MCK::GameEngAudio::data_type
                 = MCK::AudioDataType::SIGNED_32_BIT_FLOAT;
         }
+        // Reject all other formats for now
         else
         {
             throw( std::runtime_error(
@@ -251,8 +255,10 @@ void MCK::GameEngAudio::set_channel_volume(
     uint8_t channel_num
 )
 {
-    // Only use first 3 bits of channel number
-    const uint8_t CHAN_NUM = channel_num & 0x03;
+    // Only use relevant bits of channel number
+    // by masking out all other bits
+    const uint8_t CHAN_NUM
+        = channel_num & MCK::AUDIO_NUM_VIRTUAL_CHANNELS_MASK;
 
     // Set volume
     channel_volumes.at( channel_num ) = volume;
@@ -292,7 +298,7 @@ void MCK::GameEngAudio::callback(
                     / float( MCK::GameEngAudio::samples_per_second )
                         * 440.0f  // 440Hz
                         / 2.0f * 3.14127f  // period of sin
-            ) / 8.0f  // 8 channels
+            ) / float( MCK_NUM_VIRTUAL_AUDIO_CHANNELS ) 
               * MCK::GameEngAudio::master_volume_on_unit_interval;
 
         // Short integer (16 bit signed)
@@ -300,7 +306,7 @@ void MCK::GameEngAudio::callback(
         {
             // Calculate amplitude adjusted sample value
             const int16_t NORM_VAL = int16_t( VAL * 32767.0f + 0.5f ) ;
-
+            
             // Duplicate sample across all channels
             for( int ch = 0;
                  ch < MCK::GameEngAudio::num_channels;
