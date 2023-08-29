@@ -93,15 +93,6 @@ class GameEngAudio
             uint32_t ticks = 0
         );
 
-        //! Set volume of audio channel 
-        /*! @param volume: Channel volume, 0 = mute, 255 = max.
-         *  @param channel_num: Number of channel (0-7, only rightmost 3 bits are used)
-         */
-        static void set_channel_volume(
-            uint8_t volume,
-            uint8_t channel_num
-        );
-
         //! THIS METHOD IS ONLY USED BY SDL, DO NOT CALL DIRECTLY
         static void callback(
             void *user_data,
@@ -116,8 +107,8 @@ class GameEngAudio
         // to avoid istantiation.
         GameEngAudio( void ) = delete;
         ~GameEngAudio( void ) = delete;
-        GameEngAudio(GameEngAudio const&) = delete;
-        void operator=(GameEngAudio const&)  = delete;
+        GameEngAudio( GameEngAudio const& ) = delete;
+        void operator=( GameEngAudio const& )  = delete;
 
         static bool initialized;
 
@@ -156,10 +147,6 @@ class GameEngAudio
 
         static uint8_t master_volume;
         static float master_volume_on_unit_interval;
-
-        static std::vector<uint8_t> channel_volumes;
-
-        // TODO: Store chunk type instances
 };
 
 }  // End of namespace MCK

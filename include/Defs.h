@@ -50,6 +50,9 @@ namespace MCK
     //! Ceiling/invalid value for texture ids
     const MCK_TEX_ID_TYPE INVALID_TEX_ID = 0xFFFFFFFFFFFFFFFF;
 
+    //! Ceiling/invalid value for audio sample counts
+    const uint64_t AUDIO_INVALID_SAMPLE_COUNT = 0xFFFFFFFFFFFFFFFF;
+
     //! Safety parameter - max window width
     const uint16_t MAX_WINDOW_WIDTH_IN_PIXELS = 4096;
     
@@ -156,7 +159,7 @@ namespace MCK
         = ( uint8_t( 1 ) << MCK_NUM_VIRTUAL_AUDIO_CHANNELS ) - 1;
    
     //! First choice of audio format
-    static const int AUDIO_WANT_FORMAT = AUDIO_S16SYS; // signed short integer
+    static const int AUDIO_WANT_FORMAT = 32784;  // == AUDIO_S16SYS ( SDL macro for signed short integer)
 
     //! First choice of audio sample rate
     static const int AUDIO_WANT_SAMPLE_RATE = 44100;
@@ -192,6 +195,35 @@ namespace MCK
         SIGNED_16_BIT_INT,
         SIGNED_32_BIT_FLOAT
     };
+
+    //! Provides reflection to voice classes
+    /*! Do not alter this enumeration unless you are
+     *  creating/removing a voice class and know
+     *  what you are doing.
+     */
+    enum class VoiceType
+    {
+        BASE,
+        SYNTH
+    };
+
+    //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
+    const static int VOICE_SYNTH_FREQ_A4 = 440;
+
+    //! Max vibrato magnitude equals max voice magnitude divided by this number
+    /* E.g. a value of 4 means max vibrato magnitude is 25%
+     * of max voice magnitude. So, if max vibrato magnitude is
+     * selected for a particular voice, that voice's volume
+     * should be set to no more than 75%, otherwise clipping 
+     * may occur.
+     */
+    const static int VOICE_SYNTH_MAX_VIB_PROPORTION = 4;
+
+    //! These values define the bit content of the commands send to VoiceSynth
+    const static uint8_t VOICE_SYNTH_PITCH_BITS = 5;
+    const static uint8_t VOICE_SYNTH_PITCH_LSHIFT = 0;
+    const static uint8_t VOICE_SYNTH_DURATION_BITS = 3;
+    const static uint8_t VOICE_SYNTH_DURATION_LSHIFT = 5;
 
 }  // End of namespace MCK
 

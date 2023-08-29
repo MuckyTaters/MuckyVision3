@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/GameEngAudio.o build/GameEngAudioTest.o
+BUILDS := build/GameEng.o build/GameEngAudio.o build/VoiceSynth.o build/GameEngAudioTest.o
 
 #CC specifies which compiler we're using
 CC := g++
@@ -88,8 +88,12 @@ build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../in
 build/GameEngAudio.o: ../src/GameEngAudio.cpp ../include/GameEngAudio.h ../include/Defs.h build/GameEng.o
 	$(CC) -c ../src/GameEngAudio.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngAudio.o
 
+## VoiceSynth ##
+build/VoiceSynth.o: ../src/VoiceSynth.cpp ../include/VoiceSynth.h ../include/Envelope.h ../include/VoiceBase.h ../include/Defs.h ../include/Version.h
+	$(CC) -c ../src/VoiceSynth.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/VoiceSynth.o
+
 ## GameEngAudioTest ##
-build/GameEngAudioTest.o: GameEngAudioTest.cpp build/GameEng.o build/GameEngAudio.o 
+build/GameEngAudioTest.o: GameEngAudioTest.cpp build/GameEng.o build/GameEngAudio.o build/VoiceSynth.o
 	$(CC) -c GameEngAudioTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngAudioTest.o
 
 
