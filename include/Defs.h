@@ -32,7 +32,7 @@
 #ifndef MCK_DEFS_H
 #define MCK_DEFS_H
 
-// #include<cstdint>
+#include<cstdint>  // For uint32_t et al.
 
 // Defines data type used for object IDs
 #define MCK_IMG_ID_TYPE uint32_t

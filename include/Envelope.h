@@ -37,97 +37,118 @@
 #ifndef MCK_ENVELOPE_H
 #define MCK_ENVELOPE_H
 
+#include<cstdint>  // For uint32_t et al.
+
 namespace MCK
 {
 
-struct Envelope
+class Envelope
 {
-    //! Allow certain classes direct access to sustain level
-    friend class VoiceSynth;
+    public:
 
-    uint32_t attack_in_samples;
-    uint32_t decay_in_samples;
-    uint32_t release_in_samples;
-    
-    uint8_t get_sustain_level_as_proportion_of_peak( void ) const noexcept
-    {
-        return uint8_t(
-            sustain_level_as_proportion_of_peak * 255.0f + 0.5f
+        //! Allow certain classes direct access to sustain level
+        friend class VoiceSynth;
+
+        //! Create envelope
+        /*! @param attack_in_samples: Attack time 
+         *  @param decay_in_samples: Decay time
+         *  @param release_in_samples: Release time
+         *  @param sustain_level_as_proportion_of_peak: as per name
+         *  Note1: Sustain time (in samples) is determined 
+         *         by length of note, so it is not included in
+         *         this data structure.
+         *  Note2: All times are measured in sample counts.
+         *         There are typically 44100 samples in one second,
+         *         so e.g. 1/20th second = 2205 samples.
+         */
+        Envelope( void );
+
+        // Create default (square) envelope
+        /*! Note: Sustain time (in samples) is determined 
+         *  by length of note, so it is not included in
+         * this data structure.
+         */
+        Envelope(
+            uint32_t _attack_in_samples,
+            uint32_t _decay_in_samples,
+            uint32_t _release_in_samples,
+            uint8_t _sustain_level_as_proportion_of_peak
         );
-    }
-    
-    void set_sustain_level_as_proportion_of_peak( uint8_t val ) noexcept
-    {
-        sustain_level_as_proportion_of_peak
-            = float( val ) / 255.0f;
-    }
 
-    //! Create envelope
-    /*! @param attack_in_samples: Attack time 
-     *  @param decay_in_samples: Decay time
-     *  @param release_in_samples: Release time
-     *  @param sustain_level_as_proportion_of_peak: as per name
-     *  Note1: Sustain time (in samples) is determined 
-     *         by length of note, so it is not included in
-     *         this data structure.
-     *  Note2: All times are measured in sample counts.
-     *         There are typically 44100 samples in one second,
-     *         so e.g. 1/20th second = 2205 samples.
-     */
-    Envelope( void )
-    {
-        // Default 'square' ADSR envelope
-        attack_in_samples = 0;
-        decay_in_samples = 0;
-        release_in_samples = 0;
-        sustain_level_as_proportion_of_peak = 1.0f;
-    }
+        virtual ~Envelope( void ) {}
 
-    // Create default (square) envelope
-    /*! Note: Sustain time (in samples) is determined 
-     *  by length of note, so it is not included in
-     * this data structure.
-     */
-    Envelope(
-        uint32_t _attack_in_samples,
-        uint32_t _decay_in_samples,
-        uint32_t _release_in_samples,
-        uint8_t _sustain_level_as_proportion_of_peak
-    )
-    {
-        attack_in_samples = _attack_in_samples;
-        decay_in_samples = _decay_in_samples;
-        release_in_samples = _release_in_samples;
-        set_sustain_level_as_proportion_of_peak(
-                _sustain_level_as_proportion_of_peak
-        );
-    }
+        //! Copy constructor
+        Envelope( Envelope const& other );
+        
+        //! Assignment constructor
+        void operator=( Envelope const& other );
 
-    virtual ~Envelope( void ) {}
+        uint32_t get_attack_in_samples( void ) const noexcept
+        {
+            return attack_in_samples;
+        }
 
-    //! Copy constructor
-    Envelope( Envelope const& other )
-    {
-        attack_in_samples = other.attack_in_samples;
-        decay_in_samples = other.decay_in_samples;
-        release_in_samples = other.release_in_samples;
-        sustain_level_as_proportion_of_peak
-            = other.sustain_level_as_proportion_of_peak;
-    }
-    
-    //! Assignment constructor
-    void operator=( Envelope const& other )
-    {
-        attack_in_samples = other.attack_in_samples;
-        decay_in_samples = other.decay_in_samples;
-        release_in_samples = other.release_in_samples;
-        sustain_level_as_proportion_of_peak
-            = other.sustain_level_as_proportion_of_peak;
-    }
-    
+        uint32_t get_decay_in_samples( void ) const noexcept
+        {
+            return decay_in_samples;
+        }
+
+        uint32_t get_release_in_samples( void ) const noexcept
+        {
+            return release_in_samples;
+        }
+       
+        //! Get sustain level
+        // @returns: Sustain level: 0 (no sustain) to 255 (sustain level == peak level )
+        uint8_t get_sustain_level_as_proportion_of_peak( void ) const noexcept
+        {
+            return uint8_t(
+                sustain_level_as_proportion_of_peak * 255.0f + 0.5f
+            );
+        }
+        
+        void set_attack_in_samples( uint32_t val ) noexcept
+        {
+            attack_in_samples = val;
+        }
+
+        void set_decay_in_samples( uint32_t val ) noexcept
+        {
+            decay_in_samples = val;
+        }
+
+        void set_release_in_samples( uint32_t val ) noexcept
+        {
+            release_in_samples = val;
+        }
+
+        //! Set sustain level
+        /*! @param val: Sustain level: 0 (no sustain) to 255 (sustain level == peak level )
+         */
+        void set_sustain_level_as_proportion_of_peak( uint8_t val ) noexcept
+        {
+            sustain_level_as_proportion_of_peak
+                = float( val ) / 255.0f;
+        }
+
+        //! Get envelope value at given sample count
+        /*! @param rel_sample_count: Sample count relative to *start* of envelope
+         *  @param sustain_in_samples: Sustain time, in samples
+         *  @returns: Envelope value in range [0,1], OR -1 if count is past end of envelope
+         */
+        float get_envelope_value(
+            uint64_t rel_sample_count,
+            uint32_t sustain_in_samples
+        ) const;
+
+
     private:
 
-        // This is kept private to ensure it is on internal [0,1]
+        uint32_t attack_in_samples;
+        uint32_t decay_in_samples;
+        uint32_t release_in_samples;
+
+        // This is must be kept on interval [0,1]
         float sustain_level_as_proportion_of_peak;
 };
 
