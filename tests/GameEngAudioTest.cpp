@@ -1132,8 +1132,8 @@ int main( int argc, char** argv )
     // again by the main thread (i.e. this program),
     // as they will be accessed regularly by the
     // audio callback thread and they are NOT thread safe.
-    const int LOWEST_OCTAVE_VOICES_0_TO_3 = 0;  // 2;
-    const int LOWEST_OCTAVE_VOICES_4_TO_7 = 2;  // 4;
+    const int LOWEST_OCTAVE_LO_VOICES = 1;
+    const int LOWEST_OCTAVE_HI_VOICES = 3;
     std::vector<std::shared_ptr<MCK::VoiceBase>> new_voices( MCK_NUM_VOICES, NULL ); 
     for( int i = 0; i < MCK_NUM_VOICES; i++ )
     {
@@ -1143,12 +1143,12 @@ int main( int argc, char** argv )
         {
             synth->init( 
                 2205,  // sixteenth_duration_in_samples, 
-                i < 4 ?
-                    MCK::VoiceSynth::Waveform::TRIANGLE:
+                i < MCK_NUM_VOICES / 2 ?
+                    MCK::VoiceSynth::Waveform::SINE:
                     MCK::VoiceSynth::Waveform::SINE,
-                i < 4 ?
-                    LOWEST_OCTAVE_VOICES_0_TO_3 :
-                    LOWEST_OCTAVE_VOICES_4_TO_7,
+                i < MCK_NUM_VOICES / 2 ?
+                    LOWEST_OCTAVE_LO_VOICES :
+                    LOWEST_OCTAVE_HI_VOICES,
                 MCK::Envelope(
                     550,  // Attack
                     550,  // Decay
@@ -1314,7 +1314,7 @@ int main( int argc, char** argv )
     size_t song_data_index = 0;
     const size_t SONG_DATA_SIZE = SONG_DATA.size();
     uint8_t id_of_next_avail_lo_voice = 0;
-    uint8_t id_of_next_avail_hi_voice = 4;
+    uint8_t id_of_next_avail_hi_voice = MCK_NUM_VOICES / 2;
     do
     {
         ////////////////////////////////////////
@@ -1394,7 +1394,7 @@ int main( int argc, char** argv )
                 if( LO )
                 {
                     voice_id = id_of_next_avail_lo_voice++;
-                    if( id_of_next_avail_lo_voice == 4 )
+                    if( id_of_next_avail_lo_voice == MCK_NUM_VOICES / 2 )
                     {
                         id_of_next_avail_lo_voice = 0;
                     }
@@ -1402,9 +1402,9 @@ int main( int argc, char** argv )
                 else
                 {
                     voice_id = id_of_next_avail_hi_voice++;
-                    if( id_of_next_avail_hi_voice == 8 )
+                    if( id_of_next_avail_hi_voice == MCK_NUM_VOICES )
                     {
-                        id_of_next_avail_hi_voice = 4;
+                        id_of_next_avail_hi_voice = MCK_NUM_VOICES / 2;
                     }
                 }
 
@@ -1441,36 +1441,6 @@ int main( int argc, char** argv )
                           << std::endl;
             }
         }
-
-        /*
-        // Play notes at intervals
-        if( frame_num % 200 == 1 )
-        {
-            // Voice 0
-            MCK::GameEngAudio::voice_command(
-                0,  // Voice ID
-                0b10100101  // Command
-            );
-            // Voice 1
-            MCK::GameEngAudio::voice_command(
-                1,  // Voice ID
-                0b10100111  // Command
-            );
-        }
-        if( frame_num % 200 == 101 )
-        {
-            // Voice 2
-            MCK::GameEngAudio::voice_command(
-                2,  // Voice ID
-                0b10101101  // Command
-            );
-            // Voice 3
-            MCK::GameEngAudio::voice_command(
-                3,  // Voice ID
-                0b10101111  // Command
-            );
-        }
-        */
 
         // Clear, render and present
         {
