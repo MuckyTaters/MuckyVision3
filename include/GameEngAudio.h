@@ -73,8 +73,8 @@ class GameEngAudio
 
         //! Initialize SDL2 audio
         static void init(
-            uint8_t _master_volume
-            // std::vector<std::shared_ptr<MCK:VoiceBase>> &voices
+            uint8_t _master_volume,
+            std::vector<std::shared_ptr<MCK::VoiceBase>> &_voices
         );
 
         // //! Play up to eight chunks (one on each channel) at a particular point in time.

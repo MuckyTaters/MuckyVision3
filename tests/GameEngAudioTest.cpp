@@ -61,13 +61,58 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
 
+    //////////////////////////////////////////////
+    // DEFINE AUDIO VOICES
+    std::vector<std::shared_ptr<MCK::VoiceBase>> new_voices( MCK_NUM_VOICES, NULL ); 
+    for( int i = 0; i < MCK_NUM_VOICES; i++ )
+    {
+        std::shared_ptr<MCK::VoiceSynth> synth
+            = std::make_shared<MCK::VoiceSynth>();
+        try
+        {
+            synth->init( 
+                2205,  // sixteenth_duration_in_samples, 
+                MCK::VoiceSynth::Waveform( i % 5 ),
+                3,  // lowest octave
+                MCK::Envelope(
+                    550,  // Attack
+                    550,  // Decay
+                    2205,  // Sustain
+                    192  // Sustain as proportion of peak (0-255)
+                ),
+                0xFF  // Initial volume
+            );
+        }
+        catch( const std::exception &e )
+        {
+#if defined MCK_STD_OUT
+            // Issue a warning, but no point throwing exception here
+            std::cout << "Unable to init voice "
+                      << std::to_string( i )
+                      << ", error = " 
+                      << e.what()
+                      << std::endl;
+#endif
+            continue;
+        }
+
+        // Recast as base pointer, and store
+        new_voices[i] = std::dynamic_pointer_cast<MCK::VoiceBase>( synth );
+        
+#if defined MCK_STD_OUT
+        std::cout << "Successfully created voice " << i
+                  << std::endl;
+#endif 
+    }
+
 
     //////////////////////////////////////////////
     // INITIALIZE SDL AUDIO
     try
     {
         MCK::GameEngAudio::init(
-            0xFF  // Master volume
+            0xFF,  // Master volume
+            new_voices
         );
     }
     catch( std::exception &e )

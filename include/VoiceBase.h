@@ -69,6 +69,11 @@ class VoiceBase
 
         virtual ~VoiceBase( void ) {}
 
+        bool is_initialized( void ) const noexcept
+        {
+            return initialized;
+        }
+
         //! Issue a command to the voice
         /* Commands are defined in the child class */
         virtual void command( 
