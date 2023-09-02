@@ -38,6 +38,9 @@
 #define MCK_IMG_ID_TYPE uint32_t
 #define MCK_PAL_ID_TYPE uint32_t
 #define MCK_TEX_ID_TYPE uint64_t
+#define MCK_PI 3.14127f
+#define MCK_TWO_PI 6.28254f
+#define MCK_ONE_OVER_ROOT_TWO 0.707106f
 
 namespace MCK
 {
@@ -140,23 +143,23 @@ namespace MCK
     // channels used. This is because speaker bandwith
     // is shared between all virtual channels, even
     // those not producing sound at that time.
-#define MCK_NUM_VIRTUAL_AUDIO_CHANNELS 8
+#define MCK_NUM_VOICES 8
 
     // This is an internal data type used by GameEngAudio,
     // and it is dependent on the number of virtual channels
-#if MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 8
+#if MCK_NUM_VOICES == 8
 #define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint64_t
-#elif MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 4
+#elif MCK_NUM_VOICES == 4
 #define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint32_t
-#elif MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 2
+#elif MCK_NUM_VOICES == 2
 #define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint16_t
-#elif MCK_NUM_VIRTUAL_AUDIO_CHANNELS == 1
+#elif MCK_NUM_VOICES == 1
 #define MCK_AUDIO_RING_BUFFER_DATA_TYPE uint8_t
 #endif
 
     //! This is calculated at compile time, do not alter
-    static const size_t AUDIO_NUM_VIRTUAL_CHANNELS_MASK
-        = ( uint8_t( 1 ) << MCK_NUM_VIRTUAL_AUDIO_CHANNELS ) - 1;
+    static const size_t AUDIO_NUM_VOICES_MASK
+        = ( uint8_t( 1 ) << MCK_NUM_VOICES ) - 1;
    
     //! First choice of audio format
     static const int AUDIO_WANT_FORMAT = 32784;  // == AUDIO_S16SYS ( SDL macro for signed short integer)
@@ -217,13 +220,16 @@ namespace MCK
      * should be set to no more than 75%, otherwise clipping 
      * may occur.
      */
-    const static int VOICE_SYNTH_MAX_VIB_PROPORTION = 4;
+    // const static int VOICE_SYNTH_MAX_VIB_PROPORTION = 4;
 
     //! These values define the bit content of the commands send to VoiceSynth
-    const static uint8_t VOICE_SYNTH_PITCH_BITS = 5;
+    const static uint8_t VOICE_SYNTH_PITCH_MASK = 0x1F;
     const static uint8_t VOICE_SYNTH_PITCH_LSHIFT = 0;
-    const static uint8_t VOICE_SYNTH_DURATION_BITS = 3;
+    const static uint8_t VOICE_SYNTH_DURATION_MASK = 0xE0;
     const static uint8_t VOICE_SYNTH_DURATION_LSHIFT = 5;
+
+    //! Calculate envelope value every 'n' samples, where 'n' is this value + 1 (and 'n' must be power of 2)
+    const static uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;
 
 }  // End of namespace MCK
 

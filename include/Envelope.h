@@ -39,6 +39,8 @@
 
 #include<cstdint>  // For uint32_t et al.
 
+#include<iostream> // DEBUG ONLY
+
 namespace MCK
 {
 
@@ -48,6 +50,13 @@ class Envelope
 
         //! Allow certain classes direct access to sustain level
         friend class VoiceSynth;
+
+        // Create default (square) envelope
+        /*! Note: Sustain time (in samples) is determined 
+         *  by length of note, so it is not included in
+         * this data structure.
+         */
+        Envelope( void );
 
         //! Create envelope
         /*! @param attack_in_samples: Attack time 
@@ -60,13 +69,6 @@ class Envelope
          *  Note2: All times are measured in sample counts.
          *         There are typically 44100 samples in one second,
          *         so e.g. 1/20th second = 2205 samples.
-         */
-        Envelope( void );
-
-        // Create default (square) envelope
-        /*! Note: Sustain time (in samples) is determined 
-         *  by length of note, so it is not included in
-         * this data structure.
          */
         Envelope(
             uint32_t _attack_in_samples,
@@ -136,7 +138,7 @@ class Envelope
          *  @param sustain_in_samples: Sustain time, in samples
          *  @returns: Envelope value in range [0,1], OR -1 if count is past end of envelope
          */
-        float get_envelope_value(
+        float get_value(
             uint64_t rel_sample_count,
             uint32_t sustain_in_samples
         ) const;

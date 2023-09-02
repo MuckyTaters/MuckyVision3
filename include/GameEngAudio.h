@@ -61,6 +61,8 @@
 #include <vector>  // For vector
 
 #include "Defs.h"
+#include "VoiceBase.h"
+#include "VoiceSynth.h"
 
 namespace MCK
 {
@@ -126,14 +128,18 @@ class GameEngAudio
 
         static MCK::AudioDataType data_type;
 
+        // Voices, stored by *base* pointer
+        static std::vector<std::shared_ptr<MCK::VoiceBase>> voices;
+
         //! Ring buffer, for communication with main thread
         /*! This is composed of 'n' entries containing 8 bytes each
          *  where 'n' is set at compile time and defined in Defs.h.
-         *  Each byte represents a request to play an audio
-         *  chunk (i.e. a sound) on one of eight channels at some
-         *  particular time point (i.e. tick). There is some
-         *  latency as these requests have to sit in the buffer
-         *  for at least a tick or two.
+         *  The 'i'th byte from left/lowest ( 0 <= i < n ) is
+         *  a command to the 'i'th voice. The meaning of the
+         *  command depends on the voice, see each specific
+         *  voice class for details.
+         *  Note there is some latency as these commands have
+         *  to sit in the buffer for at least a tick or two.
          *  The purpose of this buffer is to avoid the need
          *  for C++11 parallelisation (e.g. mutex), as MinGW 
          *  support for that is patchy.

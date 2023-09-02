@@ -39,7 +39,8 @@ int main( int argc, char** argv )
     // Define window size (these can be changed to any sensible value)
     const int WINDOW_WIDTH_IN_PIXELS = 320;
     const int WINDOW_HEIGHT_IN_PIXELS = 240;
-   
+  
+    /*
     // TEST CODE
     {
         std::shared_ptr<MCK::VoiceSynth> synth
@@ -48,6 +49,7 @@ int main( int argc, char** argv )
         {
             synth->init(
                 44100,
+                2500,  // Arbitrary choice
                 MCK::VoiceSynth::Waveform::SQUARE,
                 3  // Lowest octave
             );
@@ -58,6 +60,7 @@ int main( int argc, char** argv )
             exit( -1 );
         }
     }
+    */
 
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER

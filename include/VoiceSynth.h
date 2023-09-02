@@ -56,7 +56,7 @@ class VoiceSynth : public VoiceBase
     public:
 
         //! Different waveforms offered by Synth voice.
-        enum class Waveform
+        enum Waveform
         {
             SINE,
             SQUARE,
@@ -67,7 +67,7 @@ class VoiceSynth : public VoiceBase
 
         VoiceSynth( void );
 
-        ~VoiceSynth( void ) {}
+        virtual ~VoiceSynth( void ) {}
 
         //! Initialize the voice
         /*! Note: _envelope is not passed by ref as it is typically
@@ -75,21 +75,31 @@ class VoiceSynth : public VoiceBase
          */
         virtual void init(
             uint32_t _samples_per_second,
+            uint32_t _sixteenth_duration_in_samples, 
             MCK::VoiceSynth::Waveform _wave,
             uint8_t _lowest_octave,
             MCK::Envelope _envelope = MCK::Envelope(),
             uint8_t initial_volume = 0xFF,
-            bool _sliding_transition = false,
-            uint8_t _duty_cycle = 0x80,
-            uint8_t _vibrato_mag = 0x00,
-            uint16_t vibrato_freq = 0x00
+            bool _sliding_transition = false
+            // uint8_t _duty_cycle = 0x80,
+            // uint8_t _vibrato_mag = 0x00,
+            // uint16_t vibrato_freq = 0x00
         );
 
         //! Issue a command (i.e. play a note)
-        /* Bits 0-4 note number (determines pitch). 
-         * Bits 5-7 note length (as power of 2, 2^0 being an eight)
+        /*! @param com: Command (see below)
+         *  @param sample_count: Current sample count
+         * Command:
+         *  A combination of pitch id (relative to lowest octave) and duration id
+         *  Number and position of bits given to pitch and duration
+         *  are specified in Defs.h. At time of writing:
+         *      Bits 0-4 denote pitch (in semitones above C in lowest octave) 
+         *      Bits 5-7 note length (as power of 2, 2^0 being an eight)
          */
-        virtual void command( uint8_t com );
+        virtual void command(
+            uint8_t com,
+            uint64_t sample_count
+        );
 
         //! Get sample at given time point
         /*! Return value must lie within range [-v,v]
@@ -99,6 +109,9 @@ class VoiceSynth : public VoiceBase
 
 
     protected:
+
+        static const std::vector<float> WHITENOISE_VALUES;
+        static const size_t WHITENOISE_VALUES_INDEX_MASK;
 
         // Wavelengths, indexed by note id.
         std::vector<uint32_t> wavelen_by_note_id;
@@ -110,14 +123,30 @@ class VoiceSynth : public VoiceBase
         uint8_t lowest_octave;
         MCK::Envelope envelope;
         bool sliding_transition;
-        float duty_cycle;
-        float vibrato_mag;
-        float vibrato_wavelen_in_samples;
+        // float duty_cycle;
+        // float vibrato_mag;
+        // float vibrato_wavelen_in_samples;
 
         uint64_t starting_sample_count;
-    
-        // Value 1/12, pre-calculated at compile time
+
+        // Used during sampling to remember envelope value
+        float envelope_value;
+
+        // Used during sampling to save looking wavelength up
+        uint32_t note_wavelen;
+
+        // Sustain value, in samples, of current note
+        uint32_t sustain;
+
+        // These used only for sliding (wavelength) transition
+        uint32_t start_wavelen;
+        uint64_t sliding_transition_length_in_samples;
+
+        //! Value 1/12, pre-calculated at compile time
         const static double ONE_TWELTH;
+
+        //! Duration of a 'sixteenth' note, in whole milliseconds
+        uint32_t sixteenth_duration_in_samples; 
 
     private:
 

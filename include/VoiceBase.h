@@ -63,14 +63,18 @@ class VoiceBase
 
         VoiceBase( void )
         {
-            this->type = MCK::VoiceType::BASE; 
+            this->type = MCK::VoiceType::BASE;
+            this->initialized = false;
         }
 
         virtual ~VoiceBase( void ) {}
 
         //! Issue a command to the voice
         /* Commands are defined in the child class */
-        virtual void command( uint8_t com ) = 0;
+        virtual void command( 
+            uint8_t com,
+            uint64_t sample_count
+        ) = 0;
 
         //! Get sample at given time point
         /*! Return value must lie within range [-v,v]
@@ -91,7 +95,7 @@ class VoiceBase
             samples_per_second = _samples_per_second;
             scale = float( initial_volume )
                       / 255.0f 
-                        / float( MCK_NUM_VIRTUAL_AUDIO_CHANNELS );
+                        / float( MCK_NUM_VOICES );
             initialized = true;
         }
 

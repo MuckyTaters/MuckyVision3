@@ -79,11 +79,18 @@ void MCK::Envelope::operator=( Envelope const& other )
         = other.sustain_level_as_proportion_of_peak;
 }
 
-float MCK::Envelope::get_envelope_value(
+float MCK::Envelope::get_value(
     uint64_t rel_sample_count,
     uint32_t sustain_in_samples
 ) const
 {
+    /*
+    // DEBUG
+    std::cout << "@1 rel_sample_count = "
+              << rel_sample_count
+              << std::endl;
+    */
+
     // Check if relative sample count falls 
     // within attack phase
     if( rel_sample_count < this->attack_in_samples )
@@ -95,6 +102,13 @@ float MCK::Envelope::get_envelope_value(
         return float( rel_sample_count )
                 / float( this->attack_in_samples );
     }
+
+    /*
+    // DEBUG
+    std::cout << "@2 rel_sample_count = "
+              << rel_sample_count
+              << std::endl;
+    */
 
     // Move relative count to beginning of decay phase
     rel_sample_count -= this->attack_in_samples;
@@ -113,23 +127,44 @@ float MCK::Envelope::get_envelope_value(
                     / float( this->decay_in_samples );
     }
 
+    /*
+    // DEBUG
+    std::cout << "@3 rel_sample_count = "
+              << rel_sample_count
+              << std::endl;
+    */
+
     // Move relative count to beginning of sustain phase
-    rel_sample_count -= sustain_in_samples;
+    rel_sample_count -= this->decay_in_samples;
 
     // Check if relative sample count falls 
     // within sustain phase
     if( rel_sample_count < sustain_in_samples )
     {
+        /*
+        // DEBUG
+        std::cout << "SUSTAIN, prop = "
+                  << this->sustain_level_as_proportion_of_peak
+                  << std::endl;
+        */
+
         // If yes, return sustain proportion
         return this->sustain_level_as_proportion_of_peak;
     }
 
+    /*
+    // DEBUG
+    std::cout << "@4 rel_sample_count = "
+              << rel_sample_count
+              << std::endl;
+    */
+
     // Move relative count to beginning of release phase
-    rel_sample_count -= release_in_samples;
+    rel_sample_count -= sustain_in_samples;
 
     // Check if relative sample count falls 
     // within release phase
-    if( rel_sample_count < release_in_samples )
+    if( rel_sample_count < this->release_in_samples )
     {
         // If yes, return envelope value in proportion
         // proportion to position within release phase

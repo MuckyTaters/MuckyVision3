@@ -56,6 +56,7 @@ uint8_t MCK::GameEngAudio::bytes_per_channel;
 MCK_AUDIO_RING_BUFFER_DATA_TYPE MCK::GameEngAudio::ring_buffer[ MCK::AUDIO_RING_BUFFER_SIZE ];
 MCK::AudioDataType MCK::GameEngAudio::data_type
     = MCK::AudioDataType::UNKNOWN;
+std::vector<std::shared_ptr<MCK::VoiceBase>> MCK::GameEngAudio::voices;
 
 void MCK::GameEngAudio::init( uint8_t _master_volume )
 {
@@ -232,6 +233,51 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
         }
     }
 
+    // Create voices (all VoiceSynth instances for now)
+    MCK::GameEngAudio::voices.resize( MCK_NUM_VOICES, NULL ); 
+    for( int i = 0; i < MCK_NUM_VOICES; i++ )
+    {
+        std::shared_ptr<MCK::VoiceSynth> synth
+            = std::make_shared<MCK::VoiceSynth>();
+        try
+        {
+            synth->init( 
+                MCK::GameEngAudio::samples_per_second,
+                2205,  // sixteenth_duration_in_samples, 
+                MCK::VoiceSynth::Waveform( i % 5 ),
+                3,  // lowest octave
+                MCK::Envelope(
+                    550,  // Attack
+                    550,  // Decay
+                    2205,  // Sustain
+                    192  // Sustain as proportion of peak (0-255)
+                ),
+                0xFF,  // Initial volume
+                false  // NOT Sliding transition
+            );
+        }
+        catch( const std::exception &e )
+        {
+#if defined MCK_STD_OUT
+            // Issue a warning, but no point throwing exception here
+            std::cout << "Unable to init voice "
+                      << std::to_string( i )
+                      << ", error = " 
+                      << e.what()
+                      << std::endl;
+#endif
+            continue;
+        }
+
+        // Recast as base pointer, and store
+        MCK::GameEngAudio::voices[i] = std::dynamic_pointer_cast<MCK::VoiceBase>( synth );
+        
+#if defined MCK_STD_OUT
+        std::cout << "Successfully created voice " << i
+                  << std::endl;
+#endif 
+    }
+
     // Set master volume
     MCK::GameEngAudio::master_volume = _master_volume;
 
@@ -271,7 +317,103 @@ void MCK::GameEngAudio::callback(
 
     // Get signed (32bit?) float pointer to actual buffer array
     float *float_buffer = (float*)raw_buffer;
+        
+    // TEST CODE
+    if( MCK::GameEngAudio::sample_counter / 44100
+            != ( 
+                MCK::GameEngAudio::sample_counter
+                    + buffer_size_in_samples
+            ) / 44100 
+    )
+    {
+        const int test_num = MCK::GameEngAudio::sample_counter / 44100; 
+        const uint8_t PITCH_ID
+            = ( test_num ) & 0x1F;
+        const uint8_t DURATION_ID
+            = 0x05;
+            // = ( test_num ) & 0x07;
+        const uint8_t COMMAND
+            = (
+                ( PITCH_ID << MCK::VOICE_SYNTH_PITCH_LSHIFT
+                ) & MCK::VOICE_SYNTH_PITCH_MASK
+            ) | (
+                ( DURATION_ID << MCK::VOICE_SYNTH_DURATION_LSHIFT
+                ) & MCK::VOICE_SYNTH_DURATION_MASK
+            );
 
+        // MCK::GameEngAudio::voices[0]->command(
+        MCK::GameEngAudio::voices[test_num % MCK_NUM_VOICES]->command(
+            COMMAND,
+            MCK::GameEngAudio::sample_counter
+        );
+
+        /*
+        // DEBUG
+        std::cout
+            << "@@@ sample_counter = "
+            << MCK::GameEngAudio::sample_counter 
+            << ", COMMAND = "
+            << int( COMMAND )
+            << std::endl;
+        */
+    }
+
+    // Fill samples
+    for( int sample_index = 0; sample_index < LENGTH; sample_index++ )
+    {
+        float val = 0.0f;
+
+        const uint64_t SAMPLE_COUNT
+            = MCK::GameEngAudio::sample_counter + sample_index;
+
+        // Loop over voices
+        for( auto vc : MCK::GameEngAudio::voices )
+        {
+            // Get sample value as float, in range [-1, 1]
+            if( vc.get() != NULL )
+            {
+                val += vc->get_sample( SAMPLE_COUNT );
+            }
+        }
+
+        /*
+        // DEBUG
+        std::cout << "SAMPLE_COUNT = " << SAMPLE_COUNT
+                  << ", val = " << val << std::endl;
+        */
+
+        // Short integer (16 bit signed)
+        if( data_type == MCK::AudioDataType::SIGNED_16_BIT_INT )
+        {
+            // Calculate amplitude adjusted sample value
+            const int16_t NORM_VAL = int16_t( val * 32767.0f + 0.5f ) ;
+            
+            // Duplicate sample across all channels
+            for( int ch = 0;
+                 ch < MCK::GameEngAudio::num_channels;
+                 ch++
+            )
+            {
+                int16_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
+                    = NORM_VAL;
+            }
+        }
+        else if( data_type == MCK::AudioDataType::SIGNED_32_BIT_FLOAT )
+        {
+            // Duplicate sample across all channels
+            for( int ch = 0;
+                 ch < MCK::GameEngAudio::num_channels;
+                 ch++
+            )
+            {
+                float_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
+                    = val;  // No need to normalize
+            }
+        }
+    
+        num_of_samples_filled++;
+    }
+    /*
     // Create a reference tone
     for( int sample_index = 0; sample_index < LENGTH; sample_index++ )
     {
@@ -318,6 +460,7 @@ void MCK::GameEngAudio::callback(
     
         num_of_samples_filled++;
     }
+    */
 
     // Fill any unused bytes with silence
     for( int i = num_of_samples_filled * MCK::GameEngAudio::bytes_per_sample; 
