@@ -143,7 +143,7 @@ namespace MCK
     // channels used. This is because speaker bandwith
     // is shared between all virtual channels, even
     // those not producing sound at that time.
-#define MCK_NUM_VOICES 4
+#define MCK_NUM_VOICES 8
 
     // This is an internal data type used by GameEngAudio,
     // and it is dependent on the number of virtual channels
@@ -227,10 +227,10 @@ namespace MCK
     // const static int VOICE_SYNTH_MAX_VIB_PROPORTION = 4;
 
     //! These values define the bit content of the commands send to VoiceSynth
-    const static uint8_t VOICE_SYNTH_PITCH_MASK = 0x1F;
+    const static uint8_t VOICE_SYNTH_PITCH_MASK = 0x3F;  // 0x1F;
     const static uint8_t VOICE_SYNTH_PITCH_LSHIFT = 0;
-    const static uint8_t VOICE_SYNTH_DURATION_MASK = 0xE0;
-    const static uint8_t VOICE_SYNTH_DURATION_LSHIFT = 5;
+    const static uint8_t VOICE_SYNTH_DURATION_MASK = 0xC0;  // 0xE0;
+    const static uint8_t VOICE_SYNTH_DURATION_LSHIFT = 6;
 
     //! Calculate envelope value every 'n' samples, where 'n' is this value + 1 (and 'n' must be power of 2)
     const static uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;

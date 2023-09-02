@@ -293,3 +293,19 @@ float MCK::VoiceSynth::get_sample( uint64_t sample_count )
     // This shouldn't occur, but just to be safe
     return 0.0f;
 }
+
+uint8_t MCK::VoiceSynth::construct_command(
+    uint8_t pitch_id,
+    uint8_t duration_id
+) noexcept
+{
+    return ( 
+        // Left shift pitch ID and then mask off
+        ( pitch_id << MCK::VOICE_SYNTH_PITCH_LSHIFT )
+            & MCK::VOICE_SYNTH_PITCH_MASK
+        ) | (
+        // Left shift duration ID and then mask off
+        ( duration_id << MCK::VOICE_SYNTH_DURATION_LSHIFT )
+            & MCK::VOICE_SYNTH_DURATION_MASK
+    );
+}

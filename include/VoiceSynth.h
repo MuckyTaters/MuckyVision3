@@ -107,6 +107,15 @@ class VoiceSynth : public VoiceBase
          */
         virtual float get_sample( uint64_t sample_count );
 
+        //! Construct command by packing pitch id and duration id into a single byte
+        /*! IMPORANT: If pitch_id and/or duration_id are
+         *  out-of-range, garbage will result (no checking is done)
+         */
+        static uint8_t construct_command(
+            uint8_t pitch_id,
+            uint8_t duration_id
+        ) noexcept;
+    
 
     protected:
 

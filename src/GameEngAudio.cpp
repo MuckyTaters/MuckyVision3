@@ -348,23 +348,6 @@ void MCK::GameEngAudio::voice_command(
         ) );
     }
 
-    // This defunct code will come in useful in main thread!
-    /*
-    // Construct command byte by packing pitch
-    // and duration IDs into a sigle btye
-    const uint8_t COM
-        = ( 
-            // Left shift pitch ID and then mask off
-            ( pitch_id << MCK::VOICE_SYNTH_PITCH_LSHIFT )
-                & MCK::VOICE_SYNTH_PITCH_MASK
-          )
-          | (
-            // Left shift duration ID and then mask off
-            ( duration_id << MCK::VOICE_SYNTH_DURATION_LSHIFT )
-                & MCK::VOICE_SYNTH_DURATION_MASK
-          );
-    */
-
     // Get current time point
     const uint32_t CURRENT_TICKS = SDL_GetTicks();
 
@@ -411,10 +394,6 @@ void MCK::GameEngAudio::voice_command(
     // Write command to ring buffer
     MCK::GameEngAudio::ring_buffer[POS] &= AND_VALUE;
     MCK::GameEngAudio::ring_buffer[POS] |= OR_VALUE;
-      
-    // DEBUG
-    std::cout << "Placed in ring_buffer at " << POS
-              << std::endl;
 }
 
 void MCK::GameEngAudio::callback(
@@ -574,5 +553,4 @@ void MCK::GameEngAudio::callback(
     
     // Set new sample count
     MCK::GameEngAudio::sample_counter = END_SAMPLE_COUNT;
-    
 }
