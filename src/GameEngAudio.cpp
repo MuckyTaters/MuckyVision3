@@ -244,7 +244,9 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
             synth->init( 
                 MCK::GameEngAudio::samples_per_second,
                 2205,  // sixteenth_duration_in_samples, 
-                MCK::VoiceSynth::Waveform( i % 5 ),
+                // MCK::VoiceSynth::SAWTOOTH,
+                MCK::VoiceSynth::WHITENOISE,
+                // MCK::VoiceSynth::Waveform( i % 5 ),
                 3,  // lowest octave
                 MCK::Envelope(
                     550,  // Attack
@@ -252,8 +254,7 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
                     2205,  // Sustain
                     192  // Sustain as proportion of peak (0-255)
                 ),
-                0xFF,  // Initial volume
-                false  // NOT Sliding transition
+                0xFF  // Initial volume
             );
         }
         catch( const std::exception &e )
@@ -346,16 +347,6 @@ void MCK::GameEngAudio::callback(
             COMMAND,
             MCK::GameEngAudio::sample_counter
         );
-
-        /*
-        // DEBUG
-        std::cout
-            << "@@@ sample_counter = "
-            << MCK::GameEngAudio::sample_counter 
-            << ", COMMAND = "
-            << int( COMMAND )
-            << std::endl;
-        */
     }
 
     // Fill samples
@@ -375,12 +366,6 @@ void MCK::GameEngAudio::callback(
                 val += vc->get_sample( SAMPLE_COUNT );
             }
         }
-
-        /*
-        // DEBUG
-        std::cout << "SAMPLE_COUNT = " << SAMPLE_COUNT
-                  << ", val = " << val << std::endl;
-        */
 
         // Short integer (16 bit signed)
         if( data_type == MCK::AudioDataType::SIGNED_16_BIT_INT )
@@ -413,54 +398,6 @@ void MCK::GameEngAudio::callback(
     
         num_of_samples_filled++;
     }
-    /*
-    // Create a reference tone
-    for( int sample_index = 0; sample_index < LENGTH; sample_index++ )
-    {
-        // Get sample value as float, in range [-1, 1]
-
-        // TEST: Generate reference tone at 440Hz
-        const float VAL
-            = sin(
-                float ( MCK::GameEngAudio::sample_counter + sample_index ) 
-                    / float( MCK::GameEngAudio::samples_per_second )
-                        * 440.0f  // 440Hz
-                        / 2.0f * 3.14127f  // period of sin
-            ) / float( MCK_NUM_VIRTUAL_AUDIO_CHANNELS ) 
-              * MCK::GameEngAudio::master_volume_on_unit_interval;
-
-        // Short integer (16 bit signed)
-        if( data_type == MCK::AudioDataType::SIGNED_16_BIT_INT )
-        {
-            // Calculate amplitude adjusted sample value
-            const int16_t NORM_VAL = int16_t( VAL * 32767.0f + 0.5f ) ;
-            
-            // Duplicate sample across all channels
-            for( int ch = 0;
-                 ch < MCK::GameEngAudio::num_channels;
-                 ch++
-            )
-            {
-                int16_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
-                    = NORM_VAL;
-            }
-        }
-        else if( data_type == MCK::AudioDataType::SIGNED_32_BIT_FLOAT )
-        {
-            // Duplicate sample across all channels
-            for( int ch = 0;
-                 ch < MCK::GameEngAudio::num_channels;
-                 ch++
-            )
-            {
-                float_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
-                    = VAL;  // No need to normalize
-            }
-        }
-    
-        num_of_samples_filled++;
-    }
-    */
 
     // Fill any unused bytes with silence
     for( int i = num_of_samples_filled * MCK::GameEngAudio::bytes_per_sample; 

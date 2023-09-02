@@ -39,8 +39,8 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
-#ifndef MCK_VOICE_CHIPTUNE_H
-#define MCK_VOICE_CHIPTUNE_H
+#ifndef MCK_VOICE_SYNTH_H
+#define MCK_VOICE_SYNTH_H
 
 #include <vector>  // For vector
 #include <math.h>  // For pow
@@ -70,7 +70,13 @@ class VoiceSynth : public VoiceBase
         virtual ~VoiceSynth( void ) {}
 
         //! Initialize the voice
-        /*! Note: _envelope is not passed by ref as it is typically
+        /*! @param _samples_per_second: use value stored in GameEngAudio
+         *  @param _sixteenth_duration_in_samples: duration of a 'sixteenth' note, sets tempo 
+         *  @param MCK::VoiceSynth::Waveform _wave: Waveform
+         *  @param uint8_t _lowest_octave: Lowest pitch ID will be C in this octave, sets overall pitch
+         *  @param MCK::Envelope _envelope: ADSR envelope
+         *  @param uint8_t initial_volume: Starting volume
+         *  Note: _envelope is not passed by ref as it is typically
          *        supplied as an r-value
          */
         virtual void init(
@@ -79,11 +85,7 @@ class VoiceSynth : public VoiceBase
             MCK::VoiceSynth::Waveform _wave,
             uint8_t _lowest_octave,
             MCK::Envelope _envelope = MCK::Envelope(),
-            uint8_t initial_volume = 0xFF,
-            bool _sliding_transition = false
-            // uint8_t _duty_cycle = 0x80,
-            // uint8_t _vibrato_mag = 0x00,
-            // uint16_t vibrato_freq = 0x00
+            uint8_t initial_volume = 0xFF
         );
 
         //! Issue a command (i.e. play a note)
@@ -102,16 +104,13 @@ class VoiceSynth : public VoiceBase
         );
 
         //! Get sample at given time point
-        /*! Return value must lie within range [-v,v]
-         *  where 'v' = channel volume (0-255) / 255 / num of virtual channels
+        /*! @param sample_count: Current sample count
+         *  @returns: value in range [-v,v] where 'v' = channel volume (0-255) / 255 / num of virtual channels
          */
         virtual float get_sample( uint64_t sample_count );
 
 
     protected:
-
-        static const std::vector<float> WHITENOISE_VALUES;
-        static const size_t WHITENOISE_VALUES_INDEX_MASK;
 
         // Wavelengths, indexed by note id.
         std::vector<uint32_t> wavelen_by_note_id;
@@ -123,9 +122,6 @@ class VoiceSynth : public VoiceBase
         uint8_t lowest_octave;
         MCK::Envelope envelope;
         bool sliding_transition;
-        // float duty_cycle;
-        // float vibrato_mag;
-        // float vibrato_wavelen_in_samples;
 
         uint64_t starting_sample_count;
 
@@ -138,15 +134,12 @@ class VoiceSynth : public VoiceBase
         // Sustain value, in samples, of current note
         uint32_t sustain;
 
-        // These used only for sliding (wavelength) transition
-        uint32_t start_wavelen;
-        uint64_t sliding_transition_length_in_samples;
-
         //! Value 1/12, pre-calculated at compile time
         const static double ONE_TWELTH;
 
         //! Duration of a 'sixteenth' note, in whole milliseconds
         uint32_t sixteenth_duration_in_samples; 
+
 
     private:
 
