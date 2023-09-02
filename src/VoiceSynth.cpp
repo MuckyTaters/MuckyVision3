@@ -158,9 +158,6 @@ void MCK::VoiceSynth::command(
        = ( com & MCK::VOICE_SYNTH_DURATION_MASK )
             >> MCK::VOICE_SYNTH_DURATION_LSHIFT;
 
-    // DEBUG
-    std::cout << "DURATION_ID = " << int( DURATION_ID ) << std::endl;
-
     // Get sustain duration, in samples
     this->sustain = this->sixteenth_duration_in_samples 
                         * pow( 2, DURATION_ID );

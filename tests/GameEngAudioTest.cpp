@@ -63,6 +63,11 @@ int main( int argc, char** argv )
 
     //////////////////////////////////////////////
     // DEFINE AUDIO VOICES
+    // IMPORTANT: Once these voices are handed over
+    // to GameEngAudio, they should NOT be accessed
+    // again by the main thread (i.e. this program),
+    // as they will be accessed regularly by the
+    // audio callback thread and they are NOT thread safe.
     std::vector<std::shared_ptr<MCK::VoiceBase>> new_voices( MCK_NUM_VOICES, NULL ); 
     for( int i = 0; i < MCK_NUM_VOICES; i++ )
     {
@@ -72,12 +77,14 @@ int main( int argc, char** argv )
         {
             synth->init( 
                 2205,  // sixteenth_duration_in_samples, 
-                MCK::VoiceSynth::Waveform( i % 5 ),
+                i < 2 ?
+                    MCK::VoiceSynth::Waveform::SINE :
+                    MCK::VoiceSynth::Waveform::TRIANGLE,
                 3,  // lowest octave
                 MCK::Envelope(
                     550,  // Attack
                     550,  // Decay
-                    2205,  // Sustain
+                    8820,  //2205,  // Release
                     192  // Sustain as proportion of peak (0-255)
                 ),
                 0xFF  // Initial volume
@@ -292,6 +299,34 @@ int main( int argc, char** argv )
             }
         }
 
+        // Play notes at intervals
+        if( frame_num % 200 == 1 )
+        {
+            // Voice 0
+            MCK::GameEngAudio::voice_command(
+                0,  // Voice ID
+                0b10100101  // Command
+            );
+            // Voice 1
+            MCK::GameEngAudio::voice_command(
+                1,  // Voice ID
+                0b10100111  // Command
+            );
+        }
+        if( frame_num % 200 == 101 )
+        {
+            // Voice 2
+            MCK::GameEngAudio::voice_command(
+                2,  // Voice ID
+                0b10101101  // Command
+            );
+            // Voice 3
+            MCK::GameEngAudio::voice_command(
+                3,  // Voice ID
+                0b10101111  // Command
+            );
+        }
+
         // Clear, render and present
         {
             try
@@ -317,4 +352,3 @@ int main( int argc, char** argv )
     // Note: SDL is closed down when 'game_eng'
     // goes out of scope
 }
-

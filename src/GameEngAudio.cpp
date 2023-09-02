@@ -43,6 +43,7 @@ uint64_t MCK::GameEngAudio::sample_counter = 0;
 uint8_t MCK::GameEngAudio::master_volume = 0xFF;
 float MCK::GameEngAudio::master_volume_on_unit_interval
     = MCK::GameEngAudio::master_volume / float( 0xFF );
+size_t MCK::GameEngAudio::ring_buffer_prev_pos = 0;
 
 // These will be set by 'init' method
 int MCK::GameEngAudio::samples_per_second;
@@ -74,6 +75,34 @@ void MCK::GameEngAudio::init(
             ""
 #endif
         ) );
+    }
+
+    // Check audio ring buffer size isn't ridiculously small
+    // and *is* a power of two
+    if( MCK::AUDIO_RING_BUFFER_SIZE < 0x40
+        || (
+            MCK::AUDIO_RING_BUFFER_SIZE
+            & ( MCK::AUDIO_RING_BUFFER_SIZE - 1 )
+        ) != 0
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to initialized SDL audio " )
+            + std::string( "as MCK::AUDIO_RING_BUFFER_SIZE " )
+            + std::string( "is either too small (<64) or not " )
+            + std::string( "a power of two." )
+            
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Clear ring buffer
+    for( int i = 0; i < MCK::AUDIO_RING_BUFFER_SIZE; i++ )
+    {
+        MCK::GameEngAudio::ring_buffer[i] = 0;
     }
 
     // Check number of supplied voices is correct
@@ -285,13 +314,107 @@ void MCK::GameEngAudio::init(
     MCK::GameEngAudio::initialized = true;
 }
 
-void MCK::GameEngAudio::play_single_chunk(
-    uint8_t chunk_id,
-    uint8_t channel_num,
+void MCK::GameEngAudio::voice_command(
+    uint8_t voice_id,
+    uint8_t command,
     uint32_t ticks
 )
 {
-    // TODO
+    // IMPORTANT: This method should only be called by the main thread
+
+    if( !MCK::GameEngAudio::initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to issue voice command as SDL audio " )
+            + std::string( "not yet initialized!" )
+#else
+            ""
+#endif
+        ) );
+    }
+    
+    // Check voice IDs within range
+    if( voice_id >= MCK_NUM_VOICES )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to issue voice command as voice id " )
+            + std::to_string( voice_id )
+            + std::string( " is out of range." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // This defunct code will come in useful in main thread!
+    /*
+    // Construct command byte by packing pitch
+    // and duration IDs into a sigle btye
+    const uint8_t COM
+        = ( 
+            // Left shift pitch ID and then mask off
+            ( pitch_id << MCK::VOICE_SYNTH_PITCH_LSHIFT )
+                & MCK::VOICE_SYNTH_PITCH_MASK
+          )
+          | (
+            // Left shift duration ID and then mask off
+            ( duration_id << MCK::VOICE_SYNTH_DURATION_LSHIFT )
+                & MCK::VOICE_SYNTH_DURATION_MASK
+          );
+    */
+
+    // Get current time point
+    const uint32_t CURRENT_TICKS = SDL_GetTicks();
+
+    // If time point is in past (or default), just use current time
+    ticks = std::max( ticks, CURRENT_TICKS );
+
+    // Check if request time point is too far in future
+    // such that it would 'lap' the current time in the
+    // ring buffer, and actually play sooner than expected
+    if( ( ticks - CURRENT_TICKS ) 
+            > ( MCK::AUDIO_RING_BUFFER_SIZE 
+                   - MCK::AUDIO_RING_BUFFER_LAG_IN_TICKS )
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to issue voice command as ticks " )
+            + std::string( " specified is too far in advance and " )
+            + std::string( " with 'lap' the audio ring buffer." )
+#else
+            ""
+#endif
+        ) );
+
+    }
+
+    // Construct 'and' value that will clear any existing command
+    // for this voice at this time-point (ticks).
+    const MCK_AUDIO_RING_BUFFER_DATA_TYPE AND_VALUE
+        = ~( 
+            MCK_AUDIO_RING_BUFFER_DATA_TYPE( 0xFF )
+                << ( voice_id * 8 )
+        );
+
+    // Construct 'or' value that will add new command
+    // for this voice at this time-point (ticks).
+    const MCK_AUDIO_RING_BUFFER_DATA_TYPE OR_VALUE
+        = MCK_AUDIO_RING_BUFFER_DATA_TYPE( command )
+            << ( voice_id * 8 );
+
+    // Get ring buffer position
+    const uint32_t POS = ticks & MCK::AUDIO_RING_BUFFER_SIZE_MASK;
+
+    // Write command to ring buffer
+    MCK::GameEngAudio::ring_buffer[POS] &= AND_VALUE;
+    MCK::GameEngAudio::ring_buffer[POS] |= OR_VALUE;
+      
+    // DEBUG
+    std::cout << "Placed in ring_buffer at " << POS
+              << std::endl;
 }
 
 void MCK::GameEngAudio::callback(
@@ -305,7 +428,7 @@ void MCK::GameEngAudio::callback(
 
     // Calculate end sample count
     const long END_SAMPLE_COUNT = MCK::GameEngAudio::sample_counter + LENGTH;
-    
+
     // Keep track of samples filled, in case we need to pad with
     // silence bytes
     int num_of_samples_filled = 0;
@@ -315,35 +438,77 @@ void MCK::GameEngAudio::callback(
 
     // Get signed (32bit?) float pointer to actual buffer array
     float *float_buffer = (float*)raw_buffer;
-        
-    // TEST CODE
-    if( MCK::GameEngAudio::sample_counter / 44100
-            != ( 
-                MCK::GameEngAudio::sample_counter
-                    + buffer_size_in_samples
-            ) / 44100 
-    )
-    {
-        const int test_num = MCK::GameEngAudio::sample_counter / 44100; 
-        const uint8_t PITCH_ID
-            = ( test_num ) & 0x1F;
-        const uint8_t DURATION_ID
-            = 0x05;
-            // = ( test_num ) & 0x07;
-        const uint8_t COMMAND
-            = (
-                ( PITCH_ID << MCK::VOICE_SYNTH_PITCH_LSHIFT
-                ) & MCK::VOICE_SYNTH_PITCH_MASK
-            ) | (
-                ( DURATION_ID << MCK::VOICE_SYNTH_DURATION_LSHIFT
-                ) & MCK::VOICE_SYNTH_DURATION_MASK
-            );
 
-        // MCK::GameEngAudio::voices[0]->command(
-        MCK::GameEngAudio::voices[test_num % MCK_NUM_VOICES]->command(
-            COMMAND,
-            MCK::GameEngAudio::sample_counter
-        );
+    ////////////////////////////////////////////
+    // CHECK RING BUFFER FOR VOICE COMMAND(S)
+    // (ignoring all but most recent command
+    //  for each voice)
+    std::vector<uint8_t> commands( MCK_NUM_VOICES, 0 );
+    bool no_commands = true;
+    {
+        // Get current position in buffer, slightly
+        // behind actual game time
+        const uint32_t RAW_TICKS = SDL_GetTicks();
+
+        const uint32_t END_POS
+            = ( RAW_TICKS - MCK::AUDIO_RING_BUFFER_LAG_IN_TICKS )
+                & MCK::AUDIO_RING_BUFFER_SIZE_MASK;
+
+        uint32_t current_pos
+            = MCK::GameEngAudio::ring_buffer_prev_pos 
+                & MCK::AUDIO_RING_BUFFER_SIZE_MASK;
+
+        while( current_pos != END_POS )
+        {
+            // Increment (and constrain) ticks
+            current_pos = ++current_pos & MCK::AUDIO_RING_BUFFER_SIZE_MASK;
+
+            // Read from ring buffer (this is safe only as long
+            // as 'current_pos' has been bitwise 'anded'
+            // with MCK::AUDIO_RING_BUFFER_SIZE_MASK )
+            const MCK_AUDIO_RING_BUFFER_DATA_TYPE NEW_COMMANDS
+                = ring_buffer[current_pos];
+
+            // Clear ring buffer entry no it has been read
+            ring_buffer[current_pos] = 0;
+
+            // Check for new voice commands, and overwrite any
+            // existing voice commands
+            for( int i = 0; i < MCK_NUM_VOICES; i++ )
+            {
+                const uint8_t COM
+                    = ( NEW_COMMANDS >> ( i * 8 ) ) & 0xFF;
+
+                if( COM != 0 )
+                {
+                    // Store command
+                    commands[i] = COM;
+                    no_commands = false;
+                }
+            }
+        }
+
+        // Remember final position as start point for next
+        // audio callback
+        MCK::GameEngAudio::ring_buffer_prev_pos = current_pos;
+    }
+
+    // Process commands (if any)
+    if( !no_commands )
+    {
+        for( int i = 0; i < MCK_NUM_VOICES; i++ )
+        {
+            if( commands[i] != 0
+                && i < MCK::GameEngAudio::voices.size()
+                && MCK::GameEngAudio::voices[i].get() != NULL
+            )
+            {
+                MCK::GameEngAudio::voices[i]->command(
+                    commands[i],
+                    MCK::GameEngAudio::sample_counter
+                );
+            }       
+        }
     }
 
     // Fill samples

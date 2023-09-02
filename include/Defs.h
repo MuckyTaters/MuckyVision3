@@ -143,7 +143,7 @@ namespace MCK
     // channels used. This is because speaker bandwith
     // is shared between all virtual channels, even
     // those not producing sound at that time.
-#define MCK_NUM_VOICES 8
+#define MCK_NUM_VOICES 4
 
     // This is an internal data type used by GameEngAudio,
     // and it is dependent on the number of virtual channels
@@ -188,7 +188,11 @@ namespace MCK
     //! This is calculated at compile time, do not alter
     static const size_t AUDIO_RING_BUFFER_SIZE_MASK
         = AUDIO_RING_BUFFER_SIZE - 1;
-   
+  
+    //! Minimum time lag (in ticks, i.e. milliseconds) between ring buffer input and output
+    static const size_t AUDIO_RING_BUFFER_LAG_IN_TICKS = 2;
+
+
     //! Default volume for individual channels (0x00 = mute, 0xFF = max)
     static const uint8_t AUDIO_DEFAULT_CHANNEL_VOLUME = 0x80;
 

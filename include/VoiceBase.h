@@ -74,6 +74,11 @@ class VoiceBase
             return initialized;
         }
 
+        MCK::VoiceType get_type( void ) const noexcept
+        {
+            return type;
+        }
+
         //! Issue a command to the voice
         /* Commands are defined in the child class */
         virtual void command( 

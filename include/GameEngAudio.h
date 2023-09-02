@@ -77,26 +77,19 @@ class GameEngAudio
             std::vector<std::shared_ptr<MCK::VoiceBase>> &_voices
         );
 
-        // //! Play up to eight chunks (one on each channel) at a particular point in time.
-        // /*! @param chunk_ids: 8 x 8 bytes, each bytes containing (left to right) the ID of a chunk to play on channel 0-7 respectively.
-        //  *  @param ticks: Time point at which to play these chunks. If 0 (default) current time is used.
-        //  * Note: Any bytes corresponding to
-        //  */
-        // static void play_chunks(
-        //     uint64_t chunk_ids,
-        //     uint32_t ticks = 0
-        // );
-        
-        //! Play a single chunk at a given time point (or a current time)
-        /*! @param chunk_id: If of chunk to play
-         *  @param channel_num: Number of channel (0-7, only rightmost 3 bits are used)
-         *  @param ticks: Future time point at which to play these chunks. If 0 (default), current time is used.
+        //! Issue a single voice command at a given time point (or a current time)
+        /*! IMPORTANT: This method should only be called by the main thread
+         *  @param voice_id: Voice (0 to MCK_NUM_VOICES - 1 )
+         *  @param command: Command bytes, relevant to that voice.
+         *  @param ticks: Future time point at which to issue command. If 0 (default), current time is used.
+            Note: Time points too far into the future will generate an exception
          */
-        static void play_single_chunk(
-            uint8_t chunk_id,
-            uint8_t channel_num,
+        static void voice_command(
+            uint8_t voice_id,
+            uint8_t command,
             uint32_t ticks = 0
         );
+
 
         //! THIS METHOD IS ONLY USED BY SDL, DO NOT CALL DIRECTLY
         static void callback(
@@ -153,6 +146,9 @@ class GameEngAudio
          *           code unless you know what you are doing.
          */
         static MCK_AUDIO_RING_BUFFER_DATA_TYPE ring_buffer[];
+
+        //! Remember previous position in ring buffer
+        static size_t ring_buffer_prev_pos;
 
         static uint8_t master_volume;
         static float master_volume_on_unit_interval;
