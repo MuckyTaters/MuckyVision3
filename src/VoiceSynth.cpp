@@ -54,7 +54,6 @@ MCK::VoiceSynth::VoiceSynth( void ) : VoiceBase()
 }
 
 void MCK::VoiceSynth::init(
-    uint32_t _samples_per_second,
     uint32_t _sixteenth_duration_in_samples,
     MCK::VoiceSynth::Waveform _wave,
     uint8_t _lowest_octave,
@@ -130,7 +129,7 @@ void MCK::VoiceSynth::init(
     }
 
     // Call base init
-    this->base_init( _samples_per_second, initial_volume ); 
+    this->base_init( /*_samples_per_second,*/ initial_volume ); 
 }
 
 void MCK::VoiceSynth::command(

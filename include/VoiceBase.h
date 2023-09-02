@@ -88,11 +88,9 @@ class VoiceBase
         //! Internal initialisation method, called by
         //  'init' method of child classes.
         void base_init(
-            uint32_t _samples_per_second,
             uint8_t initial_volume = 0xFF
         )
         {
-            samples_per_second = _samples_per_second;
             scale = float( initial_volume )
                       / 255.0f 
                         / float( MCK_NUM_VOICES );
@@ -103,8 +101,6 @@ class VoiceBase
 
         bool initialized;
             
-        uint32_t samples_per_second;
-
         // This 'scale' variable takes account of voice volume
         // and number of voices, so that returned sample values are 
         // appropriately scaled. This means the returned voice

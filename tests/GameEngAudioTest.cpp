@@ -40,27 +40,6 @@ int main( int argc, char** argv )
     const int WINDOW_WIDTH_IN_PIXELS = 320;
     const int WINDOW_HEIGHT_IN_PIXELS = 240;
   
-    /*
-    // TEST CODE
-    {
-        std::shared_ptr<MCK::VoiceSynth> synth
-            = std::make_shared<MCK::VoiceSynth>();
-        try
-        {
-            synth->init(
-                44100,
-                2500,  // Arbitrary choice
-                MCK::VoiceSynth::Waveform::SQUARE,
-                3  // Lowest octave
-            );
-        }
-        catch( std::exception &e )
-        {
-            std::cout << e.what() << std::endl;
-            exit( -1 );
-        }
-    }
-    */
 
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER

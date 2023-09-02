@@ -70,8 +70,7 @@ class VoiceSynth : public VoiceBase
         virtual ~VoiceSynth( void ) {}
 
         //! Initialize the voice
-        /*! @param _samples_per_second: use value stored in GameEngAudio
-         *  @param _sixteenth_duration_in_samples: duration of a 'sixteenth' note, sets tempo 
+        /*  @param _sixteenth_duration_in_samples: duration of a 'sixteenth' note, sets tempo 
          *  @param MCK::VoiceSynth::Waveform _wave: Waveform
          *  @param uint8_t _lowest_octave: Lowest pitch ID will be C in this octave, sets overall pitch
          *  @param MCK::Envelope _envelope: ADSR envelope
@@ -80,7 +79,6 @@ class VoiceSynth : public VoiceBase
          *        supplied as an r-value
          */
         virtual void init(
-            uint32_t _samples_per_second,
             uint32_t _sixteenth_duration_in_samples, 
             MCK::VoiceSynth::Waveform _wave,
             uint8_t _lowest_octave,

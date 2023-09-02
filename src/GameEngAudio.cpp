@@ -58,7 +58,10 @@ MCK::AudioDataType MCK::GameEngAudio::data_type
     = MCK::AudioDataType::UNKNOWN;
 std::vector<std::shared_ptr<MCK::VoiceBase>> MCK::GameEngAudio::voices;
 
-void MCK::GameEngAudio::init( uint8_t _master_volume )
+void MCK::GameEngAudio::init(
+    uint8_t _master_volume
+    // std::vector<std::shared_ptr<MCK:VoiceBase>> &voices
+)
 {
     // Forbid repeat initialization
     if( MCK::GameEngAudio::initialized )
@@ -72,6 +75,8 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
 #endif
         ) );
     }
+
+    // Check number and initialisation of supplied voices
 
     // Initialise SDL audio
     {
@@ -224,8 +229,8 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
             throw( std::runtime_error(
 #if defined MCK_STD_OUT
                 std::string( "Apologies, your audio data format " )
-                + std::string( "is not supported by MuckyVision v3." )
-                + std::string( " Audio initialization failed." )
+                + std::string( "is not yet supported by MuckyVision v3. " )
+                + std::string( "Audio initialization failed." )
 #else
                 ""
 #endif
@@ -242,11 +247,8 @@ void MCK::GameEngAudio::init( uint8_t _master_volume )
         try
         {
             synth->init( 
-                MCK::GameEngAudio::samples_per_second,
                 2205,  // sixteenth_duration_in_samples, 
-                // MCK::VoiceSynth::SAWTOOTH,
-                MCK::VoiceSynth::WHITENOISE,
-                // MCK::VoiceSynth::Waveform( i % 5 ),
+                MCK::VoiceSynth::Waveform( i % 5 ),
                 3,  // lowest octave
                 MCK::Envelope(
                     550,  // Attack
