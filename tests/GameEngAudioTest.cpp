@@ -1285,7 +1285,7 @@ int main( int argc, char** argv )
     const uint8_t CON1_CHAR_WIDTH = 8;
     const uint8_t CON1_CHAR_HEIGHT = 16;
     const uint16_t CON1_CONSOLE_LEFT = TILE_WIDTH * 1;
-    const uint16_t CON1_CONSOLE_TOP = TILE_HEIGHT * 3;
+    const uint16_t CON1_CONSOLE_TOP = TILE_HEIGHT * 5;
     const uint8_t CON1_CONSOLE_WIDTH_IN_CHARS = 37;
     const uint8_t CON1_CONSOLE_HEIGHT_IN_CHARS = 8;
     const uint8_t CON1_CONSOLE_CHAR_SPACING = 1;
@@ -1295,7 +1295,7 @@ int main( int argc, char** argv )
     const uint8_t CON2_CHAR_WIDTH = 8;
     const uint8_t CON2_CHAR_HEIGHT = 8;
     const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 22.5;
-    const uint16_t CON2_CONSOLE_TOP = TILE_HEIGHT * 3;
+    const uint16_t CON2_CONSOLE_TOP = TILE_HEIGHT * 5;
     const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 33;
     const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 16;
     const uint8_t CON2_CONSOLE_CHAR_SPACING = 0;
@@ -1354,6 +1354,78 @@ int main( int argc, char** argv )
     }
 
     //////////////////////////////////////////////
+    // CREATE CONSOLE 1 COLUMN TITLES TEXT BOX
+    std::shared_ptr<MCK::Console> console_1_titles
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        std::string s = "Ticks  Voice Note (by octave)    Len";
+        console_1_titles->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            console_1_palette_id,
+            CON1_CONSOLE_LEFT,  // x_pos,
+            TILE_HEIGHT * 3.5,  // y_pos,
+            CON1_CONSOLE_WIDTH_IN_CHARS,  // width in chars
+            1,  // height in chars
+            CON1_CHAR_WIDTH,  // char_width_in_pixels,
+            CON1_CHAR_HEIGHT,  // char_height_in_pixels,
+            s,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            0, // start_line
+            true,  // add to front of parent block
+            MCK::COL_BLACK,  // underlay colo(u)r
+            CON1_CONSOLE_CHAR_SPACING,
+            0  // line spacing in pixels
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create title text, error: ")
+            + e.what() ) );
+    }
+
+    //////////////////////////////////////////////
+    // CREATE CONSOLE 2 COLUMN TITLES TEXT BOX
+    std::shared_ptr<MCK::Console> console_2_titles
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        std::string s = "LO0 LO1 LO2 LO3 HI0 HI1 HI2 HI3";
+        console_2_titles->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            console_2_palette_id,
+            CON2_CONSOLE_LEFT,  // x_pos,
+            TILE_HEIGHT * 3.5,  // y_pos,
+            CON2_CONSOLE_WIDTH_IN_CHARS,  // width in chars
+            1,  // height in chars
+            CON2_CHAR_WIDTH - 1,  // char_width_in_pixels,
+            CON1_CHAR_HEIGHT,  // char_height_in_pixels,
+            s,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            0, // start_line
+            true,  // add to front of parent block
+            CONSOLE2_BG_COL,  // underlay colo(u)r
+            CON2_CONSOLE_CHAR_SPACING + 1,
+            0  // line spacing in pixels
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create title text, error: ")
+            + e.what() ) );
+    }
+
+    //////////////////////////////////////////////
     // CREATE CONSOLE 1
     std::shared_ptr<MCK::Console> console_1
         = std::make_shared<MCK::Console>();
@@ -1374,8 +1446,8 @@ int main( int argc, char** argv )
             0,  // print_speed_in_ticks_per_char,
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
-            0,  // CON1_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false, // true  // add_to_front_of_parent_block = true
+            CON1_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
+            false,  // don't add to front_of parent block 
             MCK::COL_BLACK,  // underlay colo(u)r
             CON1_CONSOLE_CHAR_SPACING,
             CON1_CONSOLE_LINE_SPACING
