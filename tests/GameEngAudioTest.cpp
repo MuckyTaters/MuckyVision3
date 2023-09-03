@@ -43,8 +43,10 @@
 ////////////////////////////////////////////
 
 #include "GameEng.h"
+#include "ImageMan.h"
 #include "GameEngAudio.h"
 #include "VoiceSynth.h"
+#include "Console.h"
 
 const std::vector<uint32_t> SONG_DATA
 {
@@ -1101,8 +1103,8 @@ const std::vector<uint32_t> SONG_DATA
 int main( int argc, char** argv )
 {   
     // Define window size (these can be changed to any sensible value)
-    const int WINDOW_WIDTH_IN_PIXELS = 320;
-    const int WINDOW_HEIGHT_IN_PIXELS = 240;
+    const int WINDOW_WIDTH_IN_PIXELS = 640;
+    const int WINDOW_HEIGHT_IN_PIXELS = 360;
   
 
     //////////////////////////////////////////////
@@ -1126,6 +1128,21 @@ int main( int argc, char** argv )
     }
 
     //////////////////////////////////////////////
+    // INITIALIZE IMAGE MANAGER
+    MCK::ImageMan &image_man = MCK::ImageMan::get_singleton();
+    try
+    {
+        image_man.init( game_eng );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to initialize Image Manager, error: ")
+            + e.what() ) );
+    }
+
+
+    //////////////////////////////////////////////
     // DEFINE AUDIO VOICES
     // IMPORTANT: Once these voices are handed over
     // to GameEngAudio, they should NOT be accessed
@@ -1143,16 +1160,14 @@ int main( int argc, char** argv )
         {
             synth->init( 
                 2205,  // sixteenth_duration_in_samples, 
-                i < MCK_NUM_VOICES / 2 ?
-                    MCK::VoiceSynth::Waveform::SINE:
-                    MCK::VoiceSynth::Waveform::SINE,
+                MCK::VoiceSynth::Waveform::SINE,
                 i < MCK_NUM_VOICES / 2 ?
                     LOWEST_OCTAVE_LO_VOICES :
                     LOWEST_OCTAVE_HI_VOICES,
                 MCK::Envelope(
                     550,  // Attack
                     550,  // Decay
-                    8820,  //2205,  // Release
+                    8820,  // Release
                     192  // Sustain as proportion of peak (0-255)
                 ),
                 0xFF  // Initial volume
@@ -1174,10 +1189,8 @@ int main( int argc, char** argv )
         // Recast as base pointer, and store
         new_voices[i] = std::dynamic_pointer_cast<MCK::VoiceBase>( synth );
         
-#if defined MCK_STD_OUT
         std::cout << "Successfully created voice " << i
                   << std::endl;
-#endif 
     }
 
 
@@ -1199,104 +1212,137 @@ int main( int argc, char** argv )
 
 
     ///////////////////////////////////////////
-    // CREATE LOCAL COLO(U)R PALETTES
-    // (subsets of the core 32 colo(u)r palette)
-    
-    // Black/white palette for 1bit images
-    const MCK_PAL_ID_TYPE PALETTE_ID = 0;
-    const std::vector<uint8_t> PALETTE =
-    {
-        MCK::COL_BLACK,
-        MCK::COL_WHITE
-    };
-
-
-    ///////////////////////////////////////////
-    // CREATE IMAGE DATA
-
-    // Square made of 8x8 pixels and 2 colo(u)rs
-    // Note the two 8bit binary literals here represent 8x8
-    // 1bit pixels (similar to above). In effect, each
-    // 8bit number is split in half to give 4 bits per line.
-    const MCK_IMG_ID_TYPE IMAGE_ID = 1;
-    const std::vector<uint8_t> IMAGE =
-    {
-        0b00000000, 0b00000000,
-        0b00000000, 0b01000000,
-        0b00000000, 0b11000001,
-        0b00000001, 0b01000001,
-        0b00000010, 0b01000101,
-        0b01111100, 0b01000101,
-        0b01000000, 0b01010101,
-        0b01000000, 0b01010101,
-        0b01000000, 0b01010101,
-        0b01000000, 0b01010101,
-        0b01000000, 0b01010101,
-        0b01111100, 0b01000101,
-        0b00000010, 0b01000101,
-        0b00000001, 0b01000001,
-        0b00000000, 0b11000001,
-        0b00000000, 0b01000000
-    };
-
-
-    ///////////////////////////////////////////
-    // CREATE TEXTURES
-
-    // Square (cyan/purple)
-    MCK_TEX_ID_TYPE tex_id;
-    {
-        uint16_t height_in_pixels;
-        try
-        {
-            game_eng.create_texture(
-                IMAGE_ID,
-                PALETTE_ID,
-                1,  // bits_per_pixel,
-                16,  // pitch_in_pixels,
-                IMAGE,
-                PALETTE,
-                tex_id,
-                height_in_pixels
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create texture, error: ")
-                + e.what() ) );
-        }
-
-        if( height_in_pixels != 16 )
-        {
-            throw( std::runtime_error(
-                std::string( "Texture has incorrect height")
-            ) );
-        }
-    }
-
-
-    ///////////////////////////////////////////
-    // CREATE RENDER INFO
+    // CREATE LOCAL PALETTE(S)
+    MCK_PAL_ID_TYPE title_palette_id;
+    MCK_PAL_ID_TYPE main_console_palette_id;
+    MCK_PAL_ID_TYPE mini_console_palette_id;
+    MCK_PAL_ID_TYPE lscape_console_palette_id;
+    const uint8_t MINI_CONSOLE_BG_COL = MCK::COL_FOREST_GREEN;
     try
     {
-        game_eng.create_render_info(
-            tex_id,
-            game_eng.get_prime_render_block(),
-            MCK::GameEngRenderInfo::Rect( 
-                20,  // x pos
-                20,  // y pos
-                128, // width
-                128  // height 
+        title_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_BLACK,
+                    MCK::COL_WHITE,
+                }
+            )
+        );
+        main_console_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_BLACK,
+                    MCK::COL_RED,
+                }
+            )
+        );
+        mini_console_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MINI_CONSOLE_BG_COL,
+                    MCK::COL_GREEN
+                }
+            )
+        );
+        lscape_console_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_DARK_BLUE,
+                    MCK::COL_YELLOW,
+                }
             )
         );
     }
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create render info, error: ")
+            std::string( "Failed to create black white palette, error: ")
             + e.what() ) );
     }
+
+    ///////////////////////////////////////////
+    // CREATE MAIN CONSOLE PARAMETERS
+    const uint8_t BG_COL = MCK::COL_ROTTING_PURPLE;
+   
+    // General
+    const uint8_t TILE_WIDTH = 16;
+    const uint8_t TILE_HEIGHT = 16;
+    
+    // Main console
+    const uint8_t MAIN_CHAR_WIDTH = 8;
+    const uint8_t MAIN_CHAR_HEIGHT = 16;
+    const uint16_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
+    const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 3;
+    const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 42;
+    const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 8;
+    const uint8_t MAIN_CONSOLE_CHAR_SPACING = 2;
+    const uint8_t MAIN_CONSOLE_LINE_SPACING = 4;
+
+    // Mini console
+    const uint8_t MINI_CHAR_WIDTH = 8;
+    const uint8_t MINI_CHAR_HEIGHT = 8;
+    const uint16_t MINI_CONSOLE_LEFT = TILE_WIDTH * 29;
+    const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 3;
+    const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 12;
+    const uint8_t MINI_CONSOLE_HEIGHT_IN_CHARS = 6;
+    const uint8_t MINI_CONSOLE_CHAR_SPACING = 1;
+    const uint8_t MINI_CONSOLE_LINE_SPACING = 0;
+
+    ////////////////////////////////////////////
+    // SET CLEARING COLO(U)R
+
+    // Set render clearing colo(u)r for this demo
+    try
+    {
+        game_eng.set_clearing_color( BG_COL );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to set clearing color, error: ")
+            + e.what() ) );
+    }
+
+    //////////////////////////////////////////////
+    // CREATE TITLE TEXT BOX
+    std::shared_ptr<MCK::Console> title_text
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        std::string CR( 1, uint8_t( 255 ) );
+        std::string s = "AUDIO DEMO  " + CR + " MuckyTaters 2023";
+        title_text->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            title_palette_id,
+            MAIN_CONSOLE_LEFT + TILE_WIDTH,  // x_pos,
+            TILE_HEIGHT,  // y_pos,
+            32,  // width in chars
+            1,  // height in chars
+            TILE_WIDTH,  // char_width_in_pixels,
+            TILE_HEIGHT,  // char_height_in_pixels,
+            s,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            0, // start_line
+            true,  // add_to_front_of_parent_block = true
+            MCK::COL_BLACK,  // underlay colo(u)r
+            2,  // char spacing in pixels
+            0  // line spacing in pixels
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create title text, error: ")
+            + e.what() ) );
+    }
+
+
+
+
 
 
     /////////////////////////////////////////////

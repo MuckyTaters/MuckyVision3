@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/GameEngAudio.o build/Envelope.o build/VoiceSynth.o build/GameEngAudioTest.o
+BUILDS := build/GameEng.o build/GameEngAudio.o build/Envelope.o build/VoiceSynth.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/Console.o build/GameEngAudioTest.o
 
 #CC specifies which compiler we're using
 CC := g++
@@ -96,8 +96,24 @@ build/Envelope.o: ../src/Envelope.cpp ../include/Envelope.h
 build/VoiceSynth.o: ../src/VoiceSynth.cpp ../include/VoiceSynth.h build/Envelope.o ../include/VoiceBase.h ../include/Defs.h ../include/Version.h
 	$(CC) -c ../src/VoiceSynth.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/VoiceSynth.o
 
+## ImageDataASCII ##
+build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h 
+	$(CC) -c ../src/ImageDataASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageDataASCII.o
+
+## ImageMan ##
+build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../include/Defs.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
+	$(CC) -c ../src/ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageMan.o
+
+## ImageText ##
+build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o build/ImageMan.o 
+	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
+
+## Console ##
+build/Console.o: ../src/Console.cpp ../include/Console.h build/GameEng.o build/ImageMan.o build/ImageText.o
+	$(CC) -c ../src/Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Console.o
+
 ## GameEngAudioTest ##
-build/GameEngAudioTest.o: GameEngAudioTest.cpp build/GameEng.o build/GameEngAudio.o build/VoiceSynth.o
+build/GameEngAudioTest.o: GameEngAudioTest.cpp build/GameEng.o build/GameEngAudio.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/Console.o build/VoiceSynth.o
 	$(CC) -c GameEngAudioTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngAudioTest.o
 
 
