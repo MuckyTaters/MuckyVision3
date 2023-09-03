@@ -1128,6 +1128,8 @@ int main( int argc, char** argv )
     const int WINDOW_WIDTH_IN_PIXELS = 640;
     const int WINDOW_HEIGHT_IN_PIXELS = 360;
   
+    const uint8_t LOWEST_RAW_NOTE_ID = 33;  // From song data
+    const uint8_t HIGHEST_RAW_NOTE_ID = 100;  // From song data
 
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER
@@ -1238,6 +1240,7 @@ int main( int argc, char** argv )
     MCK_PAL_ID_TYPE title_palette_id;
     MCK_PAL_ID_TYPE console_1_palette_id;
     MCK_PAL_ID_TYPE console_2_palette_id;
+    MCK_PAL_ID_TYPE lscape_console_palette_id;
     const uint8_t CONSOLE2_BG_COL = MCK::COL_FOREST_GREEN;
     try
     {
@@ -1265,6 +1268,14 @@ int main( int argc, char** argv )
                 }
             )
         );
+        lscape_console_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_BLUE,
+                    MCK::COL_YELLOW
+                }
+            )
+        );
     }
     catch( std::exception &e )
     {
@@ -1287,7 +1298,7 @@ int main( int argc, char** argv )
     const uint16_t CON1_CONSOLE_LEFT = TILE_WIDTH * 1;
     const uint16_t CON1_CONSOLE_TOP = TILE_HEIGHT * 5;
     const uint8_t CON1_CONSOLE_WIDTH_IN_CHARS = 37;
-    const uint8_t CON1_CONSOLE_HEIGHT_IN_CHARS = 8;
+    const uint8_t CON1_CONSOLE_HEIGHT_IN_CHARS = 6;
     const uint8_t CON1_CONSOLE_CHAR_SPACING = 1;
     const uint8_t CON1_CONSOLE_LINE_SPACING = 4;
 
@@ -1297,9 +1308,20 @@ int main( int argc, char** argv )
     const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 22.5;
     const uint16_t CON2_CONSOLE_TOP = TILE_HEIGHT * 5;
     const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 33;
-    const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 16;
+    const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 33;
     const uint8_t CON2_CONSOLE_CHAR_SPACING = 0;
-    const uint8_t CON2_CONSOLE_LINE_SPACING = 2;
+    const uint8_t CON2_CONSOLE_LINE_SPACING = 0;
+
+    // Landscape console 
+    const uint8_t LSCAPE_CHAR_WIDTH = 3;
+    const uint8_t LSCAPE_CHAR_HEIGHT = 2;
+    const uint16_t LSCAPE_CONSOLE_LEFT = CON1_CONSOLE_LEFT;
+    const uint16_t LSCAPE_CONSOLE_TOP = TILE_HEIGHT * 13;
+    const uint8_t LSCAPE_CONSOLE_WIDTH_IN_CHARS = 110;
+    const uint8_t LSCAPE_CONSOLE_HEIGHT_IN_CHARS
+        = HIGHEST_RAW_NOTE_ID - LOWEST_RAW_NOTE_ID + 1;
+    const uint8_t LSCAPE_CONSOLE_CHAR_SPACING = 0;
+    const uint8_t LSCAPE_CONSOLE_LINE_SPACING = 0;
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -1323,7 +1345,7 @@ int main( int argc, char** argv )
     try
     {
         std::string CR( 1, uint8_t( 255 ) );
-        std::string s = "AUDIO DEMO  " + CR + " MuckyTaters 2023";
+        std::string s = " AUDIO DEMO  " + CR + " MuckyTaters 2023";
         title_text->init(
             game_eng,
             image_man,
@@ -1385,7 +1407,7 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create title text, error: ")
+            std::string( "Failed to console title 1, error: ")
             + e.what() ) );
     }
 
@@ -1421,7 +1443,7 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create title text, error: ")
+            std::string( "Failed to create console title 2, error: ")
             + e.what() ) );
     }
 
@@ -1491,13 +1513,44 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create console 1, error: ")
+            std::string( "Failed to create console 2, error: ")
             + e.what() ) );
     }
 
-
-
-
+    //////////////////////////////////////////////
+    // CREATE LSCAPE CONSOLE
+    std::shared_ptr<MCK::Console> lscape_console
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        lscape_console->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(), // mini_console_block,
+            lscape_console_palette_id,
+            LSCAPE_CONSOLE_LEFT,  // x_pos,
+            LSCAPE_CONSOLE_TOP,  // y_pos,
+            LSCAPE_CONSOLE_WIDTH_IN_CHARS,
+            LSCAPE_CONSOLE_HEIGHT_IN_CHARS,
+            LSCAPE_CHAR_WIDTH,  // char_width_in_pixels,
+            LSCAPE_CHAR_HEIGHT,  // char_height_in_pixels,
+            "",  // initial_content,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            false,  // vertical text alignment
+            LSCAPE_CONSOLE_WIDTH_IN_CHARS - 1,  // start_line
+            false, // true  // add_to_front_of_parent_block = true
+            MCK::COL_BLACK,  // underlay colo(u)r
+            LSCAPE_CONSOLE_CHAR_SPACING,
+            LSCAPE_CONSOLE_LINE_SPACING
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create lscape console, error: ")
+            + e.what() ) );
+    }
 
 
     /////////////////////////////////////////////
@@ -1510,18 +1563,24 @@ int main( int argc, char** argv )
     uint32_t current_ticks = game_eng.get_ticks();
     const uint32_t START_TICKS = current_ticks;
     uint32_t next_frame_ticks = current_ticks + TICKS_PER_FRAME; 
-    const uint32_t END_TICKS = current_ticks + 160000;
+    const uint32_t END_TICKS = current_ticks + 163000;
     const float SCROLL_RATE = 0.1f;  // Pixels per tick
     size_t song_data_index = 0;
     const size_t SONG_DATA_SIZE = SONG_DATA.size();
     uint8_t id_of_next_avail_lo_voice = 0;
     uint8_t id_of_next_avail_hi_voice = MCK_NUM_VOICES / 2;
+    const uint32_t START_DELAY_IN_TICKS = 1000;
     bool first_note = true;
     // 'period's are used to group notes together for display
     // when they are played at the same, or similar, times.
     uint32_t period_start_in_ticks = current_ticks;
-    const uint32_t PERIOD_LEN_IN_TICKS = 100;
+    const uint32_t PERIOD_LEN_IN_TICKS = 50;
     std::vector<std::string> notes_played_this_period( MCK_NUM_VOICES, "--- " );
+    std::vector<uint8_t> notes_in_play_this_period(
+        HIGHEST_RAW_NOTE_ID - LOWEST_RAW_NOTE_ID + 1, 
+        0 
+    );
+    const std::string SOLID_BLOCK( 1, uint8_t( 230 ) );  // Single block
     do
     {
         ////////////////////////////////////////
@@ -1554,7 +1613,7 @@ int main( int argc, char** argv )
                 console_2->add_content( " " );
             }
 
-            // Add current period to console 2
+            // Add new notes for current period to console 2
             for( auto &s : notes_played_this_period )
             {
                 // Write note to console 2
@@ -1562,6 +1621,22 @@ int main( int argc, char** argv )
                 
                 // Clear note for next period
                 s = "--- ";  
+            }
+
+            // Add all playing notes for current
+            // period to landscape console
+            const size_t N = notes_in_play_this_period.size();
+            for( int i = N - 1; i >= 0; i-- )
+            {
+                if( notes_in_play_this_period[i] > 0 )
+                {
+                    lscape_console->add_content( SOLID_BLOCK );
+                    notes_in_play_this_period[i]--;
+                }
+                else
+                {
+                    lscape_console->add_content( " " );
+                }
             }
 
             /*
@@ -1611,9 +1686,15 @@ int main( int argc, char** argv )
 
         // Play notes in song
         {
-            const size_t SONG_TICKS = current_ticks - START_TICKS;
+            const uint32_t SONG_TICKS
+                = std::max(
+                    int64_t( 0 ),
+                    int64_t( current_ticks )
+                        - int64_t( START_TICKS )
+                        - int64_t( START_DELAY_IN_TICKS )
+                );
             while( song_data_index < SONG_DATA.size() - 4
-                   &&  SONG_DATA.at( song_data_index ) < SONG_TICKS
+                   && SONG_DATA.at( song_data_index ) < SONG_TICKS
             )
             {
                 ////////////////////////////////
@@ -1754,6 +1835,9 @@ int main( int argc, char** argv )
                               ) 
                               + fixed_width( OCTAVE_NUM, 1 )
                               + " ";
+                        notes_in_play_this_period.at(
+                            RAW_NOTE_ID - LOWEST_RAW_NOTE_ID
+                        ) = pow( 2, DURATION_ID );
 
                         // Fill higher octaves with blanks
                         for( int i = OCTAVE_NUM + 1; i < 9 - LO * 2; i++ )
@@ -1823,6 +1907,7 @@ int main( int argc, char** argv )
         {
             console_1->update( current_ticks );
             console_2->update( current_ticks );
+            lscape_console->update( current_ticks );
         }
         catch( std::exception &e )
         {
