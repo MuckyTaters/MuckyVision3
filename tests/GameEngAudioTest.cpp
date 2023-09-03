@@ -1557,20 +1557,34 @@ int main( int argc, char** argv )
                     msg += " ";
 
                     // Add note, positioned by octave of raw note id
-                    const int OCTAVE_NUM = RAW_NOTE_ID / 12;
-                    const int WITHIN_OCTAVE_NOTE_ID
-                        = RAW_NOTE_ID % 12;
-                    for( int i = 2; i < OCTAVE_NUM; i++ )
                     {
-                        msg += ".. ";
-                    }
-                    msg += fixed_width(
-                        NOTES[ WITHIN_OCTAVE_NOTE_ID ],
-                        3
-                    );
-                    for( int i = 0; i < 8 - OCTAVE_NUM; i++ )
-                    {
-                        msg += ".. ";
+                        const int OCTAVE_NUM = RAW_NOTE_ID / 12;
+                        const int WITHIN_OCTAVE_NOTE_ID
+                            = RAW_NOTE_ID % 12;
+                        if( !LO )
+                        {
+                            msg += "xx xx ";
+                        }
+
+                        for( int i = LOWEST_OCTAVE; i < OCTAVE_NUM; i++ )
+                        {
+                            msg += ".. ";
+                        }
+
+                        msg += fixed_width(
+                            NOTES[ WITHIN_OCTAVE_NOTE_ID ],
+                            3
+                        );
+                        
+                        for( int i = OCTAVE_NUM + 1; i < 9 - LO * 2; i++ )
+                        {
+                            msg += ".. ";
+                        }
+                        
+                        if( LO )
+                        {
+                            msg += "xx xx ";
+                        }
                     }
 
                     // Add duration ID
