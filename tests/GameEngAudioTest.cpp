@@ -1280,7 +1280,7 @@ int main( int argc, char** argv )
     // General
     const uint8_t TILE_WIDTH = 16;
     const uint8_t TILE_HEIGHT = 16;
-    
+
     // Console 1
     const uint8_t CON1_CHAR_WIDTH = 8;
     const uint8_t CON1_CHAR_HEIGHT = 16;
@@ -1294,12 +1294,12 @@ int main( int argc, char** argv )
     // Console 2
     const uint8_t CON2_CHAR_WIDTH = 8;
     const uint8_t CON2_CHAR_HEIGHT = 8;
-    const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 29;
+    const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 25;
     const uint16_t CON2_CONSOLE_TOP = TILE_HEIGHT * 3;
-    const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 12;
-    const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 6;
-    const uint8_t CON2_CONSOLE_CHAR_SPACING = 1;
-    const uint8_t CON2_CONSOLE_LINE_SPACING = 0;
+    const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 20;
+    const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 16;
+    const uint8_t CON2_CONSOLE_CHAR_SPACING = 3;
+    const uint8_t CON2_CONSOLE_LINE_SPACING = 2;
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -1370,15 +1370,50 @@ int main( int argc, char** argv )
             CON1_CONSOLE_HEIGHT_IN_CHARS,
             CON1_CHAR_WIDTH,  // char_width_in_pixels,
             CON1_CHAR_HEIGHT,  // char_height_in_pixels,
-            "------ -- -",  // initial_content,
+            "",  // initial_content,
             0,  // print_speed_in_ticks_per_char,
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
-            CON1_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
+            0,  // CON1_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
             false, // true  // add_to_front_of_parent_block = true
             MCK::COL_BLACK,  // underlay colo(u)r
             CON1_CONSOLE_CHAR_SPACING,
             CON1_CONSOLE_LINE_SPACING
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create console 1, error: ")
+            + e.what() ) );
+    }
+
+    //////////////////////////////////////////////
+    // CREATE CONSOLE 2
+    std::shared_ptr<MCK::Console> console_2
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        console_2->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(), // mini_console_block,
+            console_2_palette_id,
+            CON2_CONSOLE_LEFT,  // x_pos,
+            CON2_CONSOLE_TOP,  // y_pos,
+            CON2_CONSOLE_WIDTH_IN_CHARS,
+            CON2_CONSOLE_HEIGHT_IN_CHARS,
+            CON2_CHAR_WIDTH,  // char_width_in_pixels,
+            CON2_CHAR_HEIGHT,  // char_height_in_pixels,
+            "",  // initial_content,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            1,  // CON2_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
+            false, // true  // add_to_front_of_parent_block = true
+            CONSOLE2_BG_COL,  // underlay colo(u)r
+            CON2_CONSOLE_CHAR_SPACING,
+            CON2_CONSOLE_LINE_SPACING
         );
     }
     catch( std::exception &e )
@@ -1473,6 +1508,9 @@ int main( int argc, char** argv )
                    &&  SONG_DATA.at( song_data_index ) < SONG_TICKS
             )
             {
+                ////////////////////////////////
+                // GET NOTE DATA
+
                 // Get voice (in this demo this is LO or HI)
                 const bool LO
                     = SONG_DATA.at( ++song_data_index );
@@ -1495,7 +1533,9 @@ int main( int argc, char** argv )
                     = SONG_DATA.at( ++song_data_index );
                 song_data_index++; 
 
-                // Issue command to next available voice
+                ///////////////////////////////////////
+                // GET NEXT AVAIABLE VOICE ID
+
                 uint8_t voice_id;
                 if( LO )
                 {
@@ -1516,12 +1556,22 @@ int main( int argc, char** argv )
                     }
                 }
 
+                //////////////////////////////////////
+                // CONSTRUCT VOICE COMMAND
+
+                // Pitch and duration info must be packed into
+                // a single byte, according to the format that
+                // VoiceSynth class understands.
                 const uint8_t COMMAND
                     = MCK::VoiceSynth::construct_command(
                         PITCH_ID,
                         DURATION_ID
                     );
 
+                /////////////////////////////////////
+                // ISSUE COMMAND TO VOICE
+
+                // Pass voice command via Audio manager
                 try
                 {
                     MCK::GameEngAudio::voice_command(
@@ -1538,79 +1588,146 @@ int main( int argc, char** argv )
                               << std::endl;
                 }
 
-                // Add note info to console 1 (best effort)
-                {
-                    // Add ticks
-                    std::string msg = " ";
+                /////////////////////////////////////////
+                // VISUALS
 
+                // Create text line for consoles 1 & 2
+                {
+                    // Create string(s)
+                    std::string msg_1 = " ";
+                    std::string msg_2 = " ";
+
+                    // First line is one char shorter,
+                    // this is to prevent console scrolling
+                    // immediately once each line is written
                     if( !first_note )
                     {
-                        msg += " ";
+                        msg_1 += " ";
+                        msg_2 += " ";
                     }
 
-                    msg += fixed_width( SONG_TICKS, 7 );
+                    // Add ticks
+                    {
+                        std::string s = fixed_width( SONG_TICKS, 7 );
+                        msg_1 += s;
+                        msg_2 += s;
+                    }
 
                     // Add LO/HI and voice ID
-                    msg += LO ? "LO " : "HI ";
+                    {
+                        std::string s = LO ? "LO " : "HI ";
+                        s += std::to_string( LO ? voice_id : voice_id - 4 );
+                        s += " ";
 
-                    msg += std::to_string( LO ? voice_id : voice_id - 4 );
-                    msg += " ";
+                        msg_1 += s;
+                        msg_2 += s;
+                    }
 
                     // Add note, positioned by octave of raw note id
                     {
                         const int OCTAVE_NUM = RAW_NOTE_ID / 12;
                         const int WITHIN_OCTAVE_NOTE_ID
                             = RAW_NOTE_ID % 12;
+
+                        // For high voice, block out lower octaves
                         if( !LO )
                         {
-                            msg += "xx xx ";
+                            msg_1 += "xx xx ";
                         }
 
+                        // Fill lower octaves with blanks
                         for( int i = LOWEST_OCTAVE; i < OCTAVE_NUM; i++ )
                         {
-                            msg += ".. ";
+                            msg_1 += ".. ";
                         }
 
-                        msg += fixed_width(
-                            NOTES[ WITHIN_OCTAVE_NOTE_ID ],
-                            3
-                        );
-                        
+                        // Add note
+                        {
+                            msg_1 += fixed_width(
+                                NOTES[ WITHIN_OCTAVE_NOTE_ID ],
+                                2,
+                                ' '
+                            );
+                            msg_2 += fixed_width(
+                                NOTES[ WITHIN_OCTAVE_NOTE_ID ],
+                                2,
+                                '-'
+                            );
+                        }
+
+                        // Fill higher octaves with blanks
                         for( int i = OCTAVE_NUM + 1; i < 9 - LO * 2; i++ )
                         {
-                            msg += ".. ";
+                            msg_1 += ".. ";
                         }
                         
+                        // For low voice, block out higher octaves
                         if( LO )
                         {
-                            msg += "xx xx ";
+                            msg_1 += "xx xx ";
                         }
+
+                        // For console 2, add octave number
+                        msg_2 += fixed_width( OCTAVE_NUM, 1 );
                     }
 
                     // Add duration ID
-                    msg += fixed_width( pow( 2, DURATION_ID ), 1 );
+                    {
+                        std::string s = " ";
+                        s += fixed_width( pow( 2, DURATION_ID ), 1 );
+                        msg_1 += s;
+                        msg_2 += s;
+                    }
 
                     // Add padding to make full length line
-                    const int PAD_SIZE
+                    const int PAD_SIZE_1
                         = CON1_CONSOLE_WIDTH_IN_CHARS
-                                - msg.size() - 1;
-                    if( PAD_SIZE > 0 )
+                                - msg_1.size() - 1;
+                    if( PAD_SIZE_1 > 0 )
                     {
-                        msg += std::string( PAD_SIZE, ' ' );
+                        msg_1 += std::string( PAD_SIZE_1, ' ' );
+                    }
+
+                    const int PAD_SIZE_2
+                        = CON2_CONSOLE_WIDTH_IN_CHARS
+                                - msg_2.size() - 1;
+                    if( PAD_SIZE_2 > 0 )
+                    {
+                        msg_2 += std::string( PAD_SIZE_2, ' ' );
                     }
 
                     if( !first_note )
                     {
-                        msg += " ";
+                        msg_1 += " ";
+                        msg_2 += " ";
                     }
                     else
                     {
                         first_note = false;
                     }
 
-                    // Add all this to console 1
-                    console_1->add_content( msg );
-                        first_note = false;
+                    // DEBUG
+                    std::cout << "CON2_CONSOLE_WIDTH_IN_CHARS = "
+                              << int( CON2_CONSOLE_WIDTH_IN_CHARS )
+                              << ", msg_2.size() = "
+                              << msg_2.size()
+                              << std::endl;
+
+                    // Add all this to consoles 1 & 2
+                    try
+                    {
+                        console_1->add_content( msg_1 );
+                        console_2->add_content( msg_2 );
+                    }
+                    catch( std::exception &e )
+                    {
+                        std::cout << "Failed to add content "
+                                  << "to consoles 1 & 2, "
+                                  << "error = "
+                                  << e.what() << std::endl;
+                    }
+
+                    first_note = false;
                     
                 }
 
@@ -1630,7 +1747,7 @@ int main( int argc, char** argv )
         try
         {
             console_1->update( current_ticks );
-            // console_2->update( current_ticks );
+            console_2->update( current_ticks );
         }
         catch( std::exception &e )
         {
