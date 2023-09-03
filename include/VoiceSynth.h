@@ -120,10 +120,10 @@ class VoiceSynth : public VoiceBase
     protected:
 
         // Wavelengths, indexed by note id.
-        std::vector<uint32_t> wavelen_by_note_id;
+        std::vector<float> wavelen_by_note_id;
 
         // Frequencies, indexed by note id
-        std::vector<double> freq_by_note_id;
+        std::vector<float> freq_by_note_id;
 
         MCK::VoiceSynth::Waveform wave;
         uint8_t lowest_octave;
@@ -136,7 +136,7 @@ class VoiceSynth : public VoiceBase
         float envelope_value;
 
         // Used during sampling to save looking wavelength up
-        uint32_t note_wavelen;
+        float note_wavelen;
 
         // Sustain value, in samples, of current note
         uint32_t sustain;

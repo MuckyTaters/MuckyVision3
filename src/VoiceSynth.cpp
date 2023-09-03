@@ -51,6 +51,7 @@ MCK::VoiceSynth::VoiceSynth( void ) : VoiceBase()
     this->starting_sample_count = MCK::AUDIO_INVALID_SAMPLE_COUNT;
     this->sustain = 0;
     this->envelope_value = 0.0f;
+    this->note_wavelen = 1.0f;
 }
 
 void MCK::VoiceSynth::init(
@@ -115,16 +116,14 @@ void MCK::VoiceSynth::init(
     {
         // Calculate frequency
         this->freq_by_note_id.push_back(
-            double( VOICE_SYNTH_FREQ_A4 )
+            float( VOICE_SYNTH_FREQ_A4 )
                 * pow( 2.0f, ONE_TWELTH * n )
         );
 
         // Calculate wavelength (in samples)
         this->wavelen_by_note_id.push_back(
-            uint32_t(
-                double( MCK::AUDIO_WANT_SAMPLE_RATE ) 
-                    / this->freq_by_note_id.back() + 0.5f
-            )
+                float( MCK::AUDIO_WANT_SAMPLE_RATE ) 
+                    / this->freq_by_note_id.back()
         );
     }
 
@@ -252,11 +251,11 @@ float MCK::VoiceSynth::get_sample( uint64_t sample_count )
 
     // Calculate period within waveform (on unit interval)
     const float PERIOD
-        = float( REL_SAMPLE_COUNT ) / float( note_wavelen )
+        = float( REL_SAMPLE_COUNT ) / note_wavelen
             - float( 
                 uint32_t(
                     float( REL_SAMPLE_COUNT ) 
-                        / float( note_wavelen )
+                        / note_wavelen
                 )  
             );
 
