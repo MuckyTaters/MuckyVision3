@@ -1288,17 +1288,17 @@ int main( int argc, char** argv )
     const uint16_t CON1_CONSOLE_TOP = TILE_HEIGHT * 3;
     const uint8_t CON1_CONSOLE_WIDTH_IN_CHARS = 37;
     const uint8_t CON1_CONSOLE_HEIGHT_IN_CHARS = 8;
-    const uint8_t CON1_CONSOLE_CHAR_SPACING = 2;
+    const uint8_t CON1_CONSOLE_CHAR_SPACING = 1;
     const uint8_t CON1_CONSOLE_LINE_SPACING = 4;
 
     // Console 2
     const uint8_t CON2_CHAR_WIDTH = 8;
     const uint8_t CON2_CHAR_HEIGHT = 8;
-    const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 25;
+    const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 22.5;
     const uint16_t CON2_CONSOLE_TOP = TILE_HEIGHT * 3;
-    const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 20;
+    const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 33;
     const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 16;
-    const uint8_t CON2_CONSOLE_CHAR_SPACING = 3;
+    const uint8_t CON2_CONSOLE_CHAR_SPACING = 0;
     const uint8_t CON2_CONSOLE_LINE_SPACING = 2;
 
     ////////////////////////////////////////////
@@ -1445,6 +1445,11 @@ int main( int argc, char** argv )
     uint8_t id_of_next_avail_lo_voice = 0;
     uint8_t id_of_next_avail_hi_voice = MCK_NUM_VOICES / 2;
     bool first_note = true;
+    // 'period's are used to group notes together for display
+    // when they are played at the same, or similar, times.
+    uint32_t period_start_in_ticks = current_ticks;
+    const uint32_t PERIOD_LEN_IN_TICKS = 100;
+    std::vector<std::string> notes_played_this_period( MCK_NUM_VOICES, "--- " );
     do
     {
         ////////////////////////////////////////
@@ -1466,6 +1471,37 @@ int main( int argc, char** argv )
             // Calculate time of *next* frame
             next_frame_ticks = current_ticks + TICKS_PER_FRAME;
             frame_num++;
+        }
+
+        // Check if new (music) period has started
+        if( current_ticks 
+                >= period_start_in_ticks + PERIOD_LEN_IN_TICKS )
+        {
+            if( period_start_in_ticks != START_TICKS )
+            {
+                console_2->add_content( " " );
+            }
+
+            // Add current period to console 2
+            for( auto &s : notes_played_this_period )
+            {
+                // Write note to console 2
+                console_2->add_content( s );
+                
+                // Clear note for next period
+                s = "--- ";  
+            }
+
+            /*
+            if( period_start_in_ticks != START_TICKS )
+            {
+                console_2->add_content( " " );
+            }
+            */
+
+            // Udpate period start time
+            period_start_in_ticks += PERIOD_LEN_IN_TICKS;
+            // notes_played_this_period.resize( MCK_NUM_VOICES, "--- " );
         }
 
         ////////////////////////////////////////
@@ -1594,8 +1630,7 @@ int main( int argc, char** argv )
                 // Create text line for consoles 1 & 2
                 {
                     // Create string(s)
-                    std::string msg_1 = " ";
-                    std::string msg_2 = " ";
+                    std::string msg_1 = "";
 
                     // First line is one char shorter,
                     // this is to prevent console scrolling
@@ -1603,25 +1638,15 @@ int main( int argc, char** argv )
                     if( !first_note )
                     {
                         msg_1 += " ";
-                        msg_2 += " ";
                     }
 
                     // Add ticks
-                    {
-                        std::string s = fixed_width( SONG_TICKS, 7 );
-                        msg_1 += s;
-                        msg_2 += s;
-                    }
+                    msg_1 += fixed_width( SONG_TICKS, 7 );
 
                     // Add LO/HI and voice ID
-                    {
-                        std::string s = LO ? "LO " : "HI ";
-                        s += std::to_string( LO ? voice_id : voice_id - 4 );
-                        s += " ";
-
-                        msg_1 += s;
-                        msg_2 += s;
-                    }
+                    msg_1 += LO ? "LO " : "HI ";
+                    msg_1 += std::to_string( LO ? voice_id : voice_id - 4 );
+                    msg_1 += " ";
 
                     // Add note, positioned by octave of raw note id
                     {
@@ -1642,18 +1667,21 @@ int main( int argc, char** argv )
                         }
 
                         // Add note
-                        {
-                            msg_1 += fixed_width(
+                        msg_1 += fixed_width(
+                            NOTES[ WITHIN_OCTAVE_NOTE_ID ],
+                            3,
+                            ' '
+                        );
+
+                        // Add note to this period
+                        notes_played_this_period.at( voice_id )
+                            = fixed_width(
                                 NOTES[ WITHIN_OCTAVE_NOTE_ID ],
                                 2,
-                                ' '
-                            );
-                            msg_2 += fixed_width(
-                                NOTES[ WITHIN_OCTAVE_NOTE_ID ],
-                                2,
-                                '-'
-                            );
-                        }
+                                '-' 
+                              ) 
+                              + fixed_width( OCTAVE_NUM, 1 )
+                              + " ";
 
                         // Fill higher octaves with blanks
                         for( int i = OCTAVE_NUM + 1; i < 9 - LO * 2; i++ )
@@ -1666,18 +1694,11 @@ int main( int argc, char** argv )
                         {
                             msg_1 += "xx xx ";
                         }
-
-                        // For console 2, add octave number
-                        msg_2 += fixed_width( OCTAVE_NUM, 1 );
                     }
 
                     // Add duration ID
-                    {
-                        std::string s = " ";
-                        s += fixed_width( pow( 2, DURATION_ID ), 1 );
-                        msg_1 += s;
-                        msg_2 += s;
-                    }
+                    msg_1 += " ";
+                    msg_1 += fixed_width( pow( 2, DURATION_ID ), 1 );
 
                     // Add padding to make full length line
                     const int PAD_SIZE_1
@@ -1688,47 +1709,29 @@ int main( int argc, char** argv )
                         msg_1 += std::string( PAD_SIZE_1, ' ' );
                     }
 
-                    const int PAD_SIZE_2
-                        = CON2_CONSOLE_WIDTH_IN_CHARS
-                                - msg_2.size() - 1;
-                    if( PAD_SIZE_2 > 0 )
-                    {
-                        msg_2 += std::string( PAD_SIZE_2, ' ' );
-                    }
-
                     if( !first_note )
                     {
                         msg_1 += " ";
-                        msg_2 += " ";
                     }
                     else
                     {
                         first_note = false;
                     }
 
-                    // DEBUG
-                    std::cout << "CON2_CONSOLE_WIDTH_IN_CHARS = "
-                              << int( CON2_CONSOLE_WIDTH_IN_CHARS )
-                              << ", msg_2.size() = "
-                              << msg_2.size()
-                              << std::endl;
-
                     // Add all this to consoles 1 & 2
                     try
                     {
                         console_1->add_content( msg_1 );
-                        console_2->add_content( msg_2 );
                     }
                     catch( std::exception &e )
                     {
                         std::cout << "Failed to add content "
-                                  << "to consoles 1 & 2, "
+                                  << "to console 1, "
                                   << "error = "
                                   << e.what() << std::endl;
                     }
 
                     first_note = false;
-                    
                 }
 
                 std::cout << "current_ticks = "
