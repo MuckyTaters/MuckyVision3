@@ -1098,6 +1098,28 @@ const std::vector<uint32_t> SONG_DATA
     156667,1,45,3
 };
 
+const std::vector<std::string> NOTES { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
+// Create a fixed string, by clipping or padding the input string
+// Note string is NOT passed as ref to permit use of r-values
+std::string fixed_width( std::string in, size_t len, char pad_char = ' ' )
+{
+    // Check if clipping required
+    if( in.size() > len )
+    {
+        return in.substr( 0, len );
+    }
+    
+    // Otherwise, pad
+    return in + std::string( len - in.size(), pad_char ); 
+}
+
+// Integer wrapper for above function
+std::string fixed_width( int in, size_t len, char pad_char = ' ' )
+{
+    return fixed_width( std::to_string( in ), len, pad_char );
+}
+
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )
@@ -1214,10 +1236,9 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE LOCAL PALETTE(S)
     MCK_PAL_ID_TYPE title_palette_id;
-    MCK_PAL_ID_TYPE main_console_palette_id;
-    MCK_PAL_ID_TYPE mini_console_palette_id;
-    MCK_PAL_ID_TYPE lscape_console_palette_id;
-    const uint8_t MINI_CONSOLE_BG_COL = MCK::COL_FOREST_GREEN;
+    MCK_PAL_ID_TYPE console_1_palette_id;
+    MCK_PAL_ID_TYPE console_2_palette_id;
+    const uint8_t CONSOLE2_BG_COL = MCK::COL_FOREST_GREEN;
     try
     {
         title_palette_id = image_man.create_local_palette(
@@ -1228,7 +1249,7 @@ int main( int argc, char** argv )
                 }
             )
         );
-        main_console_palette_id = image_man.create_local_palette(
+        console_1_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_BLACK,
@@ -1236,19 +1257,11 @@ int main( int argc, char** argv )
                 }
             )
         );
-        mini_console_palette_id = image_man.create_local_palette(
+        console_2_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
-                    MINI_CONSOLE_BG_COL,
+                    CONSOLE2_BG_COL,
                     MCK::COL_GREEN
-                }
-            )
-        );
-        lscape_console_palette_id = image_man.create_local_palette(
-            std::make_shared<std::vector<uint8_t>>(
-                std::vector<uint8_t>{
-                    MCK::COL_DARK_BLUE,
-                    MCK::COL_YELLOW,
                 }
             )
         );
@@ -1256,7 +1269,7 @@ int main( int argc, char** argv )
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create black white palette, error: ")
+            std::string( "Failed to create palettes, error: ")
             + e.what() ) );
     }
 
@@ -1268,25 +1281,25 @@ int main( int argc, char** argv )
     const uint8_t TILE_WIDTH = 16;
     const uint8_t TILE_HEIGHT = 16;
     
-    // Main console
-    const uint8_t MAIN_CHAR_WIDTH = 8;
-    const uint8_t MAIN_CHAR_HEIGHT = 16;
-    const uint16_t MAIN_CONSOLE_LEFT = TILE_WIDTH * 1;
-    const uint16_t MAIN_CONSOLE_TOP = TILE_HEIGHT * 3;
-    const uint8_t MAIN_CONSOLE_WIDTH_IN_CHARS = 42;
-    const uint8_t MAIN_CONSOLE_HEIGHT_IN_CHARS = 8;
-    const uint8_t MAIN_CONSOLE_CHAR_SPACING = 2;
-    const uint8_t MAIN_CONSOLE_LINE_SPACING = 4;
+    // Console 1
+    const uint8_t CON1_CHAR_WIDTH = 8;
+    const uint8_t CON1_CHAR_HEIGHT = 16;
+    const uint16_t CON1_CONSOLE_LEFT = TILE_WIDTH * 1;
+    const uint16_t CON1_CONSOLE_TOP = TILE_HEIGHT * 3;
+    const uint8_t CON1_CONSOLE_WIDTH_IN_CHARS = 37;
+    const uint8_t CON1_CONSOLE_HEIGHT_IN_CHARS = 8;
+    const uint8_t CON1_CONSOLE_CHAR_SPACING = 2;
+    const uint8_t CON1_CONSOLE_LINE_SPACING = 4;
 
-    // Mini console
-    const uint8_t MINI_CHAR_WIDTH = 8;
-    const uint8_t MINI_CHAR_HEIGHT = 8;
-    const uint16_t MINI_CONSOLE_LEFT = TILE_WIDTH * 29;
-    const uint16_t MINI_CONSOLE_TOP = TILE_HEIGHT * 3;
-    const uint8_t MINI_CONSOLE_WIDTH_IN_CHARS = 12;
-    const uint8_t MINI_CONSOLE_HEIGHT_IN_CHARS = 6;
-    const uint8_t MINI_CONSOLE_CHAR_SPACING = 1;
-    const uint8_t MINI_CONSOLE_LINE_SPACING = 0;
+    // Console 2
+    const uint8_t CON2_CHAR_WIDTH = 8;
+    const uint8_t CON2_CHAR_HEIGHT = 8;
+    const uint16_t CON2_CONSOLE_LEFT = TILE_WIDTH * 29;
+    const uint16_t CON2_CONSOLE_TOP = TILE_HEIGHT * 3;
+    const uint8_t CON2_CONSOLE_WIDTH_IN_CHARS = 12;
+    const uint8_t CON2_CONSOLE_HEIGHT_IN_CHARS = 6;
+    const uint8_t CON2_CONSOLE_CHAR_SPACING = 1;
+    const uint8_t CON2_CONSOLE_LINE_SPACING = 0;
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -1316,7 +1329,7 @@ int main( int argc, char** argv )
             image_man,
             game_eng.get_prime_render_block(),
             title_palette_id,
-            MAIN_CONSOLE_LEFT + TILE_WIDTH,  // x_pos,
+            CON1_CONSOLE_LEFT + TILE_WIDTH,  // x_pos,
             TILE_HEIGHT,  // y_pos,
             32,  // width in chars
             1,  // height in chars
@@ -1337,6 +1350,41 @@ int main( int argc, char** argv )
     {
         throw( std::runtime_error(
             std::string( "Failed to create title text, error: ")
+            + e.what() ) );
+    }
+
+    //////////////////////////////////////////////
+    // CREATE CONSOLE 1
+    std::shared_ptr<MCK::Console> console_1
+        = std::make_shared<MCK::Console>();
+    try
+    {
+        console_1->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(), // mini_console_block,
+            console_1_palette_id,
+            CON1_CONSOLE_LEFT,  // x_pos,
+            CON1_CONSOLE_TOP,  // y_pos,
+            CON1_CONSOLE_WIDTH_IN_CHARS,
+            CON1_CONSOLE_HEIGHT_IN_CHARS,
+            CON1_CHAR_WIDTH,  // char_width_in_pixels,
+            CON1_CHAR_HEIGHT,  // char_height_in_pixels,
+            "------ -- -",  // initial_content,
+            0,  // print_speed_in_ticks_per_char,
+            0,  // scroll_speed_in_ticks_per_pixel,
+            true,  // hoz_text_alignment
+            CON1_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
+            false, // true  // add_to_front_of_parent_block = true
+            MCK::COL_BLACK,  // underlay colo(u)r
+            CON1_CONSOLE_CHAR_SPACING,
+            CON1_CONSOLE_LINE_SPACING
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create console 1, error: ")
             + e.what() ) );
     }
 
@@ -1361,6 +1409,7 @@ int main( int argc, char** argv )
     const size_t SONG_DATA_SIZE = SONG_DATA.size();
     uint8_t id_of_next_avail_lo_voice = 0;
     uint8_t id_of_next_avail_hi_voice = MCK_NUM_VOICES / 2;
+    bool first_note = true;
     do
     {
         ////////////////////////////////////////
@@ -1424,13 +1473,24 @@ int main( int argc, char** argv )
                    &&  SONG_DATA.at( song_data_index ) < SONG_TICKS
             )
             {
+                // Get voice (in this demo this is LO or HI)
                 const bool LO
                     = SONG_DATA.at( ++song_data_index );
+
+                // Get lowest octave in note range,
+                // depending on voice
                 const uint8_t LOWEST_OCTAVE
                     = LO ? 2 : 4;
+
+                // Get raw note ID (independent of LO/HI voice pitch IDs)
+                const uint8_t RAW_NOTE_ID
+                    = SONG_DATA.at( ++song_data_index );
+
+                // Get pitch ID, specific to LO or HI voice
                 const uint8_t PITCH_ID
-                    = SONG_DATA.at( ++song_data_index )
-                        - 12 * LOWEST_OCTAVE;
+                    = RAW_NOTE_ID - 12 * LOWEST_OCTAVE;
+
+                // Get duration ID, same for both voices
                 const uint8_t DURATION_ID
                     = SONG_DATA.at( ++song_data_index );
                 song_data_index++; 
@@ -1439,6 +1499,7 @@ int main( int argc, char** argv )
                 uint8_t voice_id;
                 if( LO )
                 {
+                    // LO voices
                     voice_id = id_of_next_avail_lo_voice++;
                     if( id_of_next_avail_lo_voice == MCK_NUM_VOICES / 2 )
                     {
@@ -1447,6 +1508,7 @@ int main( int argc, char** argv )
                 }
                 else
                 {
+                    // HI voices
                     voice_id = id_of_next_avail_hi_voice++;
                     if( id_of_next_avail_hi_voice == MCK_NUM_VOICES )
                     {
@@ -1476,6 +1538,68 @@ int main( int argc, char** argv )
                               << std::endl;
                 }
 
+                // Add note info to console 1 (best effort)
+                {
+                    // Add ticks
+                    std::string msg = " ";
+
+                    if( !first_note )
+                    {
+                        msg += " ";
+                    }
+
+                    msg += fixed_width( SONG_TICKS, 7 );
+
+                    // Add LO/HI and voice ID
+                    msg += LO ? "LO " : "HI ";
+
+                    msg += std::to_string( LO ? voice_id : voice_id - 4 );
+                    msg += " ";
+
+                    // Add note, positioned by octave of raw note id
+                    const int OCTAVE_NUM = RAW_NOTE_ID / 12;
+                    const int WITHIN_OCTAVE_NOTE_ID
+                        = RAW_NOTE_ID % 12;
+                    for( int i = 2; i < OCTAVE_NUM; i++ )
+                    {
+                        msg += ".. ";
+                    }
+                    msg += fixed_width(
+                        NOTES[ WITHIN_OCTAVE_NOTE_ID ],
+                        3
+                    );
+                    for( int i = 0; i < 8 - OCTAVE_NUM; i++ )
+                    {
+                        msg += ".. ";
+                    }
+
+                    // Add duration ID
+                    msg += fixed_width( pow( 2, DURATION_ID ), 1 );
+
+                    // Add padding to make full length line
+                    const int PAD_SIZE
+                        = CON1_CONSOLE_WIDTH_IN_CHARS
+                                - msg.size() - 1;
+                    if( PAD_SIZE > 0 )
+                    {
+                        msg += std::string( PAD_SIZE, ' ' );
+                    }
+
+                    if( !first_note )
+                    {
+                        msg += " ";
+                    }
+                    else
+                    {
+                        first_note = false;
+                    }
+
+                    // Add all this to console 1
+                    console_1->add_content( msg );
+                        first_note = false;
+                    
+                }
+
                 std::cout << "current_ticks = "
                           << current_ticks
                           << ", voice_id = "
@@ -1486,6 +1610,19 @@ int main( int argc, char** argv )
                           << int( DURATION_ID )
                           << std::endl;
             }
+        }
+
+        // Update console(s) 
+        try
+        {
+            console_1->update( current_ticks );
+            // console_2->update( current_ticks );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Console update(s) failed, error: ")
+                + e.what() ) );
         }
 
         // Clear, render and present
