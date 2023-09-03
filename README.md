@@ -58,11 +58,19 @@ languages.
 
 MuckyVision's source code is organised in layers. The current commit 
 comprises the lowest layer: "GameEng", the layer above "ImageMan",
-and the utility classes "ImageText" and "Console".
+and the utility classes "ImageText", "Console" and "VoiceSynth"
+(a synthesiser that works with the new audio manager).
 
 GameEng acts as a wrapper for SDL, so that higher layers have no need
 to use SDL commands. This will make it easy to swap out SDL for another
 library, should that be necessary in future.
+
+GameEng now includes an audio manager, GameEngAudio, which acts as
+a wrapper for SDL audio commands, and includes an audio callback
+(a separate thread that ensures your computer's sound system is fed
+with data in a timely manner). Given MinGW's limited support for C++11
+parallelization techniques, GameEngAudio instead uses a ring buffer to
+receive instructions from the main thread.
 
 ImageMan is an image manager, it maintains pointers to binary image data
 and colo(u)r palette information, and provides a less cumbersome way of
@@ -78,6 +86,21 @@ console, as a C++ string, and this will be fed automatically, character by
 character, into the console. Character printing speed and scroll speed can be
 controlled, and text can be added either in rows or columns, scrolling up
 or left respectively.
+
+VoiceSynth is the first specialisation of the VoiceBase class.  A 'voice' in 
+this context is a software audio channel, as distinct from a hardware audio channel,
+e.g. left speaker and right speaker. Each voice can generate a single sound 
+at any point in time, and up to eight voices can play at once. The maximum volume 
+of each voice is constained so that the total volume never exceeds system capacity.
+However, the mixing is quite basic: each voice is allocated an equal share of the 
+volume 'bandwith', regardless of whether it is playing or not.
+
+VoiceSynth provides simple SID chip style waveforms in a ADSR volume envelope.
+It can play notes of varying duration at standard pitchs (using 440Hz or 432Hz tuning)
+across a range of octaves. VoiceSynth characteristics (including waveform and octave range)
+are fixed when the voice is initialised, but you are free to vary settings between
+VoiceSynth instances. For example, you could have a high-pitched sinewave instance,
+a lower-pitched square wave instance and a whitenoise instance all playing simultaneously.
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
@@ -116,6 +139,8 @@ Classes/structs included in this commit:
     
     GameEng: Singleton class that interfaces with SDL.
     
+    GameEngAudio: All static class that interfaces with SDL audio.
+
     GameEngRenderInfo: Holds metadata for a single image (position, texture, etc.)
     
     GameEngRenderBlock: A ‘block’ container holding multiple images and other blocks.
@@ -130,14 +155,26 @@ Classes/structs included in this commit:
 
     Console: A 'window' of smooth scrolling text, printed one character at a time.
 
+    Envelope: ADSR (Attack, Decay, Sustain, Release) volume envelope for audio.
+
+    VoiceBase: Abstract base class for all 'voice' classes.
+
+    VoiceSynth: Simple SID chip style sound synthesiser.
+
 
 3. Future Plans
 
-Next on the TODO list is apply custom ASCII sets for Console and ImageText.
+Implementing basic audio was something of a detour, as I relealised that sound is
+important for demonstration software, especially on social media.
+
+Next on the TODO list remains the apply custom ASCII sets for Console and ImageText.
 After that, sprites and collision detection.
 
-Provision of audio is a high priority, but I will probably look at this
-once the major graphic elements are complete.
+Incidentally, audio implementation is far from complete. The next step for audio is
+to implement a self-playing VoiceSynth class. At present, the main program holds the
+song data and sends commands to the VoiceSynth instances to play notes. This is fine for
+interactive audio applications (e.g. a tracker), but for games it is more
+convenient for the Voice class itself to manage the playing of songs independently.
 
 
 4. Building the Supplied Demos
@@ -171,6 +208,12 @@ For the ConsoleTest demo, replace all references to 'GameEng' below
 with 'Console', including where it is part of a larger word. Hence 
 'makefile_GameEngTest_linux' becomes 'makefile_ConsoleTest_linux'
 and so on. Note that lines numbers in the Console makefile may 
+differ slightly.
+
+For the GameEngAudioTest demo, replace all references to 'GameEng' below
+with 'GameEngAudio', including where it is part of a larger word. Hence 
+'makefile_GameEngTest_linux' becomes 'makefile_GameEngAudioTest_linux'
+and so on. Note that lines numbers in the GameEngAudio makefile may 
 differ slightly.
 
 

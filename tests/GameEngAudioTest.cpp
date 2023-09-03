@@ -1128,8 +1128,14 @@ int main( int argc, char** argv )
     const int WINDOW_WIDTH_IN_PIXELS = 640;
     const int WINDOW_HEIGHT_IN_PIXELS = 360;
   
-    const uint8_t LOWEST_RAW_NOTE_ID = 33;  // From song data
-    const uint8_t HIGHEST_RAW_NOTE_ID = 100;  // From song data
+    // This MUST be the minimum note id in song data
+    // You will likely get a seg fault otherwise!
+    const uint8_t LOWEST_RAW_NOTE_ID = 33;  
+    
+    // This MUST be the maximum note id in song data
+    // You will likely get a seg fault otherwise!
+    const uint8_t HIGHEST_RAW_NOTE_ID = 100;
+
 
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER
@@ -1503,8 +1509,8 @@ int main( int argc, char** argv )
             0,  // print_speed_in_ticks_per_char,
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
-            1,  // CON2_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false, // true  // add_to_front_of_parent_block = true
+            1,
+            false, // don't add to front of parent block 
             CONSOLE2_BG_COL,  // underlay colo(u)r
             CON2_CONSOLE_CHAR_SPACING,
             CON2_CONSOLE_LINE_SPACING
@@ -1639,16 +1645,8 @@ int main( int argc, char** argv )
                 }
             }
 
-            /*
-            if( period_start_in_ticks != START_TICKS )
-            {
-                console_2->add_content( " " );
-            }
-            */
-
             // Udpate period start time
             period_start_in_ticks += PERIOD_LEN_IN_TICKS;
-            // notes_played_this_period.resize( MCK_NUM_VOICES, "--- " );
         }
 
         ////////////////////////////////////////
