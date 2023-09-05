@@ -38,7 +38,6 @@ MCK::ImageMan::ImageMan( void )
 {
     // Set all variables to invalid/default values
     this->game_eng = NULL;
-    this->ascii_image_id_base = MCK::INVALID_IMG_ID;
 }
 
 void MCK::ImageMan::init(
@@ -68,7 +67,7 @@ void MCK::ImageMan::init(
     }
     this->game_eng = &_game_eng;
 
-    // Reverse space for local colo(u)r palette index
+    // Reserve space for local colo(u)r palette index
     this->palettes_by_id.reserve( MCK::MAX_LOCAL_COLOR_PALETTES );
 
     // Reserve space for image metadata 
@@ -79,7 +78,6 @@ void MCK::ImageMan::init(
     // we can safely use a conventional pointer (creating
     // a shared pointer would required copying this data
     // to heap memory, duplicating it).
-    this->ascii_image_id_base = image_meta_data_by_id.size();
     for( const std::vector<uint8_t> &data : MCK::ImageDataASCII::image_data )
     {
         this->image_meta_data_by_id.push_back(
@@ -91,6 +89,21 @@ void MCK::ImageMan::init(
             )
         );
     }
+
+    // Create first item in 'ascii_mappings'
+    // This the default mapping for the (extended) ascii image set
+    this->ascii_mappings.clear();  // Not strictly necessary
+    this->ascii_mappings.push_back(
+        std::vector<MCK_IMG_ID_TYPE>( 256 )
+    );
+
+    // Get pointer to this
+    std::vector<MCK_IMG_ID_TYPE>* const MAPPING
+        = &ascii_mappings.back();
+
+    // Fill mapping with default ASCII image IDs
+    MCK_IMG_ID_TYPE ascii_image_id = 0;
+    for( MCK_IMG_ID_TYPE &id : *MAPPING ) { id = ascii_image_id++; }
 
     this->initialized = true;
 }
@@ -841,4 +854,127 @@ void MCK::ImageMan::change_render_info_tex(
         info->dest_rect.set_w( META_DATA->get_pitch_in_pixels() );
         info->dest_rect.set_h( META_DATA->get_height_in_pixels() );
     }
+}
+
+uint8_t MCK::ImageMan::create_alt_ascii_set(
+    const std::vector<MCK_IMG_ID_TYPE> &ascii_to_image_id_mapping
+)
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create alt ascii set as Image Manager not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( this->ascii_mappings.size() >= 255 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot change create alt ascii set there are already 255 ascii sets (including the default set)."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get size of supplied mapping
+    const size_t SIZE = ascii_to_image_id_mapping.size();
+
+    if( SIZE != 128 || SIZE != 256 )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create alt ascii set as supplied vector not of size 128 or 256."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Declare new mapping, of appropriate size
+    this->ascii_mappings.push_back( std::vector<MCK_IMG_ID_TYPE>( SIZE )  );
+
+    // Get pointer to new mapping
+    std::vector<MCK_IMG_ID_TYPE>* const NEW_MAPPING
+        = &this->ascii_mappings.back();
+    
+    // Iterate over supplied vector, checking each image ID
+    // is valid and placing ID in 'MAPPING'
+    uint8_t ascii_val = 0;
+    for( const MCK_IMG_ID_TYPE IMAGE_ID : ascii_to_image_id_mapping )
+    {
+        if( IMAGE_ID >= this->image_meta_data_by_id.size() )
+        {
+#if defined MCK_STD_OUT
+            // Report error and skip to next image ID
+            std::cout << "Error: failed to create a mapping from "
+                      << "ASCII code " << ascii_val
+                      << " to image ID " << IMAGE_ID
+                      << " as that image ID is invalid."
+                      << std::endl;
+#endif
+
+            // Use default ASCII character instead
+            // (indicated by using the special value MCK::INVALID_IMG_ID)
+            NEW_MAPPING->at( ascii_val++ ) = MCK::INVALID_IMG_ID;
+        }
+        else
+        {
+            // Store image id, indexed by ASCII value
+            NEW_MAPPING->at( ascii_val++ ) = IMAGE_ID;
+        }
+    }
+
+    // Return mapping id
+    return this->ascii_mappings.size() - 1;
+}
+
+MCK_IMG_ID_TYPE MCK::ImageMan::get_ascii_image_id(
+    uint8_t ascii_val,
+    uint8_t ascii_set
+) const
+{
+    // Set to default answer value
+    MCK_IMG_ID_TYPE image_id = MCK::INVALID_IMG_ID;
+    
+    if( ascii_set >= this->ascii_mappings.size() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "ASCII set " )
+            + std::to_string( ascii_set ) 
+            + std::string( " does not exist." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get pointer to mapping
+    const std::vector<MCK_IMG_ID_TYPE>* const MAPPING
+        = &this->ascii_mappings[ ascii_set ];
+
+    // If mapping does not extend to ascii_value, 
+    // or mapped image id is invalid, use default ascii
+    // character image instead.
+    if( ascii_val < MAPPING->size()
+        && MAPPING->at( ascii_val ) < this->image_meta_data_by_id.size()
+    )
+    {
+        // Get ascii image
+        image_id = MAPPING->at( ascii_val );
+    }
+    else
+    {
+        // Get default ascii image
+        // (these vector look ups should be safe)
+        image_id = this->ascii_mappings.at( 0 ).at( ascii_val );
+    }
+
+    return image_id;
 }

@@ -137,6 +137,7 @@ class ImageMan
         // @param width_in_pixels: image width, in window pixels
         // @param height_in_pixels: image height, in window pixels
         // @param owning_block: Pointer to block to which image is assigned (if points to NULL, image will be an *orphan*)
+        // @param ascii_set: ASCII set (zero is default)
         // Notes: Orphan images will not be visible until they are assigned to an active block.
         //        First local palette colo(u)r is background
         //        Second local palette colo(u)r is foreground
@@ -148,12 +149,14 @@ class ImageMan
             int y_pos,
             uint16_t width_in_pixels,
             uint16_t height_in_pixels,
-            std::shared_ptr<MCK::GameEngRenderBlock> parent_block
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+            uint8_t ascii_set = 0
         ) const
         {
-            // Let calling program handle any exception here
+            // Let calling program handle any exception here,
+            // including any exception from 'get_ascii_image_id'
             return this->create_render_info(
-                MCK_IMG_ID_TYPE( this->ascii_image_id_base + ascii_value ),
+                get_ascii_image_id( ascii_value, ascii_set ),
                 local_palette_id,
                 x_pos,
                 y_pos,
@@ -203,16 +206,44 @@ class ImageMan
         void change_render_info_ascii_value(
             std::shared_ptr<MCK::GameEngRenderInfo> info,
             uint8_t ascii_value,
-            MCK_PAL_ID_TYPE local_palette_id
+            MCK_PAL_ID_TYPE local_palette_id,
+            uint8_t ascii_set = 0
         ) const
         {
+            // Let calling program handle any exception here,
+            // including any exception from 'get_ascii_image_id'
             this->change_render_info_tex(
                 info,
-                this->ascii_image_id_base + ascii_value,
+                get_ascii_image_id( ascii_value, ascii_set ),
                 local_palette_id,
                 true // keep original dest_rect size
             );
         }
+
+
+        //! Create an alternatve ASCII code to image ID mapping
+        /*! @param image_ids: Vector of character image IDs, indexed by ASCII code
+         *  @returns: ID of this alternate ASCII set (1-255).
+         *  Note 1: 'image_ids' must be on length 128 or 256.
+         *  Note 2: Only 254 alternative mappings (each of 128
+         *          or 256 elements) are permitted, hence the
+         *          8bit ID code.
+         *  Note 3: For safety, the supplied vector will be
+         *          copied and stored, so you are free to delete it.
+         *  Note 4: All image IDs in vector must correspond to
+         *          images that currently exist, so create
+         *          all your alternative ascii characters *before*
+         *          you call this method.
+         *  Where an image ID is given as INVALID_IMG_ID, the
+         *  alternative mapping will be ignored and the default
+         *  extended ASCII image used. Similarly, if ASCII codes
+         *  128-255 are used with a mapping that is only 128
+         *  items in length, the default extended ASCII image
+         *  will be used.
+         */
+        uint8_t create_alt_ascii_set(
+            const std::vector<MCK_IMG_ID_TYPE> &ascii_to_image_id_mapping
+        );
 
 
     private:
@@ -303,7 +334,7 @@ class ImageMan
         };
 
         //! Extended ASCII images are numbered sequentially from this value
-        MCK_IMG_ID_TYPE ascii_image_id_base;
+        // MCK_IMG_ID_TYPE ascii_image_id_base;
 
         //! Private method for creating texture and render info
         std::shared_ptr<MCK::GameEngRenderInfo> create_texture_and_render_info(
@@ -325,6 +356,13 @@ class ImageMan
             size_t pixel_data_size
         );
 
+        //! Private method to obtain image ID for given ASCII code and ASCII set
+        MCK_IMG_ID_TYPE get_ascii_image_id(
+            uint8_t ascii_val,
+            uint8_t ascii_set
+        ) const;
+
+
         bool initialized;
 
         GameEng* game_eng;
@@ -334,6 +372,9 @@ class ImageMan
 
         //! Store pointers to image data, indexed by image ID
         std::vector<MCK::ImageMan::ImageMetaData> image_meta_data_by_id;
+
+        //! Store pointer to vector(s) that link ascii codes to image data
+        std::vector<std::vector<MCK_IMG_ID_TYPE>> ascii_mappings;
 
         // Constructor/destructor/copy/assignment/
         // initializer made private to avoid misuse.
