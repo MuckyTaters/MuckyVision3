@@ -97,8 +97,8 @@ class ImageMan
             const std::shared_ptr<std::vector<uint8_t>> global_color_ids
         );
 
-        //! Create a custom image, and return its Image ID
-        /*! @param pixel_data: Pointer to byte vector holding pixel data.
+        //! Create a custom image (using shared pointer), and return its Image ID
+        /*! @param pixel_data: Shared pointer to byte vector holding pixel data.
          *  @param pitch_per_pixel: Image width in pixels.
          *  @param pitch_per_pixel: Image height in pixels.
          *  Note: no checking is done for duplicate images, if you are
@@ -108,6 +108,22 @@ class ImageMan
          */
         MCK_IMG_ID_TYPE create_custom_image(
             std::shared_ptr<const std::vector<uint8_t>> pixel_data,
+            uint8_t bits_per_pixel,
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels
+        );
+
+        //! Create a custom image (using non-shared pointer), and return its Image ID
+        /*! @param pixel_data: Pointer to byte vector holding pixel data.
+         *  @param pitch_per_pixel: Image width in pixels.
+         *  @param pitch_per_pixel: Image height in pixels.
+         *  Note: no checking is done for duplicate images, if you are
+         *        not careful you could have the same image registered
+         *        under different image IDs. It is your responsibility
+         *        to avoid this happening.
+         */
+        MCK_IMG_ID_TYPE create_custom_image(
+            const std::vector<uint8_t>* pixel_data,
             uint8_t bits_per_pixel,
             uint16_t width_in_pixels,
             uint16_t height_in_pixels
@@ -204,15 +220,20 @@ class ImageMan
         //! Private struct used to store metadata for a sequence of images
         struct ImageMetaData
         {
+            //! Shared pointer to pixel data
             std::shared_ptr<const std::vector<uint8_t>> pixel_data;
+
+            //! Alternative pointer to pixel data when shared pointer not appropriate
+            const std::vector<uint8_t>* alt_pixel_data;
 
             //! Default constructor
             ImageMetaData( void )
             {
                 this->info = 0;
+                this->alt_pixel_data = NULL;
             }
 
-            //! Constructor
+            //! Constructor (shared pointer version)
             /*! Note: Only valid values for _bits_per_pixel are 1, 2 and 4
              *  Note: Only lowest 12 bits of pitch and height are used
              */
@@ -224,6 +245,26 @@ class ImageMan
             )
             {
                 this->pixel_data = _pixel_data;
+                this->alt_pixel_data = NULL;
+                this->info = 0 
+                       | _bits_per_pixel
+                       | ( uint32_t( ( _pitch_in_pixels % 0x0FFF ) ) << 8 )
+                       | ( uint32_t( ( _height_in_pixels % 0x0FFF ) ) << 20 );
+                this->alt_pixel_data = NULL;
+            }
+
+            //! Constructor (non-shared pointer version)
+            /*! Note: Only valid values for _bits_per_pixel are 1, 2 and 4
+             *  Note: Only lowest 12 bits of pitch and height are used
+             */
+            ImageMetaData(
+                const std::vector<uint8_t>* _alt_pixel_data,
+                uint8_t _bits_per_pixel,
+                uint16_t _pitch_in_pixels,
+                uint16_t _height_in_pixels
+            )
+            {
+                this->alt_pixel_data = _alt_pixel_data;
                 this->info = 0 
                        | _bits_per_pixel
                        | ( uint32_t( ( _pitch_in_pixels % 0x0FFF ) ) << 8 )
@@ -275,6 +316,14 @@ class ImageMan
             MCK::GameEngRenderInfo::Rect dest_rect,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block
         ) const;
+
+        //! Private method for checks shared by both versions of create_custom_image
+        void create_custom_image_quality_checks(
+            uint8_t bits_per_pixel,
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels,
+            size_t pixel_data_size
+        );
 
         bool initialized;
 

@@ -52,8 +52,8 @@ application.
 2. Current State of Development
 
 At present, MuckyVision 3 is a collection of C++ header and source files, plus
-several additional files (in the 'tests' folder) that build a small demo.
-This will eventually become a library, potentially with bindings to other
+several additional files (in the 'tests' folder) that build a series of small demos
+programs. This will eventually become a library, potentially with bindings to other
 languages.
 
 MuckyVision's source code is organised in layers. The current commit 
@@ -74,7 +74,8 @@ receive instructions from the main thread.
 
 ImageMan is an image manager, it maintains pointers to binary image data
 and colo(u)r palette information, and provides a less cumbersome way of
-creating images (although only for ASCII characters at present).
+creating images. A in-built set of 256 ASCII characters is provided,
+but users can also supply custom images.
 
 ImageText converts C++ strings into ASCII images, with option for text
 spacing and left/right/center justification. Text can be updated
@@ -99,8 +100,8 @@ VoiceSynth provides simple SID chip style waveforms in a ADSR volume envelope.
 It can play notes of varying duration at standard pitchs (using 440Hz or 432Hz tuning)
 across a range of octaves. VoiceSynth characteristics (including waveform and octave range)
 are fixed when the voice is initialised, but you are free to vary settings between
-VoiceSynth instances. For example, you could have a high-pitched sinewave instance,
-a lower-pitched square wave instance and a whitenoise instance all playing simultaneously.
+VoiceSynth instances. For example, you could have a high-pitched sine wave instance,
+a low-pitched square wave instance and a white noise instance all playing simultaneously.
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
@@ -139,7 +140,7 @@ Classes/structs included in this commit:
     
     GameEng: Singleton class that interfaces with SDL.
     
-    GameEngAudio: All static class that interfaces with SDL audio.
+    GameEngAudio: All-static class that interfaces with SDL audio.
 
     GameEngRenderInfo: Holds metadata for a single image (position, texture, etc.)
     
@@ -167,8 +168,7 @@ Classes/structs included in this commit:
 Implementing basic audio was something of a detour, as I relealised that sound is
 important for demonstration software, especially on social media.
 
-Next on the TODO list remains the apply custom ASCII sets for Console and ImageText.
-After that, sprites and collision detection.
+Next on the TODO list remains the creation of custom ASCII sets for Console and ImageText. After that, sprites and collision detection.
 
 Incidentally, audio implementation is far from complete. The next step for audio is
 to implement a self-playing VoiceSynth class. At present, the main program holds the

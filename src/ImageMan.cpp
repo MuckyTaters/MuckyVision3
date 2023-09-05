@@ -75,16 +75,16 @@ void MCK::ImageMan::init(
     this->image_meta_data_by_id.reserve( MCK::MAX_IMAGES ); 
     
     // Create meta data for ascii image pixel data
-    // TODO: A large amount of data is being copied here,
-    //       and duplicated in RAM. Consider using a plain
-    //       old pointer to the original data instead of a
-    //       smart pointer.
+    // As this pixel data is stored in the executable
+    // we can safely use a conventional pointer (creating
+    // a shared pointer would required copying this data
+    // to heap memory, duplicating it).
     this->ascii_image_id_base = image_meta_data_by_id.size();
     for( const std::vector<uint8_t> &data : MCK::ImageDataASCII::image_data )
     {
         this->image_meta_data_by_id.push_back(
             MCK::ImageMan::ImageMetaData(
-                std::make_shared<const std::vector<uint8_t>>( data ),
+                &data,
                 MCK::ImageDataASCII::BITS_PER_PIXEL,
                 MCK::ImageDataASCII::PITCH_IN_PIXELS,
                 MCK::ImageDataASCII::HEIGHT_IN_PIXELS
@@ -313,16 +313,9 @@ MCK_IMG_ID_TYPE MCK::ImageMan::create_custom_image(
     uint16_t height_in_pixels
 )
 {
-    if( !this->initialized )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            "Can create custom image as Image Manager not yet init."
-#else
-            ""
-#endif
-        ) );
-    }
+    // Initialisation check done by 
+    // 'create_custom_image_quality_checks'
+    // method
 
     ////////////////////////////////////////
     // Quality checks
@@ -338,7 +331,122 @@ MCK_IMG_ID_TYPE MCK::ImageMan::create_custom_image(
         ) );
     }
 
-    if( pixel_data->size() == 0 )
+    // If quality checks fail, this method will throw an exception.
+    // No point catching it here.
+    create_custom_image_quality_checks(
+        bits_per_pixel,
+        width_in_pixels,
+        height_in_pixels,
+        pixel_data->size()
+    );
+
+    try
+    {
+        this->image_meta_data_by_id.push_back(
+            MCK::ImageMan::ImageMetaData(
+                pixel_data,
+                bits_per_pixel,
+                width_in_pixels,
+                height_in_pixels
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to create new image meta data entry, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Index of image data just added is image ID
+    return this->image_meta_data_by_id.size() - 1;
+}
+
+MCK_IMG_ID_TYPE MCK::ImageMan::create_custom_image(
+    const std::vector<uint8_t>* pixel_data,
+    uint8_t bits_per_pixel,
+    uint16_t width_in_pixels,
+    uint16_t height_in_pixels
+)
+{
+    // Initialisation check done by 
+    // 'create_custom_image_quality_checks'
+    // method
+
+    ////////////////////////////////////////
+    // Quality checks
+
+    if( pixel_data == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Can create custom image as pixel data pointer is NULL."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If quality checks fail, this method will throw an exception.
+    // No point catching it here.
+    create_custom_image_quality_checks(
+        bits_per_pixel,
+        width_in_pixels,
+        height_in_pixels,
+        pixel_data->size()
+    );
+
+    try
+    {
+        this->image_meta_data_by_id.push_back(
+            MCK::ImageMan::ImageMetaData(
+                pixel_data,
+                bits_per_pixel,
+                width_in_pixels,
+                height_in_pixels
+            )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to create new image meta data entry, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Index of image data just added is image ID
+    return this->image_meta_data_by_id.size() - 1;
+}
+
+void MCK::ImageMan::create_custom_image_quality_checks(
+    uint8_t bits_per_pixel,
+    uint16_t width_in_pixels,
+    uint16_t height_in_pixels,
+    size_t pixel_data_size
+)
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Can create custom image as Image Manager not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    if( pixel_data_size == 0 )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -389,7 +497,7 @@ MCK_IMG_ID_TYPE MCK::ImageMan::create_custom_image(
         ) );
     }
 
-    const size_t BIT_COUNT = pixel_data->size() * 8;
+    const size_t BIT_COUNT = pixel_data_size * 8;
     const size_t MAX_PERMISSIBLE_BIT_COUNT
         = bits_per_pixel * width_in_pixels * height_in_pixels;
     const size_t MIN_PERMISSIBLE_BIT_COUNT
@@ -411,32 +519,6 @@ MCK_IMG_ID_TYPE MCK::ImageMan::create_custom_image(
 #endif
         ) );
     }
-
-    try
-    {
-        this->image_meta_data_by_id.push_back(
-            MCK::ImageMan::ImageMetaData(
-                pixel_data,
-                bits_per_pixel,
-                width_in_pixels,
-                height_in_pixels
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-#if defined MCK_STD_OUT
-            std::string( "Failed to create new image meta data entry, error = " )
-            + e.what()
-#else
-            ""
-#endif
-        ) );
-    }
-
-    // Index of image data just added is image ID
-    return this->image_meta_data_by_id.size() - 1;
 }
 
 std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
@@ -516,6 +598,32 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
         height_in_pixels
     );
 
+    // Determine (read-only) pointer to pixel data
+    const std::vector<uint8_t>* pixel_data_ptr;
+    if( META_DATA->pixel_data.get() != NULL )
+    {
+        // Extract pointer from shared pointer, if valid
+        pixel_data_ptr = META_DATA->pixel_data.get();
+    }
+    else if( META_DATA->alt_pixel_data != NULL )
+    {
+        // Use non-shared pointer instead
+        pixel_data_ptr = META_DATA->alt_pixel_data;
+    }
+    else
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to create texture as " )
+            + std::string( "both pixel data pointer and alt " )
+            + std::string( "pixel data pointer are NULL. " )
+#else
+            ""
+#endif
+        ) );
+    }
+
+
     // If texture doesn't already exist, create it
     if( !this->game_eng->texture_exists( TEX_ID ) )
     {
@@ -528,7 +636,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::ImageMan::create_render_info(
                 META_DATA->get_bits_per_pixel(),
                 META_DATA->get_pitch_in_pixels(),
                 META_DATA->get_height_in_pixels(),
-                *(META_DATA->pixel_data),
+                *pixel_data_ptr,
                 DEST_RECT, 
                 parent_block
             );
@@ -610,6 +718,31 @@ void MCK::ImageMan::change_render_info_tex(
     const MCK::ImageMan::ImageMetaData* const META_DATA
         = &this->image_meta_data_by_id[ image_id ];
 
+    // Determine (read-only) pointer to pixel data
+    const std::vector<uint8_t>* pixel_data_ptr;
+    if( META_DATA->pixel_data.get() != NULL )
+    {
+        // Extract pointer from shared pointer, if valid
+        pixel_data_ptr = META_DATA->pixel_data.get();
+    }
+    else if( META_DATA->alt_pixel_data != NULL )
+    {
+        // Use non-shared pointer instead
+        pixel_data_ptr = META_DATA->alt_pixel_data;
+    }
+    else
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "(2)Failed to create texture as " )
+            + std::string( "both pixel data pointer and alt " )
+            + std::string( "pixel data pointer are NULL. " )
+#else
+            ""
+#endif
+        ) );
+    }
+
     // Make sure palette ID is valid
     if( local_palette_id >= this->palettes_by_id.size() )
     {
@@ -644,7 +777,7 @@ void MCK::ImageMan::change_render_info_tex(
                 local_palette_id,
                 META_DATA->get_bits_per_pixel(),
                 META_DATA->get_pitch_in_pixels(),
-                *META_DATA->pixel_data,
+                *pixel_data_ptr,
                 *palettes_by_id[ local_palette_id ],
                 tex_id,
                 height_in_pixels
