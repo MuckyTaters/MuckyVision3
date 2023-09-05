@@ -69,27 +69,27 @@ class VoiceBase
 
         virtual ~VoiceBase( void ) {}
 
+        //! Returns true if initialized
         bool is_initialized( void ) const noexcept
         {
-            return initialized;
+            return this->initialized;
         }
 
+        //! Returns type of voice
         MCK::VoiceType get_type( void ) const noexcept
         {
-            return type;
+            return this->type;
         }
 
         //! Issue a command to the voice
-        /* Commands are defined in the child class */
+        /* Defined in the child class */
         virtual void command( 
             uint8_t com,
             uint64_t sample_count
         ) = 0;
 
         //! Get sample at given time point
-        /*! Return value must lie within range [-v,v]
-         *  where 'v' = channel volume (0-255) / 255 / num of virtual channels
-         */
+        /* Defined in the child class */
         virtual float get_sample( uint64_t sample_count ) = 0;
 
 
@@ -98,13 +98,13 @@ class VoiceBase
         //! Internal initialisation method, called by
         //  'init' method of child classes.
         void base_init(
-            uint8_t initial_volume = 0xFF
+            uint8_t volume = 0xFF
         )
         {
-            scale = float( initial_volume )
+            this->scale = float( volume )
                       / 255.0f 
                         / float( MCK_NUM_VOICES );
-            initialized = true;
+            this->initialized = true;
         }
 
         MCK::VoiceType type;
@@ -118,9 +118,10 @@ class VoiceBase
         // sample value without any further multiplication.
         float scale;
 
+
     private:
 
-        // Copy and assignment constructor hidden to
+        // Copy and assignment constructor deleted to
         // prevent misuse.
         VoiceBase(VoiceBase const&) = delete;
         void operator=(VoiceBase const&)  = delete;

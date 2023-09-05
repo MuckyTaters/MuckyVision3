@@ -1667,7 +1667,7 @@ int main( int argc, char** argv )
 
             for( auto e : events )
             {
-                // For now, only check for quit
+                // Check for quit
                 if( e.key_code == MCK::KeyEvent::KEY_QUIT
                     && e.status == MCK::KeyEvent::PRESSED
                 )
@@ -1676,6 +1676,14 @@ int main( int argc, char** argv )
                     // destroyed automatically, and SDL 
                     // shut down safely
                     exit( 0 );
+                }
+
+                if( e.key_code == MCK::KeyEvent::KEY_T
+                    && e.status == MCK::KeyEvent::PRESSED
+                )
+                {
+                    std::cout << "*** TOGGLE MUTE ON/OFF ***" << std::endl;
+                    MCK::GameEngAudio::toggle_mute();
                 }
 
                 // TODO: Other keyboard input
@@ -1887,16 +1895,6 @@ int main( int argc, char** argv )
 
                     first_note = false;
                 }
-
-                std::cout << "current_ticks = "
-                          << current_ticks
-                          << ", voice_id = "
-                          << int( voice_id )
-                          << ", PITCH_ID = "
-                          << int( PITCH_ID )
-                          << ", DURATION_ID = "
-                          << int( DURATION_ID )
-                          << std::endl;
             }
         }
 

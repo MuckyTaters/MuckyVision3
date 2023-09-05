@@ -70,12 +70,12 @@ class VoiceSynth : public VoiceBase
         virtual ~VoiceSynth( void ) {}
 
         //! Initialize the voice
-        /*  @param _sixteenth_duration_in_samples: duration of a 'sixteenth' note, sets tempo 
+        /*  @param _sixteenth_duration_in_samples: duration of a 'sixteenth' note (sets tempo) 
          *  @param MCK::VoiceSynth::Waveform _wave: Waveform
-         *  @param uint8_t _lowest_octave: Lowest pitch ID will be C in this octave, sets overall pitch
-         *  @param MCK::Envelope _envelope: ADSR envelope
-         *  @param uint8_t initial_volume: Starting volume
-         *  Note: _envelope is not passed by ref as it is typically
+         *  @param uint8_t _lowest_octave: Lowest pitch ID will be C in this octave (sets overall pitch)
+         *  @param MCK::Envelope _envelope: ADSR volume envelope
+         *  @param uint8_t volume: Volume (0 = silent, 255 = full)
+         *  Note: _envelope is NOT passed by ref as it is typically
          *        supplied as an r-value
          */
         virtual void init(
@@ -83,18 +83,19 @@ class VoiceSynth : public VoiceBase
             MCK::VoiceSynth::Waveform _wave,
             uint8_t _lowest_octave,
             MCK::Envelope _envelope = MCK::Envelope(),
-            uint8_t initial_volume = 0xFF
+            uint8_t volume = 0xFF
         );
 
         //! Issue a command (i.e. play a note)
         /*! @param com: Command (see below)
          *  @param sample_count: Current sample count
          * Command:
-         *  A combination of pitch id (relative to lowest octave) and duration id
-         *  Number and position of bits given to pitch and duration
-         *  are specified in Defs.h. At time of writing:
-         *      Bits 0-4 denote pitch (in semitones above C in lowest octave) 
-         *      Bits 5-7 note length (as power of 2, 2^0 being an eight)
+         *  A single byte combination of pitch id (relative 
+         *  to lowest octave) and duration id.
+         *  The nummber and position of bits given to pitch 
+         *  and duration are specified in Defs.h.
+         *  Please use the 'construct_command' method to correctly
+         *  form a command from pitch ID and duration ID.
          */
         virtual void command(
             uint8_t com,
@@ -103,12 +104,12 @@ class VoiceSynth : public VoiceBase
 
         //! Get sample at given time point
         /*! @param sample_count: Current sample count
-         *  @returns: value in range [-v,v] where 'v' = channel volume (0-255) / 255 / num of virtual channels
+         *  @returns: value in range [-v,v] where 'v' = channel volume (0-255) ÷ 255 ÷ MCK_NUM_VOICES
          */
         virtual float get_sample( uint64_t sample_count );
 
-        //! Construct command by packing pitch id and duration id into a single byte
-        /*! IMPORANT: If pitch_id and/or duration_id are
+        //! Construct command by packing pitch ID and duration ID into a single byte
+        /*! IMPORANT: If pitch ID and/or duration ID are
          *  out-of-range, garbage will result (no checking is done)
          */
         static uint8_t construct_command(

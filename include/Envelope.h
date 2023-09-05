@@ -12,8 +12,6 @@
 //      Sustain
 //      Release
 //
-//  There is no Envelope.cpp file
-//
 //  Copyright (c) Muckytaters 2023
 //
 //  This program is free software: you can
@@ -85,51 +83,57 @@ class Envelope
         //! Assignment constructor
         void operator=( Envelope const& other );
 
+        //! Get attack time in samples
         uint32_t get_attack_in_samples( void ) const noexcept
         {
-            return attack_in_samples;
+            return this->attack_in_samples;
         }
 
+        //! Get decay time in samples
         uint32_t get_decay_in_samples( void ) const noexcept
         {
-            return decay_in_samples;
+            return this->decay_in_samples;
         }
 
+        //! Get release time in samples
         uint32_t get_release_in_samples( void ) const noexcept
         {
-            return release_in_samples;
+            return this->release_in_samples;
         }
        
-        //! Get sustain level
-        // @returns: Sustain level: 0 (no sustain) to 255 (sustain level == peak level )
+        //! Get sustain level, as proportion of the level at the end of the attack phase
+        // @returns: Sustain level: 0 (silent) to 255 (same as peak level, i.e. no drop in level during decay phase )
         uint8_t get_sustain_level_as_proportion_of_peak( void ) const noexcept
         {
             return uint8_t(
-                sustain_level_as_proportion_of_peak * 255.0f + 0.5f
+                this->sustain_level_as_proportion_of_peak * 255.0f + 0.5f
             );
         }
         
+        //! Set attack time in samples
         void set_attack_in_samples( uint32_t val ) noexcept
         {
-            attack_in_samples = val;
+            this->attack_in_samples = val;
         }
 
+        //! Set decay time in samples
         void set_decay_in_samples( uint32_t val ) noexcept
         {
-            decay_in_samples = val;
+            this->decay_in_samples = val;
         }
 
+        //! Set release time in samples
         void set_release_in_samples( uint32_t val ) noexcept
         {
-            release_in_samples = val;
+            this->release_in_samples = val;
         }
 
         //! Set sustain level
-        /*! @param val: Sustain level: 0 (no sustain) to 255 (sustain level == peak level )
+        /*! @param val: Sustain level: 0 (silent) to 255 (same as peak level, i.e. no drop in level during decay phase )
          */
         void set_sustain_level_as_proportion_of_peak( uint8_t val ) noexcept
         {
-            sustain_level_as_proportion_of_peak
+            this->sustain_level_as_proportion_of_peak
                 = float( val ) / 255.0f;
         }
 

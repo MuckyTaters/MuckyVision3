@@ -59,7 +59,7 @@ void MCK::VoiceSynth::init(
     MCK::VoiceSynth::Waveform _wave,
     uint8_t _lowest_octave,
     MCK::Envelope _envelope,
-    uint8_t initial_volume
+    uint8_t volume
 )
 {
     if( this->initialized )
@@ -77,7 +77,11 @@ void MCK::VoiceSynth::init(
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "Lowest octave must be at least 6. Tuning A (440Hz) is in octave 4."
+            std::string( "Cannot intialize VoiceSynth instance " )
+            + std::string( "with lowest octave set to " )
+            + std::to_string( _lowest_octave )
+            + std::string( ". Lowest octave must be not exceed 6. " )
+            + std::string( "For info: 'tuning A' is in octave 4." )
 #else
             ""
 #endif
@@ -93,8 +97,10 @@ void MCK::VoiceSynth::init(
     
     this->envelope = _envelope; 
 
-    // Get total number of notes by applying note bit shift
-    // to note bit mask, then adding 1.
+    // Calculate total number of notes via number of bits allocated
+    // to pitch IDs in the command byte. This is done by applying
+    // the pitch ID bit shift (in reverse, i.e. right) to the 
+    // pitch ID bit mask, then adding 1.
     const uint8_t NUM_NOTES
         = ( MCK::VOICE_SYNTH_PITCH_MASK  
                 >> MCK::VOICE_SYNTH_PITCH_LSHIFT ) + 1; 
@@ -108,7 +114,7 @@ void MCK::VoiceSynth::init(
         = this->lowest_octave * 12;  // always 12 notes per octave
 
     // Calculate distance (in semitones) between lowest
-    // note and tuning A (index 57)
+    // note and 'tuning A' (which always has raw note ID of 57)
     const int LO_DIFF = LOWEST_C_INDEX - 57;
 
     // Loop over notes
@@ -116,11 +122,11 @@ void MCK::VoiceSynth::init(
     {
         // Calculate frequency
         this->freq_by_note_id.push_back(
-            float( VOICE_SYNTH_FREQ_A4 )
-                * pow( 2.0f, ONE_TWELTH * n )
+            float( VOICE_SYNTH_FREQ_A4 ) // Freq of 'tuning A'
+                * pow( 2.0f, MCK::VoiceSynth::ONE_TWELTH * n )
         );
 
-        // Calculate wavelength (in samples)
+        // Calculate wavelength (in samples) from frequency
         this->wavelen_by_note_id.push_back(
                 float( MCK::AUDIO_WANT_SAMPLE_RATE ) 
                     / this->freq_by_note_id.back()
@@ -128,7 +134,7 @@ void MCK::VoiceSynth::init(
     }
 
     // Call base init
-    this->base_init( /*_samples_per_second,*/ initial_volume ); 
+    this->base_init( volume ); 
 }
 
 void MCK::VoiceSynth::command(
@@ -244,47 +250,47 @@ float MCK::VoiceSynth::get_sample( uint64_t sample_count )
     }
 
     // For whitenoise, no wavelength needed
-    if( wave == MCK::VoiceSynth::WHITENOISE )
+    if( this->wave == MCK::VoiceSynth::WHITENOISE )
     {
-        return scale * ( float( rand() & 255 ) / 128.0f - 1.0f );
+        return this->scale * ( float( rand() & 255 ) / 128.0f - 1.0f );
     }
 
     // Calculate period within waveform (on unit interval)
     const float PERIOD
-        = float( REL_SAMPLE_COUNT ) / note_wavelen
+        = float( REL_SAMPLE_COUNT ) / this->note_wavelen
             - float( 
                 uint32_t(
                     float( REL_SAMPLE_COUNT ) 
-                        / note_wavelen
+                        / this->note_wavelen
                 )  
             );
 
     // Calculate waveform value, scaled by envelope value
-    switch( wave )
+    switch( this->wave )
     {
         case MCK::VoiceSynth::SINE:
-            return scale * envelope_value * sin( PERIOD * MCK_TWO_PI );
+            return this->scale * this->envelope_value * sin( PERIOD * MCK_TWO_PI );
             break;
 
         case MCK::VoiceSynth::SQUARE:
             // Note: this is scaled to match RMS value of SINE
             //       using a constant approx. equal to the
             //       reciprocal of the square root of two.
-            return scale * envelope_value * MCK_ONE_OVER_ROOT_TWO 
+            return this->scale * this->envelope_value * MCK_ONE_OVER_ROOT_TWO 
                     * ( ( PERIOD > 0.5f ) * 2.0f - 1.0f );
 
         case MCK::VoiceSynth::TRIANGLE:
             if( PERIOD < 0.5f )
             {
-                return scale * envelope_value * ( PERIOD * 4.0f - 1.0f );
+                return this->scale * this->envelope_value * ( PERIOD * 4.0f - 1.0f );
             }
             else
             {
-                return scale * envelope_value * ( 3.0f - PERIOD * 4.0f ); 
+                return this->scale * this->envelope_value * ( 3.0f - PERIOD * 4.0f ); 
             }
 
         case MCK::VoiceSynth::SAWTOOTH:
-            return scale * envelope_value * PERIOD * 4.0f - 2.0f;
+            return this->scale * this->envelope_value * PERIOD * 4.0f - 2.0f;
 
         // Note: white noise waveform handled earlier.
     }

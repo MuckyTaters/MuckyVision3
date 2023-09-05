@@ -413,10 +413,6 @@ void MCK::Console::init(
         }
     }
 
-    // DEBUG
-    std::cout << "@@ text_buffer.size() = "
-              << text_buffer.size() << std::endl;
-
     this->initialized = true;
 }
 

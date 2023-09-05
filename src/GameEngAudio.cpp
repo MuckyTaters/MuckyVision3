@@ -10,10 +10,11 @@
 //  audio callback.
 //
 //  THIS CLASS IS 100% STATIC, RATHER THAN
-//  BEING A SINGLETON CLASS (IT HAS NO
-//  CONSTRUCTOR). THIS IS FOR EASE OF
+//  BEING A SINGLETON CLASS. IT HAS NO
+//  CONSTRUCTOR. THIS IS FOR EASE OF
 //  INTEGRATION WITH THE AUDIO CALLBACK,
-//  WHICH IS STATIC
+//  THAT HAS TO BE STATIC, OR A NON-MEMBER
+//  FUNCTION.
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -40,10 +41,8 @@
 // Set initial values
 bool MCK::GameEngAudio::initialized = false;
 uint64_t MCK::GameEngAudio::sample_counter = 0;
-uint8_t MCK::GameEngAudio::master_volume = 0xFF;
-float MCK::GameEngAudio::master_volume_on_unit_interval
-    = MCK::GameEngAudio::master_volume / float( 0xFF );
 size_t MCK::GameEngAudio::ring_buffer_prev_pos = 0;
+bool MCK::GameEngAudio::mute = false;
 
 // These will be set by 'init' method
 int MCK::GameEngAudio::samples_per_second;
@@ -58,6 +57,7 @@ MCK_AUDIO_RING_BUFFER_DATA_TYPE MCK::GameEngAudio::ring_buffer[ MCK::AUDIO_RING_
 MCK::AudioDataType MCK::GameEngAudio::data_type
     = MCK::AudioDataType::UNKNOWN;
 std::vector<std::shared_ptr<MCK::VoiceBase>> MCK::GameEngAudio::voices;
+uint8_t MCK::GameEngAudio::master_volume;
 
 void MCK::GameEngAudio::init(
     uint8_t _master_volume,
@@ -98,6 +98,9 @@ void MCK::GameEngAudio::init(
 #endif
         ) );
     }
+
+    // Set master volume
+    master_volume = _master_volume;
 
     // Clear ring buffer
     for( int i = 0; i < MCK::AUDIO_RING_BUFFER_SIZE; i++ )
@@ -298,15 +301,20 @@ void MCK::GameEngAudio::init(
                 std::string( "Apologies, your audio data format " )
                 + std::string( "is not yet supported by MuckyVision v3. " )
                 + std::string( "Audio initialization failed." )
+                + std::string( "\nFor information, your format is read as:" )
+                + std::string( SIGNED ? "\n>> SIGNED" : "\n>> UNSIGNED" )
+                + std::string( FLOAT ? "\n>> FLOAT" : "\n>> INTEGER" )
+                + std::string( "\n>> NUMBER BITS: " )
+                + std::to_string( NUM_BITS )
+                + std::string( "\n>> BYTES PER CHANNEL: " )
+                + std::to_string( MCK::GameEngAudio::bytes_per_channel )
+
 #else
                 ""
 #endif
             ) );
         }
     }
-
-    // Set master volume
-    MCK::GameEngAudio::master_volume = _master_volume;
 
     SDL_PauseAudio(0); // Start audio by default
     // SDL_PauseAudio(1); // Pause audio by default
@@ -374,7 +382,7 @@ void MCK::GameEngAudio::voice_command(
 
     }
 
-    // Construct 'and' value that will clear any existing command
+    // Construct 'AND' value that will clear any existing command
     // for this voice at this time-point (ticks).
     const MCK_AUDIO_RING_BUFFER_DATA_TYPE AND_VALUE
         = ~( 
@@ -382,7 +390,7 @@ void MCK::GameEngAudio::voice_command(
                 << ( voice_id * 8 )
         );
 
-    // Construct 'or' value that will add new command
+    // Construct 'OR' value that will add new command
     // for this voice at this time-point (ticks).
     const MCK_AUDIO_RING_BUFFER_DATA_TYPE OR_VALUE
         = MCK_AUDIO_RING_BUFFER_DATA_TYPE( command )
@@ -490,54 +498,63 @@ void MCK::GameEngAudio::callback(
         }
     }
 
-    // Fill samples
-    for( int sample_index = 0; sample_index < LENGTH; sample_index++ )
+    // Fill samples (unless mute is on)
+    if( !mute )
     {
-        float val = 0.0f;
+        float master_volume_on_unit_interval
+            = float( master_volume ) / 255.0f;
 
-        const uint64_t SAMPLE_COUNT
-            = MCK::GameEngAudio::sample_counter + sample_index;
+        for( int sample_index = 0; sample_index < LENGTH; sample_index++ )
+        {
+            float val = 0.0f;
 
-        // Loop over voices
-        for( auto vc : MCK::GameEngAudio::voices )
-        {
-            // Get sample value as float, in range [-1, 1]
-            if( vc.get() != NULL )
-            {
-                val += vc->get_sample( SAMPLE_COUNT );
-            }
-        }
+            const uint64_t SAMPLE_COUNT
+                = MCK::GameEngAudio::sample_counter + sample_index;
 
-        // Short integer (16 bit signed)
-        if( data_type == MCK::AudioDataType::SIGNED_16_BIT_INT )
-        {
-            // Calculate amplitude adjusted sample value
-            const int16_t NORM_VAL = int16_t( val * 32767.0f + 0.5f ) ;
-            
-            // Duplicate sample across all channels
-            for( int ch = 0;
-                 ch < MCK::GameEngAudio::num_channels;
-                 ch++
-            )
+            // Loop over voices
+            for( auto vc : MCK::GameEngAudio::voices )
             {
-                int16_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
-                    = NORM_VAL;
+                // Get sample value as float, in range [-1, 1]
+                if( vc.get() != NULL )
+                {
+                    val += vc->get_sample( SAMPLE_COUNT );
+                }
             }
-        }
-        else if( data_type == MCK::AudioDataType::SIGNED_32_BIT_FLOAT )
-        {
-            // Duplicate sample across all channels
-            for( int ch = 0;
-                 ch < MCK::GameEngAudio::num_channels;
-                 ch++
-            )
+
+            // Apply master volume
+            val *= master_volume_on_unit_interval;
+
+            // Short integer (16 bit signed)
+            if( data_type == MCK::AudioDataType::SIGNED_16_BIT_INT )
             {
-                float_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
-                    = val;  // No need to normalize
+                // Calculate amplitude adjusted sample value
+                const int16_t NORM_VAL = int16_t( val * 32767.0f + 0.5f ) ;
+                
+                // Duplicate sample across all channels
+                for( int ch = 0;
+                     ch < MCK::GameEngAudio::num_channels;
+                     ch++
+                )
+                {
+                    int16_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
+                        = NORM_VAL;
+                }
             }
+            else if( data_type == MCK::AudioDataType::SIGNED_32_BIT_FLOAT )
+            {
+                // Duplicate sample across all channels
+                for( int ch = 0;
+                     ch < MCK::GameEngAudio::num_channels;
+                     ch++
+                )
+                {
+                    float_buffer[ sample_index * MCK::GameEngAudio::num_channels + ch ]
+                        = val;  // No need to normalize
+                }
+            }
+        
+            num_of_samples_filled++;
         }
-    
-        num_of_samples_filled++;
     }
 
     // Fill any unused bytes with silence
