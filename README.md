@@ -75,7 +75,10 @@ receive instructions from the main thread.
 ImageMan is an image manager, it maintains pointers to binary image data
 and colo(u)r palette information, and provides a less cumbersome way of
 creating images. A in-built set of 256 ASCII characters is provided,
-but users can also supply custom images.
+but users can also supply their own partial or complete ASCII character
+sets. For partial character sets, any undefined characters default to their
+in-built character image. Up to 255 custom ASCII character sets can be used
+simultaneously, plus the in-built set.
 
 ImageText converts C++ strings into ASCII images, with option for text
 spacing and left/right/center justification. Text can be updated
@@ -165,16 +168,13 @@ Classes/structs included in this commit:
 
 3. Future Plans
 
-Implementing basic audio was something of a detour, as I relealised that sound is
-important for demonstration software, especially on social media.
+Next on the TODO list for graphics is sprites and collision detection.
 
-Next on the TODO list remains the creation of custom ASCII sets for Console and ImageText. After that, sprites and collision detection.
-
-Incidentally, audio implementation is far from complete. The next step for audio is
-to implement a self-playing VoiceSynth class. At present, the main program holds the
-song data and sends commands to the VoiceSynth instances to play notes. This is fine for
-interactive audio applications (e.g. a tracker), but for games it is more
-convenient for the Voice class itself to manage the playing of songs independently.
+The next step for audio is to implement a self-playing VoiceSynth class.
+At present, the main program holds the song data and sends commands to the
+VoiceSynth instances to play notes. This is fine for interactive audio 
+applications (e.g. a tracker), but for games it is more convenient for the
+Voice class itself to manage the playing of songs independently.
 
 
 4. Building the Supplied Demos
@@ -198,23 +198,12 @@ Note the file MuckyVision3/include/Version.h provides control over certain
 aspects of the build process, although the default settings should work
 for both Linux and Windows (MinGW).
 
-For the ImageManTest demo, replace all references to 'GameEng' below
-with 'ImageMan', including where it is part of a larger word. Hence 
-'makefile_GameEngTest_linux' becomes 'makefile_ImageManTest_linux'
-and so on. Note that lines numbers in the ImageMan makefile may 
-differ slightly.
-
-For the ConsoleTest demo, replace all references to 'GameEng' below
-with 'Console', including where it is part of a larger word. Hence 
-'makefile_GameEngTest_linux' becomes 'makefile_ConsoleTest_linux'
-and so on. Note that lines numbers in the Console makefile may 
-differ slightly.
-
-For the GameEngAudioTest demo, replace all references to 'GameEng' below
-with 'GameEngAudio', including where it is part of a larger word. Hence 
-'makefile_GameEngTest_linux' becomes 'makefile_GameEngAudioTest_linux'
-and so on. Note that lines numbers in the GameEngAudio makefile may 
-differ slightly.
+For the other demos (ImageManTest, ConsoleTest, FancyConsoleTest and 
+GameAudioTest) replace all references to 'GameEng' below
+with the respective demo name, including where it is part of a larger word.
+Hence 'makefile_GameEngTest_linux' becomes 'makefile_ImageManTest_linux'
+or 'makefile_FancyConsole_linux' or whatever. Note that lines numbers in 
+the other makefiles may differ slightly.
 
 
 Suggestions for Linux:
