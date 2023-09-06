@@ -82,7 +82,8 @@ void MCK::ImageText::init(
     std::string initial_content,
     MCK::ImageText::Just _justification,
     bool add_to_front_of_parent_block,
-    uint8_t _char_spacing_in_pixels
+    uint8_t _char_spacing_in_pixels,
+    uint8_t _ascii_set
 )
 {
     if( this->initialized )
@@ -166,6 +167,20 @@ void MCK::ImageText::init(
         ) );
     }
 
+    // Check _ascii_set is valid
+    if( !image_man->ascii_set_valid( _ascii_set ) )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot initialize ImageText as ASCII set ID " )
+            + std::to_string( _ascii_set )
+            + std::string( " is invalid." )
+#else
+            ""
+#endif
+        ) );
+    }
+
     // Store parameter values
     this->size_in_chars = _size_in_chars;
     this->char_width_in_pixels = _char_width_in_pixels;
@@ -173,6 +188,7 @@ void MCK::ImageText::init(
     this->char_spacing_in_pixels = _char_spacing_in_pixels;
     this->local_palette_id = _local_palette_id;
     this->justification = _justification;
+    this->ascii_set = _ascii_set;
 
     // Check for content clipping
     if( initial_content.size() > this->size_in_chars )
@@ -290,7 +306,6 @@ void MCK::ImageText::init(
 
         try
         {
-            // this->block->render_info.push_back(
             this->image_man->create_extended_ascii_render_info(
                 c,
                 this->local_palette_id,
@@ -298,7 +313,8 @@ void MCK::ImageText::init(
                 y_pos + i * dy,
                 this->char_width_in_pixels,
                 this->char_height_in_pixels,
-                block
+                block,
+                this->ascii_set
             );
         }
         catch( std::exception &e )
@@ -476,7 +492,8 @@ void MCK::ImageText::set_content(
             this->image_man->change_render_info_ascii_value(
                 this->block->get_render_info( i ),
                 c,
-                this->local_palette_id
+                this->local_palette_id,
+                this->ascii_set
             );
         }
         catch( std::exception &e )
@@ -632,7 +649,8 @@ void MCK::ImageText::set_char(
         this->image_man->change_render_info_ascii_value(
             this->block->get_render_info( char_pos ),
             ascii_value,
-            this->local_palette_id
+            this->local_palette_id,
+            this->ascii_set
         );
     }
     catch( std::exception &e )

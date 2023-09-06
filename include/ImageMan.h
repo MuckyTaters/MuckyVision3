@@ -117,6 +117,9 @@ class ImageMan
         /*! @param pixel_data: Pointer to byte vector holding pixel data.
          *  @param pitch_per_pixel: Image width in pixels.
          *  @param pitch_per_pixel: Image height in pixels.
+         *  IMPORTANT: 'pixel_data' must continue to point to 
+         *             the actual pixel data until the END OF THE
+         *             PROGRAM, otherwise a seg fault may occur. 
          *  Note: no checking is done for duplicate images, if you are
          *        not careful you could have the same image registered
          *        under different image IDs. It is your responsibility
@@ -244,6 +247,12 @@ class ImageMan
         uint8_t create_alt_ascii_set(
             const std::vector<MCK_IMG_ID_TYPE> &ascii_to_image_id_mapping
         );
+
+        //! Check if ASCII set ID is valid
+        bool ascii_set_valid( uint8_t ascii_set ) const noexcept
+        {
+             return ascii_set < this->ascii_mappings.size();
+        }
 
 
     private:

@@ -74,6 +74,7 @@ class ImageText
          *  @param _justification: Hoz/vert text direction and justification
          *  @param add_to_front_of_parent_block: If true, appears in front of any other blocks attached to parent block
             @param _char_spacing_in_pixels: Space between characters
+            @param _ascii_set: ID of ASCII set used for text (0 is 'in-built' ASCII set)
          */
         void init(
             GameEng &_game_eng,
@@ -88,13 +89,20 @@ class ImageText
             std::string initial_content = "",  // Not pass by ref as r-value typically supplied
             MCK::ImageText::Just _justification = MCK::ImageText::LEFT,
             bool add_to_front_of_parent_block = true,
-            uint8_t _char_spacing_in_pixels = 0
+            uint8_t _char_spacing_in_pixels = 0,
+            uint8_t _ascii_set = 0
         );
 
         //! Returns true if initialized
         bool is_initialized( void ) const noexcept
         {
             return initialized;
+        }
+
+        //! Get ID of ASCII set used for this text
+        uint8_t get_ascii_set( void ) const noexcept
+        {
+            return this->ascii_set;
         }
 
         //! Set new string content
@@ -294,6 +302,8 @@ class ImageText
         MCK_PAL_ID_TYPE local_palette_id;
 
         std::shared_ptr<MCK::GameEngRenderBlock> block;
+
+        uint8_t ascii_set;
 };
 
 }  // End of namespace MCK

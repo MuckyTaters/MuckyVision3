@@ -1,0 +1,118 @@
+###########################################
+##  -----------------------------------
+##  ---MUCKY VISION 3 (BASIC ENGINE)---
+##  -----------------------------------
+##
+##  makefile_ConsoleTest_linux
+##
+##  Makefile to build test of Console
+##  class on Linux using g++.
+##
+##  IMPORTANT:
+##  Before running this file, please 
+##  read section 4 of README.md in the
+##  projects top level directory.
+##
+##  Copyright (c) Muckytaters 2023
+##
+##  This program is free software: you can
+##  redistribute it and/or modify it under 
+##  the terms of the GNU General Public License
+##  as published by the Free Software Foundation,
+##  either version 3 of the License, or (at your
+##  option) any later version.
+##
+##  This program is distributed in the hope it
+##  will be useful, but WITHOUT ANY WARRANTY;
+##  without even the implied warranty of MERCHANTABILITY
+##  or FITNESS FOR A PARTICULAR PURPOSE. See the
+##  GNU General Public License for more details.
+##
+##  You should have received a copy of the GNU
+##  General Public License along with this
+##  program. If not, see http://www.gnu.org/license
+############################################
+
+#############################################
+## DISCLAIMER: Dependencies described herein
+## are maintained on a best-effort basis and
+## may not be 100% correct. If in doubt,
+## execute 'make -f makefile_ConsoleTest_linux clean'
+## then 'make -f makefile_ConsoleTest_linux' to
+## rebuild the entire project
+#############################################
+
+#############################################
+############# PRELIMINARIES #################
+#############################################
+
+#List of all files to be built
+BUILDS := build/GameEng.o build/ImageDataASCII.o build/FancyTypeface.o build/ImageMan.o build/ImageText.o build/Console.o build/FancyConsoleTest.o 
+
+#CC specifies which compiler we're using
+CC := g++
+
+#COMPILER_FLAGS specifies the additional compilation options we're using
+# -g debug build
+# -std=c++14 Use C++14 (only needed for binary literals, otherwise C++11 is fine)
+# -pedantic-errors
+COMPILER_FLAGS := -g -std=c++14 -pedantic-errors
+
+#LINKER_FLAGS specifies the libraries we're linking against
+LINKER_FLAGS := -lSDL2 
+
+#INC specifies include directories
+INC := -I../include -I.
+
+#OUTPUT specifies the name of our exectuable
+OUTPUT := FancyConsoleTest
+
+
+#############################################
+################# EXECUTABLE ################
+#############################################
+
+# This comes first so we can use 'make' as well as 'make all'
+#This is the target that compiles our executable
+all: $(BUILDS)
+	$(CC) $(BUILDS) $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o $(OUTPUT)
+
+
+# Rules to make dependencies.................
+
+## GameEng ##
+build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
+	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
+
+## ImageDataASCII ##
+build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h 
+	$(CC) -c ../src/ImageDataASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageDataASCII.o
+
+## FancyTypeface ##
+build/FancyTypeface.o: ./FancyTypeface.cpp ./FancyTypeface.h 
+	$(CC) -c ./FancyTypeface.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/FancyTypeface.o
+
+## ImageMan ##
+build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../include/Defs.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
+	$(CC) -c ../src/ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageMan.o
+
+## ImageText ##
+build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o build/ImageMan.o 
+	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
+
+## Console ##
+build/Console.o: ../src/Console.cpp ../include/Console.h build/GameEng.o build/ImageMan.o build/ImageText.o
+	$(CC) -c ../src/Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Console.o
+
+## FancyConsoleTest ##
+build/FancyConsoleTest.o: FancyConsoleTest.cpp build/Console.o build/GameEng.o build/ImageText.o build/FancyTypeface.o 
+	$(CC) -c FancyConsoleTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/FancyConsoleTest.o
+
+
+#############################################
+################### CLEAN ###################
+#############################################
+
+.PHONY: clean
+clean:
+	rm -f build/*.o

@@ -967,11 +967,13 @@ void MCK::GameEng::create_texture(
         ) );
     }
 
-    if( local_palette.size() != pow( 2, bits_per_pixel ) )
+    // Check palette has at least enough colo(u)rs to 
+    // cover bit depth
+    if( local_palette.size() < pow( 2, bits_per_pixel ) )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            "Cannot create texture as palette wrong size."
+            "Cannot create texture as palette has too few colors."
 #else
             ""
 #endif

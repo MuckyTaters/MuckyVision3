@@ -96,7 +96,8 @@ class Console
             bool add_to_front_of_parent_block = true,
             uint8_t underlay_color_id = MCK::COL_BLACK,
             uint8_t _char_spacing_in_pixels = 0,
-            uint8_t _line_spacing_in_pixels = 0
+            uint8_t _line_spacing_in_pixels = 0,
+            uint8_t _ascii_set = 0
         );
 
         //! Returns true if Console instance is initialized
@@ -185,6 +186,13 @@ class Console
             return this->text_buffer.size();
         }
 
+        //! Get ID of ASCII set used for this console
+        uint8_t get_ascii_set( void ) const noexcept
+        {
+            return this->ascii_set;
+        }
+    
+
     protected:
 
         bool initialized;
@@ -223,6 +231,8 @@ class Console
         std::shared_ptr<MCK::GameEngRenderBlock> overlay_block;
         
         std::shared_ptr<MCK::GameEngRenderBlock> underlay_block;
+
+        uint8_t ascii_set;
 };
 
 }  // End of namespace MCK

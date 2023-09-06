@@ -49,6 +49,7 @@ MCK::Console::Console( void )
     this->char_spacing_in_pixels = 0;
     this->line_spacing_in_pixels = 0;
     this->local_palette_id = MCK::INVALID_PAL_ID;
+    this->ascii_set = 0;
 }
 
 void MCK::Console::init(
@@ -70,7 +71,8 @@ void MCK::Console::init(
     bool add_to_front_of_parent_block,
     uint8_t underlay_color_id,
     uint8_t _char_spacing_in_pixels,
-    uint8_t _line_spacing_in_pixels
+    uint8_t _line_spacing_in_pixels,
+    uint8_t _ascii_set
 )
 {
     if( this->initialized )
@@ -143,6 +145,9 @@ void MCK::Console::init(
         ) );
     }
 
+    // Note: The validity of '_ascii_set' will be checked
+    //       within the ImageText instances later on
+
     // Store parameter values
     this->width_in_chars = _width_in_chars;
     this->height_in_chars = _height_in_chars;
@@ -156,6 +161,7 @@ void MCK::Console::init(
     this->hoz_text_alignment = _hoz_text_alignment;
     this->char_spacing_in_pixels = _char_spacing_in_pixels;
     this->line_spacing_in_pixels = _line_spacing_in_pixels;
+    this->ascii_set = _ascii_set;
 
     // Create new overlay render block
     // (the overlay block holds everything)
@@ -358,7 +364,8 @@ void MCK::Console::init(
                 ),
                 justification, 
                 true,  // Add to front
-                this->char_spacing_in_pixels
+                this->char_spacing_in_pixels,
+                this->ascii_set
             );
         }
         catch( std::exception &e )
@@ -557,7 +564,8 @@ void MCK::Console::update( uint32_t current_ticks )
                             MCK::ImageText::LEFT :
                             MCK::ImageText::VERT_TOP,
                         true,  // Render on top
-                        this->char_spacing_in_pixels
+                        this->char_spacing_in_pixels,
+                        this->ascii_set
                     );
                 }
                 catch( std::exception &e )

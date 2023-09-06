@@ -885,7 +885,7 @@ uint8_t MCK::ImageMan::create_alt_ascii_set(
     // Get size of supplied mapping
     const size_t SIZE = ascii_to_image_id_mapping.size();
 
-    if( SIZE != 128 || SIZE != 256 )
+    if( !( SIZE == 128 || SIZE == 256 ) )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -905,15 +905,20 @@ uint8_t MCK::ImageMan::create_alt_ascii_set(
     
     // Iterate over supplied vector, checking each image ID
     // is valid and placing ID in 'MAPPING'
+    // Note: we can safely ignore image IDs with value
+    // MCK::INVALID_IMG_ID as this is the instruction to
+    // use the image ID stored in default ASCII set instead.
     uint8_t ascii_val = 0;
     for( const MCK_IMG_ID_TYPE IMAGE_ID : ascii_to_image_id_mapping )
     {
-        if( IMAGE_ID >= this->image_meta_data_by_id.size() )
+        if( IMAGE_ID >= this->image_meta_data_by_id.size()
+            && IMAGE_ID != MCK::INVALID_IMG_ID
+        )
         {
 #if defined MCK_STD_OUT
             // Report error and skip to next image ID
             std::cout << "Error: failed to create a mapping from "
-                      << "ASCII code " << ascii_val
+                      << "ASCII code " << int( ascii_val )
                       << " to image ID " << IMAGE_ID
                       << " as that image ID is invalid."
                       << std::endl;

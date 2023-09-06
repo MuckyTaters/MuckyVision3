@@ -238,6 +238,46 @@ int main( int argc, char** argv )
     }
 
 
+
+    ///////////////////////////////////////////
+    // CREATE ALTERNATIVE ASCII SET
+    std::vector<MCK_IMG_ID_TYPE> ascii_to_image_id_mapping( 128, MCK::INVALID_IMG_ID );
+    const std::vector<uint8_t> ALT_A {
+        0b11111111,
+        0b11111111,
+        0b11000011,
+        0b11000011,
+        0b11111111,
+        0b11111111,
+        0b11000011,
+        0b11000011
+    };
+    uint8_t alt_ascii_set_id;
+    {
+        const MCK_IMG_ID_TYPE ALT_A_IMG_ID = image_man.create_custom_image(
+            &ALT_A,
+            1,  // bits_per_pixel,
+            8,  // width_in_pixels,
+            8  // height_in_pixels
+        );
+
+        ascii_to_image_id_mapping.at( 65 ) = ALT_A_IMG_ID;
+
+        try
+        {
+            alt_ascii_set_id = image_man.create_alt_ascii_set(
+                ascii_to_image_id_mapping
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create alt ascii set, error: ")
+                + e.what() ) );
+        }
+    }
+    
+
     ///////////////////////////////////////////
     // CREATE RENDER INFO
 
@@ -291,7 +331,8 @@ int main( int argc, char** argv )
                     Y_POS,
                     TEXT_WIDTH,
                     TEXT_HEIGHT,
-                    ascii_blocks[ BLOCK_ID ]
+                    ascii_blocks[ BLOCK_ID ],
+                    alt_ascii_set_id
                 );
             }
             catch( std::exception &e )
