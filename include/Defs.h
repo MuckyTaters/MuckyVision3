@@ -33,6 +33,7 @@
 #define MCK_DEFS_H
 
 #include<cstdint>  // For uint32_t et al.
+#include "stddef.h" // For 'size_t' guaranteed in global namespace
 
 // Defines data type used for object IDs
 #define MCK_IMG_ID_TYPE uint32_t
@@ -214,6 +215,18 @@ namespace MCK
         SYNTH
     };
 
+    //! Provides reflection to render instance classes
+    /*! Do not alter this enumeration unless you are
+     *  creating/removing a render instance class and know
+     *  what you are doing.
+     */
+    enum class RenderInstanceType
+    {
+        BASE,
+        INFO,
+        BLOCK
+    };
+
     //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
     const static int VOICE_SYNTH_FREQ_A4 = 440;
 
@@ -234,6 +247,8 @@ namespace MCK
 
     //! Calculate envelope value every 'n' samples, where 'n' is this value + 1 (and 'n' must be power of 2)
     const static uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;
+
+    const static uint32_t DEFAULT_Z_VALUE = 0x00000010;
 
 }  // End of namespace MCK
 

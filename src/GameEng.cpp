@@ -670,148 +670,154 @@ void MCK::GameEng::render_all(
     const int16_t HOZ_OFFSET = hoz_offset + render_block->hoz_offset;
     const int16_t VERT_OFFSET = vert_offset + render_block->vert_offset;
 
-    // Iterate recursively over subservient blocks
-    for( auto sub_block : render_block->sub_blocks )
-    {
-        if( perform_integrity_check )
-        {
-            if( sub_block.get() == NULL )
-            {
-#if defined MCK_STD_OUT
-                std::cout << "Null sub-block found during render."
-                          << std::endl;
-#endif
-                continue;
-            }
-
-            if( sub_block->parent_block != render_block.get() )
-            {
-#if defined MCK_STD_OUT
-                std::cout << "Cuckold sub-block found during render."
-                          << std::endl;
-#endif
-                continue;
-            }
-        }
-
-        try
-        {
-            this->render_all(
-                sub_block,
-                HOZ_OFFSET,
-                VERT_OFFSET,
-                perform_integrity_check
-            );
-        }
-        catch( std::exception &e )
-        {
-            // Issue warning but do not throw,
-            // as we can try rendering other sub-blocks
-#if defined MCK_STD_OUT
-            std::cout << "Failed to render sub-block, error = "
-                      << e.what() << std::endl;
-#endif
-        }
-    }
-
     // Check for offset
     if( HOZ_OFFSET == 0 && VERT_OFFSET == 0 )
     {
         ///////////////////////////////////////
         // If no offset, use a faster loop
 
-        // Iterate over all textures in block
-        for( std::shared_ptr<MCK::GameEngRenderInfo> info 
-                : render_block->render_info
-        )
+        // Iterate over all render instances in block
+        for( const auto it : render_block->render_instances )
         {
-            // Ignore NULL textures
-            if( info.get() == NULL || info->tex == NULL )
+            // Get pointer to item
+            const std::shared_ptr<MCK::GameEngRenderBase> item = it.second;
+
+            // Ignore NULL items
+            if( item.get() == NULL )
             {
 #if defined MCK_STD_OUT
                 if( perform_integrity_check )
                 {
-                    std::cout << "NULL info found during render"
+                    std::cout << "NULL item found during render"
                               << std::endl;
                 }
 #endif
-                
                 continue;
             }
 
             // Check parentage
             if( perform_integrity_check 
-                && info->parent_block != render_block.get()
+                && item->parent_block != render_block.get()
             )
             {
 #if defined MCK_STD_OUT
-                std::cout << "Cuckold info found during render, ignoring."
+                std::cout << "Cuckoo item found during render, ignoring."
                           << std::endl;
 #endif
                 continue;
             }
 
-            // If no flags, use simpler command
-            if( info->flags == 0 )
+            // If item is GameEngRenderInfo instance,
+            // process accordingly
+            if( item->get_type() == MCK::RenderInstanceType::INFO )
+            {
+                std::shared_ptr<MCK::GameEngRenderInfo> info
+                    = std::dynamic_pointer_cast<MCK::GameEngRenderInfo>(
+                        item
+                    );
+
+                if( info->tex == NULL )
+                {
+#if defined MCK_STD_OUT
+                    if( perform_integrity_check )
+                    {
+                        std::cout << "NULL texture found during render"
+                                  << std::endl;
+                    }
+#endif
+                    continue;
+                }
+
+                // If no flags, use simpler command
+                if( info->flags == 0 )
+                {
+                    try
+                    {
+                        SDL_RenderCopy(
+                            this->renderer,
+                            info->tex,
+                            info->clip ? &info->clip_rect.r : NULL,
+                            &info->dest_rect.r
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                        std::cout << "SDL_RenderCopy failed, error = "
+                                  << SDL_GetError() << std::endl;
+#endif
+                    }
+                }
+                else
+                {
+                    // Get rotation angle (in degrees)
+                    const double ANGLE
+                        = ( 
+                            ( info->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
+                                >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
+                        ) * 90.0f;
+                
+                    // Get flip
+                    SDL_RendererFlip flip = SDL_FLIP_NONE;
+                    if( info->get_flip_x() )
+                    {
+                        flip = SDL_RendererFlip( flip | SDL_FLIP_HORIZONTAL );
+                    }
+                    if( info->get_flip_y() )
+                    {
+                        flip = SDL_RendererFlip( flip | SDL_FLIP_VERTICAL );
+                    }
+                    
+                    try
+                    {
+                        SDL_RenderCopyEx(
+                            this->renderer,
+                            &*info->tex,  // Convert from shared_ptr
+                            info->clip ? &info->clip_rect.r : NULL,
+                            &info->dest_rect.r,
+                            ANGLE,
+                            NULL,  // Rotate about centre
+                            flip
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                        std::cout << "SDL_RenderCopyEx failed, error = "
+                                  << SDL_GetError() << std::endl;
+#endif
+                    }
+                }
+            }
+            else if( item->get_type() == MCK::RenderInstanceType::BLOCK )
             {
                 try
                 {
-                    SDL_RenderCopy(
-                        this->renderer,
-                        info->tex,
-                        info->clip ? &info->clip_rect.r : NULL,
-                        &info->dest_rect.r
+                    this->render_all(
+                        std::dynamic_pointer_cast<MCK::GameEngRenderBlock>( item ),
+                        0,  // No x offset needed
+                        0,  // No y offset needed
+                        perform_integrity_check
                     );
                 }
                 catch( std::exception &e )
                 {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-                    std::cout << "SDL_RenderCopy failed, error = "
-                              << SDL_GetError() << std::endl;
+                    // Issue warning but do not throw,
+                    // as we can try rendering other sub-blocks
+#if defined MCK_STD_OUT
+                    std::cout << "Failed to render sub-block, error = "
+                              << e.what() << std::endl;
 #endif
                 }
             }
             else
             {
-                // Get rotation angle (in degrees)
-                const double ANGLE
-                    = ( 
-                        ( info->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
-                            >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
-                    ) * 90.0f;
-            
-                // Get flip
-                SDL_RendererFlip flip = SDL_FLIP_NONE;
-                if( info->get_flip_x() )
-                {
-                    flip = SDL_RendererFlip( flip | SDL_FLIP_HORIZONTAL );
-                }
-                if( info->get_flip_y() )
-                {
-                    flip = SDL_RendererFlip( flip | SDL_FLIP_VERTICAL );
-                }
-                
-                try
-                {
-                    SDL_RenderCopyEx(
-                        this->renderer,
-                        &*info->tex,  // Convert from shared_ptr
-                        info->clip ? &info->clip_rect.r : NULL,
-                        &info->dest_rect.r,
-                        ANGLE,
-                        NULL,  // Rotate about centre
-                        flip
-                    );
-                }
-                catch( std::exception &e )
-                {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-                    std::cout << "SDL_RenderCopyEx failed, error = "
-                              << SDL_GetError() << std::endl;
+#if defined MCK_STD_OUT
+                std::cout << "(2)Unknown render instance type found during render"
+                          << std::endl;
 #endif
-                }
+                continue;
             }
-
         }
     }
     else
@@ -820,18 +826,19 @@ void MCK::GameEng::render_all(
         // If offset used, calculate each
         // destination rectangle separately
 
-        // Iterate over all textures in block
-        for( std::shared_ptr<MCK::GameEngRenderInfo> info
-                : render_block->render_info
-        )
+        // Iterate over all render instances in block
+        for( const auto it : render_block->render_instances )
         {
+            // Get pointer to item
+            const std::shared_ptr<MCK::GameEngRenderBase> item = it.second;
+            
             // Ignore NULL pointers and NULL textures
-            if( info.get() == NULL || info->tex == NULL )
+            if( item.get() == NULL )
             {
 #if defined MCK_STD_OUT
                 if( perform_integrity_check )
                 {
-                    std::cout << "NULL info/tex found during render"
+                    std::cout << "(2)NULL item found during render"
                               << std::endl;
                 }
 #endif
@@ -840,80 +847,129 @@ void MCK::GameEng::render_all(
 
             // Check parentage
             if( perform_integrity_check 
-                && info->parent_block != render_block.get()
+                && item->parent_block != render_block.get()
             )
             {
 #if defined MCK_STD_OUT
-                std::cout << "Cuckold info found during render, ignoring."
+                std::cout << "(2)Cuckoo item found during render, ignoring."
                           << std::endl;
 #endif
                 continue;
             }
 
-            // Get offset destination rectangle
-            SDL_Rect dest = info->dest_rect.r;
-            dest.x += HOZ_OFFSET;
-            dest.y += VERT_OFFSET;
+            if( item->get_type() == MCK::RenderInstanceType::INFO )
+            {
+                std::shared_ptr<MCK::GameEngRenderInfo> info
+                    = std::dynamic_pointer_cast<MCK::GameEngRenderInfo>(
+                        item
+                    );
 
-            // If no flags, use simpler command
-            if( info->flags == 0 )
+                if( info->tex == NULL )
+                {
+#if defined MCK_STD_OUT
+                    if( perform_integrity_check )
+                    {
+                        std::cout << "(2)NULL texture found during render"
+                                  << std::endl;
+                    }
+#endif
+                    continue;
+                }
+
+                // Get offset destination rectangle
+                SDL_Rect dest = info->dest_rect.r;
+                dest.x += HOZ_OFFSET;
+                dest.y += VERT_OFFSET;
+
+                // If no flags, use simpler command
+                if( info->flags == 0 )
+                {
+                    try
+                    {
+                        SDL_RenderCopy(
+                            this->renderer,
+                            info->tex,
+                            info->clip ? &info->clip_rect.r : NULL,
+                            &dest
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                        std::cout << "(2)Offset SDL_RenderCopy failed, error = "
+                                  << SDL_GetError() << std::endl;
+#endif
+                    }
+                }
+                else
+                {
+                    // Get rotation angle (in degrees)
+                    const double ANGLE
+                        = ( 
+                            ( info->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
+                                >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
+                        ) * 90.0f;
+                
+                    // Get flip
+                    SDL_RendererFlip flip = SDL_FLIP_NONE;
+                    if( info->get_flip_x() )
+                    {
+                        flip = SDL_RendererFlip( flip | SDL_FLIP_HORIZONTAL );
+                    }
+                    if( info->get_flip_y() )
+                    {
+                        flip = SDL_RendererFlip( flip | SDL_FLIP_VERTICAL );
+                    }
+                    
+                    try
+                    {
+                        SDL_RenderCopyEx(
+                            this->renderer,
+                            info->tex,
+                            info->clip ? &info->clip_rect.r : NULL,
+                            &dest,
+                            ANGLE,
+                            NULL,  // Rotate about centre
+                            flip
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                        std::cout << "(2)Offset SDL_RenderCopyEx failed, error = "
+                                  << SDL_GetError() << std::endl;
+#endif
+                    }
+                }
+            }
+            else if( item->get_type() == MCK::RenderInstanceType::BLOCK )
             {
                 try
                 {
-                    SDL_RenderCopy(
-                        this->renderer,
-                        info->tex,
-                        info->clip ? &info->clip_rect.r : NULL,
-                        &dest
+                    this->render_all(
+                        std::dynamic_pointer_cast<MCK::GameEngRenderBlock>( item ),
+                        HOZ_OFFSET,
+                        VERT_OFFSET,
+                        perform_integrity_check
                     );
                 }
                 catch( std::exception &e )
                 {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-                    std::cout << "Offset SDL_RenderCopy failed, error = "
-                              << SDL_GetError() << std::endl;
+                    // Issue warning but do not throw,
+                    // as we can try rendering other sub-blocks
+#if defined MCK_STD_OUT
+                    std::cout << "(2)Failed to render sub-block, error = "
+                              << e.what() << std::endl;
 #endif
                 }
             }
             else
             {
-                // Get rotation angle (in degrees)
-                const double ANGLE
-                    = ( 
-                        ( info->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
-                            >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
-                    ) * 90.0f;
-            
-                // Get flip
-                SDL_RendererFlip flip = SDL_FLIP_NONE;
-                if( info->get_flip_x() )
-                {
-                    flip = SDL_RendererFlip( flip | SDL_FLIP_HORIZONTAL );
-                }
-                if( info->get_flip_y() )
-                {
-                    flip = SDL_RendererFlip( flip | SDL_FLIP_VERTICAL );
-                }
-                
-                try
-                {
-                    SDL_RenderCopyEx(
-                        this->renderer,
-                        info->tex,
-                        info->clip ? &info->clip_rect.r : NULL,
-                        &dest,
-                        ANGLE,
-                        NULL,  // Rotate about centre
-                        flip
-                    );
-                }
-                catch( std::exception &e )
-                {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-                    std::cout << "Offset SDL_RenderCopyEx failed, error = "
-                              << SDL_GetError() << std::endl;
+#if defined MCK_STD_OUT
+                std::cout << "(2)Unknown render instance type found during render"
+                          << std::endl;
 #endif
-                }
+                continue;
             }
         }
     }
@@ -1059,7 +1115,7 @@ void MCK::GameEng::create_texture(
         
 std::shared_ptr<MCK::GameEngRenderBlock> MCK::GameEng::create_empty_render_block(
     std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
-    bool add_to_front
+    uint32_t z
 ) const
 {
     if( !this->initialized )
@@ -1077,21 +1133,38 @@ std::shared_ptr<MCK::GameEngRenderBlock> MCK::GameEng::create_empty_render_block
 
     // Create new block
     std::shared_ptr<MCK::GameEngRenderBlock> new_block
-        = std::make_shared<MCK::GameEngRenderBlock>();
-            
+        = std::make_shared<MCK::GameEngRenderBlock>( z );
+
     // Add to parent block, if exists
     if( parent_block.get() != NULL )
     {
-        if( add_to_front )
-        {
-            parent_block->sub_blocks.push_back( new_block );
-        }
-        else
-        {
-            parent_block->sub_blocks.push_front( new_block );
-        }
-
         new_block->parent_block = parent_block.get();
+        
+        try
+        {
+            parent_block->render_instances.insert(
+                std::pair<
+                    uint64_t, std::shared_ptr<MCK::GameEngRenderBase>
+                >( 
+                    new_block->render_order, 
+                    std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
+                        new_block
+                    )
+                )
+            );
+        }
+        catch( const std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Failed to insert new render block " )
+                + std::string( "into parent block, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
     }
 
     return new_block;
@@ -1125,7 +1198,8 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_render_info(
     MCK::GameEngRenderInfo::Rect clip_rect,
     int rotation,
     bool flip_x,
-    bool flip_y
+    bool flip_y,
+    uint32_t z
 ) const
 {
     if( !this->initialized )
@@ -1177,7 +1251,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_render_info(
 
     // Create new info instance
     std::shared_ptr<MCK::GameEngRenderInfo> new_info
-        = std::make_shared<MCK::GameEngRenderInfo>();
+        = std::make_shared<MCK::GameEngRenderInfo>( z );
     new_info->tex = tex;
     new_info->tex_id = tex_id;
     new_info->dest_rect = dest_rect;
@@ -1193,8 +1267,34 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_render_info(
     // supplied (note, always added to end of render block)
     if( parent_block.get() != NULL )
     {
-        parent_block->render_info.push_back( new_info );
         new_info->parent_block = parent_block.get();
+
+        try
+        {
+            parent_block->render_instances.insert(
+                std::pair<
+                    uint64_t,
+                    std::shared_ptr<MCK::GameEngRenderBase>
+                >( 
+                    new_info->render_order, 
+                    std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
+                        new_info
+                    )
+                )    
+            );
+        }
+        catch( const std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Failed to insert new render info " )
+                + std::string( "into parent block, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
     }
 
     return new_info;
@@ -1437,31 +1537,42 @@ void MCK::GameEng::remove_block(
     {
         return;
     }
+    
+    // Convert block pointer to base pointer, as this is
+    // what we will actually searching for
+    std::shared_ptr<MCK::GameEngRenderBase> item_to_remove
+        = std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
+            block_to_remove
+        );
 
     // Loop over blocks, looking for the one to remove
-    std::list<std::shared_ptr<MCK::GameEngRenderBlock>>::iterator it;
-    for( it = block_to_start_search->sub_blocks.begin();
-         it != block_to_start_search->sub_blocks.end();
+    std::multimap<uint64_t,std::shared_ptr<MCK::GameEngRenderBase>>::iterator it;
+    for( it = block_to_start_search->render_instances.begin();
+         it != block_to_start_search->render_instances.end();
          it++
     )
     {
-        // If block pointer is NULL, or matchs block to be
+        // Get pointer to item
+        std::shared_ptr<MCK::GameEngRenderBase> item = it->second;
+
+        // If item is null, or matches the block to be
         // removed, remove it
         // Note: Carry on searching after removal, in case
         //       the block to be removed has multiple entries
-        if( it->get() == NULL
-            || it->get() == block_to_remove.get() 
+        if( item.get() == NULL
+            || item.get() == item_to_remove.get() 
         )
         {
-            // Remove this sub-block
-            block_to_start_search->sub_blocks.erase( it++ );
+            // Remove this instance
+            block_to_start_search->render_instances.erase( it++ );
         }
-        else
+        // Otherwise, if item is a non-matching block,
+        // continue search recursively
+        else if( item->get_type() == MCK::RenderInstanceType::BLOCK )
         {
-            // Call method recursively upon this sub-block
             GameEng::remove_block(
                 block_to_remove,
-                *it
+                std::dynamic_pointer_cast<MCK::GameEngRenderBlock>( item )
             );
         }
     }
@@ -1857,7 +1968,8 @@ void MCK::GameEng::basic_create_texture(
 std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_info(
     uint8_t col_id,
     std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
-    MCK::GameEngRenderInfo::Rect dest_rect
+    MCK::GameEngRenderInfo::Rect dest_rect,
+    uint32_t z
 ) const
 {
     if( !this->initialized | this->blank_textures.size() == 0 )
@@ -1902,9 +2014,45 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_in
     // supplied (note, always added to end of render block)
     if( parent_block.get() != NULL )
     {
-        parent_block->render_info.push_back( new_info );
         new_info->parent_block = parent_block.get();
+       
+        try
+        {
+            parent_block->render_instances.insert(
+                std::pair<
+                    uint64_t,
+                    std::shared_ptr<MCK::GameEngRenderBase>
+                >( 
+                    z, 
+                    std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
+                        new_info
+                    )
+                )    
+            );
+        }
+        catch( const std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Failed to insert new blank tex render info " )
+                + std::string( "into parent block, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+
     }
 
     return new_info;
 }
+
+/*
+void MCK::GameEng::insert_render_instance(
+    std::shared_ptr<MCK::RenderBase> item_to_insert,
+    std::shared_ptr<MCK::RenderBlock> target_block
+)
+{
+}
+*/

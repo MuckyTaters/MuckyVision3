@@ -151,7 +151,7 @@ class GameEng
          */
         std::shared_ptr<MCK::GameEngRenderBlock> create_empty_render_block(
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
-            bool add_to_front = true
+            uint32_t z = MCK::DEFAULT_Z_VALUE
         ) const;
 
         //! Create render info for specified texture id
@@ -175,7 +175,8 @@ class GameEng
                 = MCK::GameEngRenderInfo::Rect(),
             int rotation = 0,
             bool flip_x = false,
-            bool flip_y = false
+            bool flip_y = false,
+            uint32_t z = MCK::DEFAULT_Z_VALUE
         ) const;
 
         //! Create blank textured render info
@@ -186,7 +187,8 @@ class GameEng
         std::shared_ptr<MCK::GameEngRenderInfo> create_blank_tex_render_info(
             uint8_t col_id,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
-            MCK::GameEngRenderInfo::Rect dest_rect
+            MCK::GameEngRenderInfo::Rect dest_rect,
+            uint32_t z = MCK::DEFAULT_Z_VALUE
         ) const;
 
         //! Change texture of render info object
@@ -277,6 +279,14 @@ class GameEng
             std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove, 
             std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
         );
+
+        /*
+        //! Insert render instance into a render block, according to item's 'z' value
+        static void insert_render_instance(
+            std::shared_ptr<MCK::RenderBase> item_to_insert,
+            std::shared_ptr<MCK::RenderBlock> target_block
+        );
+        */
 
 
     private:

@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEng.o build/GameEngTest.o
+BUILDS := build/GameEngRenderBase.o build/GameEng.o build/GameEngTest.o
 
 #CC specifies which compiler we're using
 CC := g++
@@ -80,8 +80,12 @@ all: $(BUILDS)
 
 # Rules to make dependencies.................
 
+## GameEngRenderBase ##
+build/GameEngRenderBase.o: ../src/GameEngRenderBase.cpp ../include/GameEngRenderBase.h 
+	$(CC) -c ../src/GameEngRenderBase.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngRenderBase.o
+
 ## GameEng ##
-build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
+build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h build/GameEngRenderBase.o ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
 
 ## GameEngTest ##

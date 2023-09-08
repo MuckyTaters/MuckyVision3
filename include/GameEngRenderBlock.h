@@ -37,131 +37,149 @@
 #include <vector>
 #include <stdexcept>
 
+#include "GameEngRenderBase.h"
 #include "GameEngRenderInfo.h"
 
 namespace MCK
 {
 
-struct GameEngRenderBlock
+class GameEngRenderBlock : public GameEngRenderBase
 {
     //! Friendship so GameEng can access protected/private members
     friend class GameEng;
 
-    //! Flag to indicate if block should be rendered
-    /*! True = render, false = don't render */
-    bool active;
+    public:
 
-    //! Optional horizontal offset (in screen pixels)
-    int16_t hoz_offset;
+        //! Flag to indicate if block should be rendered
+        /*! True = render, false = don't render */
+        bool active;
 
-    //! Optional vertical offset (in screen pixels)
-    int16_t vert_offset;
+        //! Optional horizontal offset (in screen pixels)
+        int16_t hoz_offset;
 
-    //! Default constructor
-    GameEngRenderBlock( void )
-    {
-        this->active = true;
-        this->hoz_offset = 0;
-        this->vert_offset = 0;
-    }
+        //! Optional vertical offset (in screen pixels)
+        int16_t vert_offset;
 
-    //! Get number of render info structs associated with this block
-    /*! Note: excludes render info structs belonging to any sub-blocks
-     */
-    size_t get_render_info_count( void ) const noexcept
-    {
-        return this->render_info.size();
-    }
-
-    //! Get number of subservient blocks associated with this block
-    size_t get_sub_block_count( void ) const noexcept
-    {
-        return this->sub_blocks.size();
-    }
-
-    std::shared_ptr<GameEngRenderBlock> get_sub_block( size_t index )
-    {
-        if( index > this->sub_blocks.size() )
+        //! Default constructor
+        GameEngRenderBlock( uint32_t z = MCK::DEFAULT_Z_VALUE )
+            : GameEngRenderBase( z )
         {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                std::string( "Invalid sub block index: " )
-                + std::to_string( index )
-#else
-                ""
-#endif
-            ) );
+            this->active = true;
+            this->hoz_offset = 0;
+            this->vert_offset = 0;
+
+            this->type = MCK::RenderInstanceType::BLOCK;
+
         }
 
-        std::list<std::shared_ptr<GameEngRenderBlock>>::iterator it
-            = this->sub_blocks.begin();
-        std::advance<
-            std::list<std::shared_ptr<GameEngRenderBlock>>::iterator,
-            size_t
-        >( it, index );
-        return *it;
-    }
-
-    //! Reserve memory for pointers to future info render objects
-    /*! Performs a 'reserve' operation on an internal vector.
-     *  Set this to max number of info render objects your envisage
-     *  attaching to this block. This is a 'soft' limit; you can
-     *  exceed it, at the risk of some inefficiency.
-     */
-    void reserve_space_for_info_render( size_t num )
-    {
-        if( num > this->render_info.size() )
+        //! Returns true if block contains no render instances, i.e. images or other blocks
+        bool is_empty( void ) const noexcept
         {
-            this->render_info.reserve( num );
-        }
-    }
-
-    //! Get info render instance at given index position
-    /*! @param index: Position of info render instance in internal vector
-     * Note: Raises exception if index exceeds last element in vector
-     */
-    std::shared_ptr<MCK::GameEngRenderInfo> get_render_info( size_t index )
-    {
-        if( this->render_info.size() <= index )
-        {
-            throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                std::string( "Invalid info render index: " )
-                + std::to_string( index )
-#else
-                ""
-#endif
-            ) );
+            return render_instances.size() == 0;
         }
 
-        return this->render_info[index];
-    }
+        // //! Get number of render info structs associated with this block
+        // /*! Note: excludes render info structs belonging to any sub-blocks
+        //  */
+        // size_t get_render_info_count( void ) const noexcept
+        // {
+        //     return this->render_info.size();
+        // }
 
-    //! Remove last render info item from this block
-    void remove_last_render_info( void )
-    {
-        if( this->render_info.size() > 0 )
-        {
-            this->render_info.pop_back();
-        }
-    }
+        // //! Get number of subservient blocks associated with this block
+        // size_t get_sub_block_count( void ) const noexcept
+        // {
+        //     return this->sub_blocks.size();
+        // }
+
+        // std::shared_ptr<GameEngRenderBlock> get_sub_block( size_t index )
+        // {
+        //     if( index > this->sub_blocks.size() )
+        //     {
+        //         throw( std::runtime_error(
+    // #if defined MCK_STD_OUT
+        //             std::string( "Invalid sub block index: " )
+        //             + std::to_string( index )
+    // #else
+        //             ""
+    // #endif
+        //         ) );
+        //     }
+
+        //     std::list<std::shared_ptr<GameEngRenderBlock>>::iterator it
+        //         = this->sub_blocks.begin();
+        //     std::advance<
+        //         std::list<std::shared_ptr<GameEngRenderBlock>>::iterator,
+        //         size_t
+        //     >( it, index );
+        //     return *it;
+        // }
+
+        // //! Reserve memory for pointers to future render instances
+        // /*! Performs a 'reserve' operation on an internal vector.
+        //  *  Set this to max number of images and sub-blocks your envisage
+        //  *  attaching to this block. This is a 'soft' limit; you can
+        //  *  exceed it, at the risk of some inefficiency.
+        //  */
+        // void reserve_space_for_render_instances( size_t num )
+        // {
+        //     if( num > this->render_instances.size() )
+        //     {
+        //         this->render_instances.reserve( num );
+        //     }
+        // }
+
+        // //! Get info render instance at given index position
+        // /*! @param index: Position of info render instance in internal vector
+        //  * Note: Raises exception if index exceeds last element in vector
+        //  */
+        // std::shared_ptr<MCK::GameEngRenderInfo> get_render_info( size_t index )
+        // {
+        //     if( this->render_info.size() <= index )
+        //     {
+        //         throw( std::runtime_error(
+    // #if defined MCK_STD_OUT
+        //             std::string( "Invalid info render index: " )
+        //             + std::to_string( index )
+    // #else
+        //             ""
+    // #end if
+        //         ) );
+        //     }
+
+        //     return this->render_info[index];
+        // }
+
+        // //! Remove last render info item from this block
+        // void remove_last_render_info( void )
+        // {
+        //     if( this->render_info.size() > 0 )
+        //     {
+        //         this->render_info.pop_back();
+        //     }
+        // }
 
 
     protected :
 
-        // Pointer to parent block, only accessible through
-        // friend access (GameEng). This pointer should only
-        // be used to ensure parent is correct, not to access
-        // the parent (for safety it is best not to actually
-        // dereference this pointer)
-        const MCK::GameEngRenderBlock* parent_block;
-
+        /*
         //! Vector of render information associated with this block
         std::vector<std::shared_ptr<MCK::GameEngRenderInfo>> render_info;
+        */
 
-        //! List of blocks subserviant to this block
-        std::list<std::shared_ptr<MCK::GameEngRenderBlock>> sub_blocks;
+        //! Map of render instances subserviant to this block
+        /*! The key is the 'render_order' of the associated
+         *  render instance, comprised of 'z' value (32 most
+         *  significant bits) and render instance ID (32 least
+         *  significant bits).
+         *  This is a 'multimap' to account for the possibility
+         *  of duplicate IDs if more than 2^32 instances are 
+         *  created.
+         */
+        std::multimap<uint64_t,std::shared_ptr<MCK::GameEngRenderBase>> render_instances;
 
+        // Dummy method to this class non-abstract
+        void dummy( void ) {}
 };
 
 }  // End of namespace MCK
