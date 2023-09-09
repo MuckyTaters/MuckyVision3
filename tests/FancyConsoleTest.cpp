@@ -386,11 +386,11 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             0, // start_line
-            true,  // add_to_front_of_parent_block = true
             BG_COL,  // underlay colo(u)r
             2,  // char spacing in pixels
             0,  // line spacing in pixels
-            fancy_ascii_set
+            fancy_ascii_set,
+            MCK::MAX_Z_VALUE  // Render on top
         );
     }
     catch( std::exception &e )
@@ -593,7 +593,6 @@ int main( int argc, char** argv )
             10,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             MINI_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false, // true  // add_to_front_of_parent_block = true
             MINI_CONSOLE_BG_COL,  // underlay colo(u)r
             MINI_CONSOLE_CHAR_SPACING,
             MINI_CONSOLE_LINE_SPACING,
@@ -629,7 +628,6 @@ int main( int argc, char** argv )
             10,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             MAIN_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false, // true  // add_to_front_of_parent_block = true
             MCK::COL_DARK_GRAY,  // Underlay colo(u)r
             MAIN_CONSOLE_CHAR_SPACING,
             MAIN_CONSOLE_LINE_SPACING,
@@ -678,7 +676,6 @@ int main( int argc, char** argv )
             10,  // scroll_speed_in_ticks_per_pixel,
             false,  // vert_text_alignment
             0,  // start_line
-            true,  // add_to_front_of_parent_block = true
             MCK::COL_BLACK,
             0,  // char spacing
             0,  // line spacing
@@ -714,7 +711,6 @@ int main( int argc, char** argv )
             5,  // scroll_speed_in_ticks_per_pixel,
             false,  // vert_text_alignment
             10,  // start_line
-            true, // add_to_front_of_parent_block = true
             MCK::COL_TRANSPARENT,
             0,  // char spacing
             0,  // line spacing

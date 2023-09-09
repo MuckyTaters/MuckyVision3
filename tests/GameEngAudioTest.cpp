@@ -1368,10 +1368,11 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             0, // start_line
-            true,  // add_to_front_of_parent_block = true
             MCK::COL_BLACK,  // underlay colo(u)r
             2,  // char spacing in pixels
-            0  // line spacing in pixels
+            0,  // line spacing in pixels
+            0,  // default ascii set
+            MCK::MAX_Z_VALUE  // Render on top
         );
     }
     catch( std::exception &e )
@@ -1404,7 +1405,6 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             0, // start_line
-            true,  // add to front of parent block
             MCK::COL_BLACK,  // underlay colo(u)r
             CON1_CONSOLE_CHAR_SPACING,
             0  // line spacing in pixels
@@ -1440,7 +1440,6 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             0, // start_line
-            true,  // add to front of parent block
             CONSOLE2_BG_COL,  // underlay colo(u)r
             CON2_CONSOLE_CHAR_SPACING + 1,
             0  // line spacing in pixels
@@ -1475,7 +1474,6 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             CON1_CONSOLE_HEIGHT_IN_CHARS - 1,  // start_line
-            false,  // don't add to front_of parent block 
             MCK::COL_BLACK,  // underlay colo(u)r
             CON1_CONSOLE_CHAR_SPACING,
             CON1_CONSOLE_LINE_SPACING
@@ -1510,7 +1508,6 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             true,  // hoz_text_alignment
             1,
-            false, // don't add to front of parent block 
             CONSOLE2_BG_COL,  // underlay colo(u)r
             CON2_CONSOLE_CHAR_SPACING,
             CON2_CONSOLE_LINE_SPACING
@@ -1545,7 +1542,6 @@ int main( int argc, char** argv )
             0,  // scroll_speed_in_ticks_per_pixel,
             false,  // vertical text alignment
             LSCAPE_CONSOLE_WIDTH_IN_CHARS - 1,  // start_line
-            false, // true  // add_to_front_of_parent_block = true
             MCK::COL_BLACK,  // underlay colo(u)r
             LSCAPE_CONSOLE_CHAR_SPACING,
             LSCAPE_CONSOLE_LINE_SPACING
