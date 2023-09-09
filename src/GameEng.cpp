@@ -695,6 +695,21 @@ void MCK::GameEng::render_all(
                 continue;
             }
 
+#if defined MCK_STD_OUT
+            if( perform_integrity_check
+                && it.first != item->render_order
+            )
+            {
+                std::cout << "WARNING: Render order of item (0x"
+                          << std::hex << item->render_order
+                          << ") differs from key (0x"
+                          << it.first
+                          << "). Blocks and/or images may be "
+                          << "rendered in wrong order!"
+                          << std::dec << std::endl;
+            }
+#endif
+
             // Check parentage
             if( perform_integrity_check 
                 && item->parent_block != render_block.get()
@@ -955,10 +970,11 @@ void MCK::GameEng::render_all(
                 }
                 catch( std::exception &e )
                 {
+#if defined MCK_STD_OUT
                     // Issue warning but do not throw,
                     // as we can try rendering other sub-blocks
-#if defined MCK_STD_OUT
-                    std::cout << "(2)Failed to render sub-block, error = "
+                    std::cout << "(2)Failed to render sub-block, "
+                              << "error = "
                               << e.what() << std::endl;
 #endif
                 }
@@ -966,7 +982,8 @@ void MCK::GameEng::render_all(
             else
             {
 #if defined MCK_STD_OUT
-                std::cout << "(2)Unknown render instance type found during render"
+                std::cout << "(2)Unknown render instance type "
+                          << "found during render"
                           << std::endl;
 #endif
                 continue;
@@ -2011,7 +2028,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_in
     new_info->flags = 0;
 
     // Associate info with render block, if render block
-    // supplied (note, always added to end of render block)
+    // supplied
     if( parent_block.get() != NULL )
     {
         new_info->parent_block = parent_block.get();
@@ -2023,7 +2040,7 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_in
                     uint64_t,
                     std::shared_ptr<MCK::GameEngRenderBase>
                 >( 
-                    z, 
+                    new_info->render_order, 
                     std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
                         new_info
                     )

@@ -248,7 +248,14 @@ namespace MCK
     //! Calculate envelope value every 'n' samples, where 'n' is this value + 1 (and 'n' must be power of 2)
     const static uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;
 
-    const static uint32_t DEFAULT_Z_VALUE = 0x00000010;
+    //! Minimum z value (determines within-block render order)
+    const static uint32_t MIN_Z_VALUE = 0x0;
+
+    //! Default z value (determines within-block render order)
+    const static uint32_t DEFAULT_Z_VALUE = 0x80000000;
+    
+    //! Maximum z value (determines within-block render order)
+    const static uint32_t MAX_Z_VALUE = 0xFFFFFFFF;
 
 }  // End of namespace MCK
 

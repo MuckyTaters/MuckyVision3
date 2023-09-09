@@ -81,9 +81,9 @@ void MCK::ImageText::init(
     uint8_t _char_height_in_pixels,
     std::string initial_content,
     MCK::ImageText::Just _justification,
-    bool add_to_front_of_parent_block,
     uint8_t _char_spacing_in_pixels,
-    uint8_t _ascii_set
+    uint8_t _ascii_set,
+    uint32_t z
 )
 {
     if( this->initialized )
@@ -215,7 +215,7 @@ void MCK::ImageText::init(
     {
         this->block = this->game_eng->create_empty_render_block(
                     parent_block,
-                    add_to_front_of_parent_block
+                    z
                 );
     }
     catch( std::exception &e )
@@ -234,7 +234,7 @@ void MCK::ImageText::init(
     const uint8_t CONTENT_SIZE = this->current_content.size();
 
     // Reserve memory for render info structs
-    this->block->reserve_space_for_info_render( this->size_in_chars );
+    // this->block->reserve_space_for_info_render( this->size_in_chars );
 
     // Getting starting character position for this content,
     // and also x,y pos of character image
@@ -285,6 +285,8 @@ void MCK::ImageText::init(
             start_char = 0;
     }
 
+    this->chars.reserve( this->size_in_chars );
+
     // Create render info structs, and assign to block
     for( int i = 0; i < this->size_in_chars; i++ )
     {
@@ -306,15 +308,17 @@ void MCK::ImageText::init(
 
         try
         {
-            this->image_man->create_extended_ascii_render_info(
-                c,
-                this->local_palette_id,
-                x_pos + i * dx,
-                y_pos + i * dy,
-                this->char_width_in_pixels,
-                this->char_height_in_pixels,
-                block,
-                this->ascii_set
+            this->chars.push_back(
+                this->image_man->create_extended_ascii_render_info(
+                    c,
+                    this->local_palette_id,
+                    x_pos + i * dx,
+                    y_pos + i * dy,
+                    this->char_width_in_pixels,
+                    this->char_height_in_pixels,
+                    block,
+                    this->ascii_set
+                )    
             );
         }
         catch( std::exception &e )
@@ -332,16 +336,14 @@ void MCK::ImageText::init(
     }
 
     // Internal quality check
-    if( this->block->get_render_info_count() != this->size_in_chars )
+    // This should be unnecessary unless the above code
+    // is modified incorrectly, but better safe than sorry!
+    if( this->chars.size() != this->size_in_chars )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            std::string( "Cannot initialize ImageText as block's " )
-            + std::string( "render info list has size " )
-            + std::to_string( this->block->get_render_info_count() )
-            + std::string( "where as size_in_chars is " )
-            + std::to_string( this->size_in_chars )
-            + std::string( ". These should match! Internal error?." )
+            std::string( "Cannot initialize ImageText as char " )
+            + std::string( "arr size not as expected" )
 #else
             ""
 #endif
@@ -490,7 +492,8 @@ void MCK::ImageText::set_content(
         try
         {
             this->image_man->change_render_info_ascii_value(
-                this->block->get_render_info( i ),
+                this->chars[i],
+                // this->block->get_render_info( i ),
                 c,
                 this->local_palette_id,
                 this->ascii_set
@@ -527,8 +530,13 @@ void MCK::ImageText::get_top_left_pixel_pos(
         ) );
     }
    
+    /*
     if( this->block->get_render_info_count() == 0
         || this->block->get_render_info( 0 ).get() == NULL
+    )
+    */
+    if( this->chars.size() == 0
+        || chars[0].get() == NULL
     )
     {
         throw( std::runtime_error(
@@ -542,9 +550,9 @@ void MCK::ImageText::get_top_left_pixel_pos(
     }
 
     // Get x/y pos from first character
-    x_pos = this->block->get_render_info( 0 )->dest_rect.get_x()
+    x_pos = this->chars[0]->dest_rect.get_x()
                 + this->block->hoz_offset;
-    y_pos = this->block->get_render_info( 0 )->dest_rect.get_y()
+    y_pos = this->chars[0]->dest_rect.get_y()
                 + this->block->vert_offset;
     
     // Add offset, if needed
@@ -571,8 +579,8 @@ void MCK::ImageText::set_new_top_left_pixel_pos(
         ) );
     }
    
-    if( this->block->get_render_info_count() == 0
-        || this->block->get_render_info( 0 ).get() == NULL
+    if( this->chars.size() == 0
+        || chars[0].get() == NULL
     )
     {
         throw( std::runtime_error(
@@ -587,9 +595,9 @@ void MCK::ImageText::set_new_top_left_pixel_pos(
 
     // Get top-left of first char image
     const int FIRST_CHAR_X
-        = this->block->get_render_info( 0 )->dest_rect.get_x();
+        = this->chars[0]->dest_rect.get_x();
     const int FIRST_CHAR_Y
-        = this->block->get_render_info( 0 )->dest_rect.get_y();
+        = this->chars[0]->dest_rect.get_y();
 
     // Calculate and set required offset
     this->block->hoz_offset = new_x_pos - FIRST_CHAR_X;
@@ -632,7 +640,7 @@ void MCK::ImageText::set_char(
         ) );
     }
 
-    if( char_pos >= this->block->get_render_info_count() )
+    if( char_pos >= this->chars.size() )
     {
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -647,7 +655,7 @@ void MCK::ImageText::set_char(
     try
     {
         this->image_man->change_render_info_ascii_value(
-            this->block->get_render_info( char_pos ),
+            this->chars[char_pos],
             ascii_value,
             this->local_palette_id,
             this->ascii_set

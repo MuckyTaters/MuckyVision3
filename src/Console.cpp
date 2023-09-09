@@ -68,11 +68,11 @@ void MCK::Console::init(
     uint32_t _scroll_speed_in_ticks_per_pixel,
     bool _hoz_text_alignment,
     uint8_t start_line,
-    bool add_to_front_of_parent_block,
     uint8_t underlay_color_id,
     uint8_t _char_spacing_in_pixels,
     uint8_t _line_spacing_in_pixels,
-    uint8_t _ascii_set
+    uint8_t _ascii_set,
+    uint32_t z
 )
 {
     if( this->initialized )
@@ -170,7 +170,7 @@ void MCK::Console::init(
         this->overlay_block
             = this->game_eng->create_empty_render_block(
                 parent_block,
-                add_to_front_of_parent_block
+                z
             );
     }
     catch( std::exception &e )
@@ -193,7 +193,7 @@ void MCK::Console::init(
     {
         this->block = this->game_eng->create_empty_render_block(
                           this->overlay_block,
-                          true  // Display at front
+                          MCK::DEFAULT_Z_VALUE - 1
                       );
     }
     catch( std::exception &e )
@@ -218,7 +218,7 @@ void MCK::Console::init(
         this->underlay_block
             = this->game_eng->create_empty_render_block(
                 this->overlay_block,
-                false  // Display at rear
+                MCK::DEFAULT_Z_VALUE - 2
             );
     }
     catch( std::exception &e )
@@ -321,7 +321,6 @@ void MCK::Console::init(
 
     // Create lines....
 
-    // size_t max_content_pos = 0;
     for( int i = 0; i < num_lines; i++ )
     {
         // Work out position in initial_content of
@@ -333,11 +332,11 @@ void MCK::Console::init(
         if( i >= start_line )
         {
             const size_t POS = ( i - start_line )
-                            * line_len;  // this->width_in_chars;
+                            * line_len;
             if( POS < initial_content.size() )
             {
                 content_pos = POS;
-                content_len = line_len; // this->width_in_chars;
+                content_len = line_len;
             }
         }
             
@@ -363,9 +362,9 @@ void MCK::Console::init(
                     content_len
                 ),
                 justification, 
-                true,  // Add to front
                 this->char_spacing_in_pixels,
-                this->ascii_set
+                this->ascii_set,
+                MCK::DEFAULT_Z_VALUE
             );
         }
         catch( std::exception &e )
@@ -500,7 +499,6 @@ void MCK::Console::update( uint32_t current_ticks )
 
         // If scrolling has started, scroll one pixel
         if( ticks >= this->scroll_speed_in_ticks_per_pixel
-            // && *SCROLL_OFFSET != 0
             && this->scroll_in_progress
         )
         {
@@ -511,7 +509,7 @@ void MCK::Console::update( uint32_t current_ticks )
                 *SCROLL_OFFSET = 0;
 
                 // Destroy first remaining line
-                // TODO: Keep a history
+                // TODO: Keep a history?
                 this->lines.pop_front();
 
                 // Change position of all remaining lines
@@ -563,9 +561,9 @@ void MCK::Console::update( uint32_t current_ticks )
                         this->hoz_text_alignment ?
                             MCK::ImageText::LEFT :
                             MCK::ImageText::VERT_TOP,
-                        true,  // Render on top
                         this->char_spacing_in_pixels,
-                        this->ascii_set
+                        this->ascii_set,
+                        MCK::DEFAULT_Z_VALUE
                     );
                 }
                 catch( std::exception &e )

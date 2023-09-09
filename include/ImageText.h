@@ -88,9 +88,9 @@ class ImageText
             uint8_t _char_height_in_pixels,
             std::string initial_content = "",  // Not pass by ref as r-value typically supplied
             MCK::ImageText::Just _justification = MCK::ImageText::LEFT,
-            bool add_to_front_of_parent_block = true,
             uint8_t _char_spacing_in_pixels = 0,
-            uint8_t _ascii_set = 0
+            uint8_t _ascii_set = 0,
+            uint32_t z = MCK::DEFAULT_Z_VALUE
         );
 
         //! Returns true if initialized
@@ -296,6 +296,8 @@ class ImageText
         uint8_t char_width_in_pixels;
         uint8_t char_height_in_pixels;
         uint8_t char_spacing_in_pixels;
+
+        std::vector<std::shared_ptr<MCK::GameEngRenderInfo>> chars;
 
         std::string current_content;
 

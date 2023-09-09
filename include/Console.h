@@ -65,7 +65,6 @@ class Console
          *  @param _scroll_speed_in_ticks_per_pixel: Ticks between each scroll of one pixel, see notes below
          *  @param _hoz_text_alignment: If true, chars print left to right, scrolling up. If false, chars print top to bottom, scrolling left. 
          *  @param start_line: Index of first line at which initial content is displayed
-         *  @param add_to_front_of_parent_block: If true appears in front of all other blocks currently in parent block, behind if false.
          *  @param underlay_color_id: Spaced chars/lines leave gaps, the underlay fills those gaps, choose its colo(u)r here.
          *  @param _char_spacing_in_pixels: Additional spacing (padding) in pixel(s), between each character on line.
          *  @param _line_spacing_in_pixels: Additional spacing (padding), in pixel(s), between lines.
@@ -93,11 +92,11 @@ class Console
             uint32_t _scroll_speed_in_ticks_per_pixel = 0,
             bool _hoz_text_alignment = true,
             uint8_t start_line = 0,
-            bool add_to_front_of_parent_block = true,
             uint8_t underlay_color_id = MCK::COL_BLACK,
             uint8_t _char_spacing_in_pixels = 0,
             uint8_t _line_spacing_in_pixels = 0,
-            uint8_t _ascii_set = 0
+            uint8_t _ascii_set = 0,
+            uint32_t z = MCK::DEFAULT_Z_VALUE
         );
 
         //! Returns true if Console instance is initialized
