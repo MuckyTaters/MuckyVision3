@@ -31,3 +31,4 @@
 #include "GameEngRenderBase.h"
 
 uint32_t MCK::GameEngRenderBase::next_id = 0;
+bool MCK::GameEngRenderBase::duplicate_ids_exist = false;

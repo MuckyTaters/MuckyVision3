@@ -51,7 +51,14 @@ class GameEngRenderBase
         {
             // Set render order from combination of 
             // 'z' value and auto-generated id.
-            render_order = ( uint64_t( z ) << 32 ) | next_id++;
+            render_order = ( uint64_t( z ) << 32 )
+                           | MCK::GameEngRenderBase::next_id++;
+
+            // Check if ids have 'lapped' (unlikely!)
+            if( next_id == 0 )
+            {
+                MCK::GameEngRenderBase::duplicate_ids_exist = true;
+            }
 
             this->parent_block = NULL;
             
@@ -126,9 +133,12 @@ class GameEngRenderBase
          */
         uint64_t render_order;
 
-        //! Ths variable keeps record of next available ID
+        //! This variable keeps record of next available ID
         static uint32_t next_id;
-        
+
+        //! This variable indicates that more than 2^32 IDs exist
+        static bool duplicate_ids_exist;
+
         // Pointer to parent block, only accessible through
         // friend access (GameEng). This pointer should only
         // be used to ensure parent is correct, not to access

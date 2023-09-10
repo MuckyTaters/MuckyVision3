@@ -280,13 +280,17 @@ class GameEng
             std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
         );
 
-        /*
-        //! Insert render instance into a render block, according to item's 'z' value
-        static void insert_render_instance(
-            std::shared_ptr<MCK::RenderBase> item_to_insert,
-            std::shared_ptr<MCK::RenderBlock> target_block
+        //! Change the 'z' value of a render instance
+        /*! @param render_instance: Instance being changed
+         *  @param parent_block: Parent block
+         *  @param use_current_z_as_hint: Set to true if 'z' not changing my much
+         */
+        static void change_z(
+            std::shared_ptr<MCK::GameEngRenderBase> render_instance,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+            uint32_t new_z,
+            bool use_current_z_as_hint = true
         );
-        */
 
 
     private:

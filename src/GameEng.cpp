@@ -2065,11 +2065,155 @@ std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_in
     return new_info;
 }
 
-/*
-void MCK::GameEng::insert_render_instance(
-    std::shared_ptr<MCK::RenderBase> item_to_insert,
-    std::shared_ptr<MCK::RenderBlock> target_block
+void MCK::GameEng::change_z(
+    std::shared_ptr<MCK::GameEngRenderBase> render_instance,
+    std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+    uint32_t new_z,
+    bool use_current_z_as_hint
 )
 {
+    if( render_instance.get() == NULL
+        || parent_block.get() == NULL
+        || render_instance->parent_block
+            != parent_block.get()
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to change 'z' as instance/parent integrity check failed." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Declare iterator to entry of render_instance in partent block
+    std::multimap<
+        uint64_t,
+        std::shared_ptr<MCK::GameEngRenderBase>
+    >::iterator it;
+
+    // Explainer: there is a *theoretical* possiblity of more than
+    //            one instance sharing the same key, but only if
+    //            more than 2^32 render instances have been
+    //            created.
+    //
+    //            To account for this, the 'strict' option uses
+    //            'equal_range' when searching the multimap
+    //            instead of 'find'.
+    if( MCK::GameEngRenderBase::duplicate_ids_exist )
+    {
+        // Get instance's entry in parent blocks map of render instances
+        std::pair<
+            std::multimap<
+                uint64_t,
+                std::shared_ptr<MCK::GameEngRenderBase>
+            >::iterator,
+            std::multimap<
+                uint64_t,
+                std::shared_ptr<MCK::GameEngRenderBase>
+            >::iterator
+        > range = parent_block->render_instances.equal_range(
+            render_instance->render_order
+        );
+
+        // Now loop over all return iterators to find the
+        // correct entry
+        for( it = range.first;
+             it != parent_block->render_instances.end(); it++ )
+        {
+            // Check if this is 'render_instance'
+            if( it->second.get() == render_instance.get() )
+            {
+                // Found it
+                break;
+            }
+        }
+
+        // If no match found, throw exception
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to change 'z' as now matching " )
+            + std::string( "instance found in parent." )
+#else
+            ""
+#endif
+        ) );
+    }
+    else
+    {
+        it = parent_block->render_instances.find(
+            render_instance->render_order
+        );
+
+        // Quality check
+        if( it == parent_block->render_instances.end()
+            || it->second.get() != render_instance.get() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "(2)Failed to change 'z' as no matching " )
+                + std::string( "instance found in parent." )
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    // Remove existing instance from parent block
+    // and move iterator in to next element (or end)
+    // This is so 'it' can safely be used as a hint
+    // below
+    parent_block->render_instances.erase( it );
+
+    // Temporarily store ID of render instance
+    const uint32_t ID = render_instance->get_id();
+
+    // Change 'z' in render instance
+    render_instance->render_order = ( uint64_t( new_z ) << 32 ) | ID;
+
+    // Re-insert into parent block
+    try
+    {
+        if( use_current_z_as_hint
+            && it != parent_block->render_instances.end()
+        )
+        {
+            parent_block->render_instances.insert(
+                // it,  // Hint
+                std::pair<
+                    uint64_t,
+                    std::shared_ptr<MCK::GameEngRenderBase>
+                >(
+                    render_instance->render_order,
+                    render_instance
+                )
+            );
+        }
+        else
+        {
+            parent_block->render_instances.insert(
+                std::pair<
+                    uint64_t,
+                    std::shared_ptr<MCK::GameEngRenderBase>
+                >(
+                    render_instance->render_order,
+                    render_instance
+                )
+            );
+        }
+    }
+    catch( const std::exception &e )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Failed to re-insert render info " )
+            + std::string( "into parent block, error = " )
+            + e.what()
+#else
+            ""
+#endif
+        ) );
+    }
 }
-*/

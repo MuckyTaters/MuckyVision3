@@ -109,9 +109,6 @@ int main( int argc, char** argv )
 	    = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // Square made of 8x8 pixels and 2 colo(u)rs
-    // Note the two 8bit binary literals here represent 8x8
-    // 1bit pixels (similar to above). In effect, each
-    // 8bit number is split in half to give 4 bits per line.
     const MCK_IMG_ID_TYPE IMAGE_SQUARE_1BIT_8x8_ID = 1;
     const std::vector<uint8_t> IMAGE_SQUARE_1BIT_8x8 =
     {
