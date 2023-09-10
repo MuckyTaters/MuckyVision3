@@ -85,7 +85,7 @@ build/GameEngRenderBase.o: ../src/GameEngRenderBase.cpp ../include/GameEngRender
 	$(CC) -c ../src/GameEngRenderBase.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngRenderBase.o
 
 ## GameEng ##
-build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h build/GameEngRenderBase.o ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
+build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h build/GameEngRenderBase.o ../include/Defs.h ../include/KeyEvent.h ../include/Version.h build/GameEngRenderBase.o ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
 
 ## GameEngTest ##

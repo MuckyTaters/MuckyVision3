@@ -307,18 +307,20 @@ int main( int argc, char** argv )
         //       in prime render block, so that it
         //       is rendered after everything else
         biplane_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block()
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE + 1
         );
         city_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block()
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE - 1
         );
         background_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
-            false  // Add to *back* of block
+            MCK::DEFAULT_Z_VALUE - 2
         );
         border_overlay_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),  // 'prime render block' is the topmost block, created automatically by GameEng
-            true  // Add to *front* of block, see note above
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE + 2
         );
     }
     catch( std::exception &e )
@@ -336,7 +338,7 @@ int main( int argc, char** argv )
 
     // Create mutliple blocks, all subservient to 'city_block'
     // Each block will hold a 'tower' of square images of random height
-    std::list<std::shared_ptr<MCK::GameEngRenderBlock>> tower_blocks;
+    std::vector<std::shared_ptr<MCK::GameEngRenderBlock>> tower_blocks;
     for( int i = 0; i < NUM_TOWERS; i++ )
     {
         std::shared_ptr<MCK::GameEngRenderBlock> block;
@@ -365,7 +367,7 @@ int main( int argc, char** argv )
     // Create mutliple tower blocks at half scale,
     // all subservient to 'background'
     // Each block will hold a 'tower' of half scale square images of random height
-    std::list<std::shared_ptr<MCK::GameEngRenderBlock>> background_tower_blocks;
+    std::vector<std::shared_ptr<MCK::GameEngRenderBlock>> background_tower_blocks;
     for( int i = 0; i < NUM_TOWERS * 2; i++ )
     {
         std::shared_ptr<MCK::GameEngRenderBlock> block;
@@ -624,12 +626,12 @@ int main( int argc, char** argv )
             if( PREV_OFFSET < city_block->hoz_offset )
             {
                 const size_t NUM_SUB_BLOCKS
-                    = city_block->get_sub_block_count();
+                    = tower_blocks.size();
 
                 for( size_t i = 0; i < NUM_SUB_BLOCKS; i++ )
                 {
                     std::shared_ptr<MCK::GameEngRenderBlock> block
-                        = city_block->get_sub_block( i );
+                        = tower_blocks.at( i );
 
                     block->hoz_offset -= SQUARE_TOTAL_SIZE;
                     if( block->hoz_offset < 0 )
@@ -659,12 +661,12 @@ int main( int argc, char** argv )
             if( PREV_OFFSET < background_block->hoz_offset )
             {
                 const size_t NUM_SUB_BLOCKS
-                    = background_block->get_sub_block_count();
+                    = background_tower_blocks.size();
 
                 for( size_t i = 0; i < NUM_SUB_BLOCKS; i++ )
                 {
                     std::shared_ptr<MCK::GameEngRenderBlock> block
-                        = background_block->get_sub_block( i );
+                        = background_tower_blocks.at( i );
                 
                     block->hoz_offset -= SQUARE_TOTAL_SIZE / 2;
                     if( block->hoz_offset < 0 )
@@ -710,4 +712,3 @@ int main( int argc, char** argv )
     // Note: SDL is closed down when 'game_eng'
     // goes out of scope
 }
-
