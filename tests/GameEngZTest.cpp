@@ -30,14 +30,91 @@
 
 #include "GameEng.h"
 
+///////////////////////////////////////////
+// DEMO PARAMETERS
+// Made global for convenience, 
+// as this is only a short demo.
+//
+const int WINDOW_WIDTH_IN_PIXELS = 640;
+const int WINDOW_HEIGHT_IN_PIXELS = 480;
+const float PATH_CENTER_Z = 1000;
+const float PATH_RADIUS_X = 300;
+const float PATH_RADIUS_Y = 200;
+const float PATH_RADIUS_Z = 300;
+const int NUM_CIRCLES = 18;
+const float ANG_VEL_IN_REV_PER_SEC = 0.2f;
+const float ANG_DIFF_IN_REVS = 1.0f / float( NUM_CIRCLES );
+const int MAX_CIRCLE_SCALE = 6;
+const float MAX_CIRCLE_RADIUS = MAX_CIRCLE_SCALE * 8.0f;
+const float PATH_CENTER_X = WINDOW_WIDTH_IN_PIXELS / 2;
+const float PATH_CENTER_Y = WINDOW_HEIGHT_IN_PIXELS / 2;
+const int LOGO_SCALE = 4;
+const int LOGO_X = WINDOW_WIDTH_IN_PIXELS / 2 - 40 * LOGO_SCALE;
+const int LOGO_Y = WINDOW_HEIGHT_IN_PIXELS / 2 - 4 * LOGO_SCALE;
+
+/////////////////////////////////////////////////////////
+// Utility function to set circle position and size
+void set_circle_pos(
+    MCK::GameEng &game_eng,
+    std::shared_ptr<MCK::GameEngRenderInfo> circle,
+    float angle,
+    float rad_scale = 1.0f
+)
+{
+    const float Z 
+        = PATH_CENTER_Z + cos( angle ) * PATH_RADIUS_Z * rad_scale;
+
+    const float SCALE 
+        = std::min(
+            1.0f,
+            Z / ( PATH_CENTER_Z + PATH_RADIUS_Z )
+        );
+
+    const float X = PATH_CENTER_X
+                        - MAX_CIRCLE_RADIUS * rad_scale
+                        + sin( angle )
+                            * PATH_RADIUS_X * SCALE * rad_scale;
+    
+    const float Y = PATH_CENTER_Y 
+                        - MAX_CIRCLE_RADIUS * rad_scale * 2.0f
+                        + cos( angle )
+                            * PATH_RADIUS_Y * SCALE * rad_scale;
+    
+    const float CIRCLE_DIAMETER
+        = SCALE * MAX_CIRCLE_RADIUS * 2 * rad_scale;
+    
+    // Offset to adjust X and Y to account for actual circle diameter
+    const float OFFSET
+        = ( 1.0f - SCALE ) *  MAX_CIRCLE_RADIUS * rad_scale;
+
+    // Set circle location/size
+    circle->dest_rect.set_x( int( X + OFFSET + 0.5f ) );
+    circle->dest_rect.set_y( int( Y + OFFSET + 0.5f ) );
+    circle->dest_rect.set_w( int( CIRCLE_DIAMETER + 0.5f ) );
+    circle->dest_rect.set_h( int( CIRCLE_DIAMETER + 0.5f ) );
+
+    // Change 'z' value
+    try
+    {
+        MCK::GameEng::change_z_rel_to_default(
+            circle,
+            game_eng.get_prime_render_block(),
+            int32_t( Z + 0.5f )
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to change z, error: ")
+            + e.what() ) );
+    }
+}
+
+
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )
 {   
-    // Define window size (these can be changed to any sensible value)
-    const int WINDOW_WIDTH_IN_PIXELS = 640;
-    const int WINDOW_HEIGHT_IN_PIXELS = 480;
-   
 
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER
@@ -61,38 +138,49 @@ int main( int argc, char** argv )
 
 
     ///////////////////////////////////////////
+    // SET BACKGROUND COLO(U)R (BEST EFFORT)
+    game_eng.set_clearing_color( MCK::COL_ROTTING_PURPLE );
+
+
+    ///////////////////////////////////////////
     // CREATE LOCAL COLO(U)R PALETTES
     // (subsets of the core 32 colo(u)r palette)
     
     // Black/white palette for 1bit images
-    const MCK_PAL_ID_TYPE PALETTE_1BIT_BLACK_WHITE_ID = 0;
-    const std::vector<uint8_t> PALETTE_1BIT_BLACK_WHITE =
+    const MCK_PAL_ID_TYPE LOGO_PALETTE_ID = 0;
+    const std::vector<uint8_t> LOGO_PALETTE =
     {
         MCK::COL_BLACK,
-        MCK::COL_WHITE
+        MCK::COL_YELLOW
     };
 
-    // Transparent/red palette for 1bit images
-    const MCK_PAL_ID_TYPE PALETTE_1BIT_TRANS_RED_ID = 1;
-    const std::vector<uint8_t> PALETTE_1BIT_TRANS_RED =
+    // Palette A for 2bit images
+    const MCK_PAL_ID_TYPE PALETTE_A_ID = 1;
+    const std::vector<uint8_t> PALETTE_A =
     {
         MCK::COL_TRANSPARENT,
+        MCK::COL_WHITE,
+        MCK::COL_BLACK,
         MCK::COL_RED
     };
 
-    // Transparent/green palette for 1bit images
-    const MCK_PAL_ID_TYPE PALETTE_1BIT_TRANS_GREEN_ID = 2;
-    const std::vector<uint8_t> PALETTE_1BIT_TRANS_GREEN =
+    // Palette B for 2bit images
+    const MCK_PAL_ID_TYPE PALETTE_B_ID = 2;
+    const std::vector<uint8_t> PALETTE_B =
     {
         MCK::COL_TRANSPARENT,
+        MCK::COL_WHITE,
+        MCK::COL_BLACK,
         MCK::COL_GREEN
     };
 
-    // Transparent/blue palette for 1bit images
-    const MCK_PAL_ID_TYPE PALETTE_1BIT_TRANS_BLUE_ID = 3;
-    const std::vector<uint8_t> PALETTE_1BIT_TRANS_BLUE =
+    // Palette C for 2bit images
+    const MCK_PAL_ID_TYPE PALETTE_C_ID = 3;
+    const std::vector<uint8_t> PALETTE_C =
     {
         MCK::COL_TRANSPARENT,
+        MCK::COL_WHITE,
+        MCK::COL_BLACK,
         MCK::COL_BLUE
     };
 
@@ -100,206 +188,330 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE IMAGE DATA
 
-    // Circle of 16x16 pixels and 2 colo(u)rs
-    // Note the two 8bit binary literals here represent 8x8
-    // 1bit pixels (similar to above). In effect, each
-    // 8bit number is split in half to give 4 bits per line.
-    const MCK_IMG_ID_TYPE IMAGE_CIRCLE_1BIT_16x16_ID = 0;
-    const std::vector<uint8_t> IMAGE_CIRCLE_1BIT_16x16 =
+    // Circle of 16x16 pixels and 4 colo(u)rs
+    // Each 8bit binary literal here represents 4 pixels,
+    // with 00 = local palette colo(u)r 0
+    //      01 = local palette colo(u)r 1
+    //      ... and so on
+    const MCK_IMG_ID_TYPE IMAGE_CIRCLE_2BIT_16x16_ID = 0;
+    const std::vector<uint8_t> IMAGE_CIRCLE_2BIT_16x16 =
     {
-        0b00000111, 0b11100000,
-        0b00011111, 0b11111000,
-        0b00111111, 0b11111100,
-        0b01111111, 0b11111110,
-        0b01111111, 0b11111110,
-        0b11111111, 0b11111111,
-        0b11111111, 0b11111111,
-        0b11111111, 0b11111111,
-        0b11111111, 0b11111111,
-        0b11111111, 0b11111111,
-        0b11111111, 0b11111111,
-        0b01111111, 0b11111110,
-        0b01111111, 0b11111110,
-        0b00111111, 0b11111100,
-        0b00011111, 0b11111000,
-        0b00000111, 0b11100000
+        0b00000000, 0b00101010, 0b10101000, 0b00000000,
+        0b00000010, 0b10111111, 0b11111110, 0b10000000,
+        0b00001011, 0b11011111, 0b11111111, 0b11100000,
+        0b00101111, 0b01111111, 0b11111111, 0b11111000,
+        0b00101111, 0b01111111, 0b11111111, 0b11111000,
+        0b10111101, 0b11111111, 0b11111111, 0b11111110,
+        0b10111111, 0b11111111, 0b11111111, 0b11111110,
+        0b10111111, 0b11111111, 0b11111111, 0b11111110,
+        0b10111111, 0b11111111, 0b11111111, 0b11111110,
+        0b10111111, 0b11111111, 0b11111111, 0b11111110,
+        0b10111111, 0b11111111, 0b11111111, 0b11111110,
+        0b00101111, 0b11111111, 0b11111111, 0b11111000,
+        0b00101111, 0b11111111, 0b11111111, 0b11111000,
+        0b00001011, 0b11111111, 0b11111111, 0b11100000,
+        0b00000010, 0b10111111, 0b11111110, 0b10000000,
+        0b00000000, 0b00101010, 0b10101000, 0b00000000
+
+    };
+
+    // Left hand side of logo
+    // Each bit here represents 1 pixel,
+    // with 40 pixels in each row
+    const MCK_IMG_ID_TYPE LOGO_LEFT_ID = 1;
+    const std::vector<uint8_t> LOGO_LEFT =
+    {
+        0b00111110, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b01000001, 0b01000101, 0b00100110, 0b01001010, 0b00101111, 
+        0b01011101, 0b01101101, 0b00101001, 0b01010001, 0b01000010, 
+        0b01010001, 0b01010101, 0b00101000, 0b01100000, 0b10000010, 
+        0b01011101, 0b01000101, 0b00101001, 0b01010000, 0b10000010, 
+        0b01000001, 0b01000100, 0b11000110, 0b01001000, 0b10000010, 
+        0b00111110, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000
+    };
+
+    // Right hand side of logo
+    // Each bit here represents 1 pixel,
+    // with 40 pixels in each row
+    const MCK_IMG_ID_TYPE LOGO_RIGHT_ID = 2;
+    const std::vector<uint8_t> LOGO_RIGHT =
+    {
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b10011001, 0b11110111, 0b10111001, 0b11101011, 0b11011110, 
+        0b00100100, 0b01000100, 0b00100101, 0b00001000, 0b01000010, 
+        0b00111100, 0b01000111, 0b00111001, 0b11100011, 0b11011110, 
+        0b00100100, 0b01000100, 0b00100100, 0b00100010, 0b00000010, 
+        0b00100100, 0b01000111, 0b10100101, 0b11100011, 0b11011110, 
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000
     };
 
 
     ///////////////////////////////////////////
     // CREATE TEXTURES
 
-    // Red ball texture
-    MCK_TEX_ID_TYPE red_circle_tex_id;
+    // Type A circle texture
+    MCK_TEX_ID_TYPE circle_A_tex_id;
     {
         uint16_t height_in_pixels;
         try
         {
             game_eng.create_texture(
-                IMAGE_CIRCLE_1BIT_16x16_ID,
-                PALETTE_1BIT_TRANS_RED_ID,
-                1,  // bits_per_pixel,
+                IMAGE_CIRCLE_2BIT_16x16_ID,
+                PALETTE_A_ID,
+                2,  // bits_per_pixel,
                 16,  // pitch_in_pixels,
-                IMAGE_CIRCLE_1BIT_16x16,
-                PALETTE_1BIT_TRANS_RED,
-                red_circle_tex_id,
+                IMAGE_CIRCLE_2BIT_16x16,
+                PALETTE_A,
+                circle_A_tex_id,
                 height_in_pixels
             );
         }
         catch( std::exception &e )
         {
             throw( std::runtime_error(
-                std::string( "Failed to create red circle texture, error: ")
+                std::string( "Failed to create circle A texture, error: ")
                 + e.what() ) );
         }
 
         if( height_in_pixels != 16 )
         {
             throw( std::runtime_error(
-                std::string( "Red circle texture has incorrect height")
+                std::string( "Circle A texture has incorrect height")
             ) );
         }
     }
 
-    // Green ball texture
-    MCK_TEX_ID_TYPE green_circle_tex_id;
+    // Type B circle texture
+    MCK_TEX_ID_TYPE circle_B_tex_id;
     {
         uint16_t height_in_pixels;
         try
         {
             game_eng.create_texture(
-                IMAGE_CIRCLE_1BIT_16x16_ID,
-                PALETTE_1BIT_TRANS_GREEN_ID,
-                1,  // bits_per_pixel,
+                IMAGE_CIRCLE_2BIT_16x16_ID,
+                PALETTE_B_ID,
+                2,  // bits_per_pixel,
                 16,  // pitch_in_pixels,
-                IMAGE_CIRCLE_1BIT_16x16,
-                PALETTE_1BIT_TRANS_GREEN,
-                green_circle_tex_id,
+                IMAGE_CIRCLE_2BIT_16x16,
+                PALETTE_B,
+                circle_B_tex_id,
                 height_in_pixels
             );
         }
         catch( std::exception &e )
         {
             throw( std::runtime_error(
-                std::string( "Failed to create green circle texture, error: ")
+                std::string( "Failed to create circle B texture, error: ")
                 + e.what() ) );
         }
 
         if( height_in_pixels != 16 )
         {
             throw( std::runtime_error(
-                std::string( "Green circle texture has incorrect height")
+                std::string( "Circle B texture has incorrect height")
             ) );
         }
     }
 
-    // Blue ball texture
-    MCK_TEX_ID_TYPE blue_circle_tex_id;
+    // Type C circle texture
+    MCK_TEX_ID_TYPE circle_C_tex_id;
     {
         uint16_t height_in_pixels;
         try
         {
             game_eng.create_texture(
-                IMAGE_CIRCLE_1BIT_16x16_ID,
-                PALETTE_1BIT_TRANS_BLUE_ID,
-                1,  // bits_per_pixel,
+                IMAGE_CIRCLE_2BIT_16x16_ID,
+                PALETTE_C_ID,
+                2,  // bits_per_pixel,
                 16,  // pitch_in_pixels,
-                IMAGE_CIRCLE_1BIT_16x16,
-                PALETTE_1BIT_TRANS_BLUE,
-                blue_circle_tex_id,
+                IMAGE_CIRCLE_2BIT_16x16,
+                PALETTE_C,
+                circle_C_tex_id,
                 height_in_pixels
             );
         }
         catch( std::exception &e )
         {
             throw( std::runtime_error(
-                std::string( "Failed to create blue circle texture, error: ")
+                std::string( "Failed to create circle C texture, error: ")
                 + e.what() ) );
         }
 
         if( height_in_pixels != 16 )
         {
             throw( std::runtime_error(
-                std::string( "Green circle texture has incorrect height")
+                std::string( "Circle C texture has incorrect height")
             ) );
         }
     }
 
+    // Logo left texture
+    MCK_TEX_ID_TYPE logo_left_tex_id;
+    {
+        uint16_t height_in_pixels;
+        try
+        {
+            game_eng.create_texture(
+                LOGO_LEFT_ID,
+                LOGO_PALETTE_ID,
+                1,  // bits_per_pixel,
+                40,  // pitch_in_pixels,
+                LOGO_LEFT,
+                LOGO_PALETTE,
+                logo_left_tex_id,
+                height_in_pixels
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create logo left texture, error: ")
+                + e.what() ) );
+        }
 
-    ///////////////////////////////////////////
-    // CREATE DEMO PARAMETERS
-    const float PATH_CENTER_X = WINDOW_WIDTH_IN_PIXELS / 2;
-    const float PATH_CENTER_Y = WINDOW_HEIGHT_IN_PIXELS / 2;
-    const float PATH_RADIUS_X = 200;
-    const float PATH_RADIUS_Y = 100;
-    const float PATH_RADIUS_Z = 200;
-    const float ANG_VEL_IN_REV_PER_SEC = 0.2f;
-    const float ANG_DIFF_IN_REVS = 0.06f;  // 0.05f;
+        if( height_in_pixels != 8 )
+        {
+            throw( std::runtime_error(
+                std::string( "Logo left texture has incorrect height")
+            ) );
+        }
+    }
+
+    // Logo right texture
+    MCK_TEX_ID_TYPE logo_right_tex_id;
+    {
+        uint16_t height_in_pixels;
+        try
+        {
+            game_eng.create_texture(
+                LOGO_RIGHT_ID,
+                LOGO_PALETTE_ID,
+                1,  // bits_per_pixel,
+                40,  // pitch_in_pixels,
+                LOGO_RIGHT,
+                LOGO_PALETTE,
+                logo_right_tex_id,
+                height_in_pixels
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create logo right texture, error: ")
+                + e.what() ) );
+        }
+
+        if( height_in_pixels != 8 )
+        {
+            throw( std::runtime_error(
+                std::string( "Logo right texture has incorrect height")
+            ) );
+        }
+    }
+
 
     ///////////////////////////////////////////
     // CREATE RENDER INFO
+    
+    // Create two concentric rings of circles, outer and inner
+    std::vector<std::shared_ptr<MCK::GameEngRenderInfo>> outer_circles;
+    std::vector<std::shared_ptr<MCK::GameEngRenderInfo>> inner_circles;
+    outer_circles.reserve( NUM_CIRCLES );
+    inner_circles.reserve( NUM_CIRCLES );
+    for( int i = 0; i < NUM_CIRCLES; i++ )
+    {
+        // Cycle through circle textures
+        MCK_TEX_ID_TYPE tex_id;
+        switch( i % 3 )
+        {
+            case 0:
+                tex_id = circle_A_tex_id;
+                break;
 
-    std::shared_ptr<MCK::GameEngRenderInfo> red_circle;
-    std::shared_ptr<MCK::GameEngRenderInfo> green_circle;
-    std::shared_ptr<MCK::GameEngRenderInfo> blue_circle;
-    try
-    {
-        red_circle = game_eng.create_render_info(
-            red_circle_tex_id,
-            game_eng.get_prime_render_block(),
-            MCK::GameEngRenderInfo::Rect( 
-                0,  // x pos - overwritten on first frame
-                0,  // y pos - overwritten on first frame
-                64,  // width 
-                64  // height
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create red circle, error: ")
-            + e.what() ) );
-    }
-    try
-    {
-        green_circle = game_eng.create_render_info(
-            green_circle_tex_id,
-            game_eng.get_prime_render_block(),
-            MCK::GameEngRenderInfo::Rect( 
-                0,  // x pos - overwritten on first frame
-                0,  // y pos - overwritten on first frame
-                64,  // width 
-                64  // height
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create green circle, error: ")
-            + e.what() ) );
-    }
-    try
-    {
-        blue_circle = game_eng.create_render_info(
-            blue_circle_tex_id,
-            game_eng.get_prime_render_block(),
-            MCK::GameEngRenderInfo::Rect( 
-                0,  // x pos - overwritten on first frame
-                0,  // y pos - overwritten on first frame
-                64,  // width 
-                64  // height
-            )
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create blue circle, error: ")
-            + e.what() ) );
+            case 1:
+                tex_id = circle_B_tex_id;
+                break;
+
+            case 2:
+                tex_id = circle_C_tex_id;
+                break;
+        }
+
+        try
+        {
+            outer_circles.push_back(
+                game_eng.create_render_info(
+                    tex_id,
+                    game_eng.get_prime_render_block(),
+                    // This rect is overwritten on first frame
+                    MCK::GameEngRenderInfo::Rect( 0, 0, 0, 0 )
+                )
+            );
+            inner_circles.push_back(
+                game_eng.create_render_info(
+                    tex_id,
+                    game_eng.get_prime_render_block(),
+                    // This rect is overwritten on first frame
+                    MCK::GameEngRenderInfo::Rect( 0, 0, 0, 0 )
+                )
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create circle, error: ")
+                + e.what() ) );
+        }
     }
 
+    // Logo
+    try
+    {
+        // Logo left
+        game_eng.create_render_info(
+            logo_left_tex_id,
+            game_eng.get_prime_render_block(),
+            MCK::GameEngRenderInfo::Rect(
+                LOGO_X,
+                LOGO_Y,
+                40 * LOGO_SCALE,
+                8 * LOGO_SCALE
+            ),
+            false,  // No clip
+            MCK::GameEngRenderInfo::Rect(),
+            0,  // No rotation
+            false,  // No flip x
+            false,  // No flip y
+            MCK::MAX_Z_VALUE  // Always on top
+        );
+
+        // Logo right
+        game_eng.create_render_info(
+            logo_right_tex_id,
+            game_eng.get_prime_render_block(),
+            MCK::GameEngRenderInfo::Rect(
+                LOGO_X + 40 * LOGO_SCALE,
+                LOGO_Y,
+                40 * LOGO_SCALE,
+                8 * LOGO_SCALE
+            ),
+            false,  // No clip
+            MCK::GameEngRenderInfo::Rect(),
+            0,  // No rotation
+            false,  // No flip x
+            false,  // No flip y
+            MCK::MAX_Z_VALUE  // Always on top
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create logo, error: ")
+            + e.what() ) );
+    }
+    
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
@@ -311,7 +523,7 @@ int main( int argc, char** argv )
     uint32_t current_ticks = game_eng.get_ticks();
     uint32_t start_ticks = current_ticks;
     uint32_t next_frame_ticks = current_ticks + TICKS_PER_FRAME; 
-    uint32_t end_ticks = current_ticks + 13500;
+    uint32_t end_ticks = current_ticks + 60000;
     const float SCROLL_RATE = 0.1f;  // Pixels per tick
     do
     {
@@ -369,7 +581,8 @@ int main( int argc, char** argv )
             }
         }
 
-        // TODO: Movement
+        //////////////////////////////////////////
+        // MOVEMENT
 
         // Get current angle
         const float PRIME_ANGLE = float( current_ticks )
@@ -377,109 +590,56 @@ int main( int argc, char** argv )
                                     * ANG_VEL_IN_REV_PER_SEC
                                         * MCK_TWO_PI;
 
-        // Set red circle using prime angle
+        // Outer circles
         {
-            const int X = PATH_CENTER_X 
-                            + int( sin( PRIME_ANGLE )
-                                    * PATH_RADIUS_X + 0.5f );
-            
-            const int Y = PATH_CENTER_Y
-                            + int( cos( PRIME_ANGLE )
-                                    * PATH_RADIUS_Y + 0.5f );
-            
-            const int Z = MCK::DEFAULT_Z_VALUE
-                            + int( cos( PRIME_ANGLE )
-                                    * PATH_RADIUS_Z + 0.5f );
-
-            red_circle->dest_rect.set_x( X );
-            red_circle->dest_rect.set_y( Y );
-
-            // Change 'z' value
-            try
+            size_t count = 0;
+            for( auto circ : outer_circles )
             {
-                MCK::GameEng::change_z(
-                    red_circle,
-                    game_eng.get_prime_render_block(),
-                    Z
-                );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to change z, error: ")
-                    + e.what() ) );
+                // Set circle positions based on prime angle
+                try
+                {
+                    set_circle_pos(
+                        game_eng,
+                        circ, 
+                        PRIME_ANGLE 
+                            + ANG_DIFF_IN_REVS
+                                * MCK_TWO_PI 
+                                    * float( count++ )
+                    );
+                }
+                catch( std::exception &e )
+                {
+                    throw( std::runtime_error(
+                        std::string( "set_circle_pos failed, error: ")
+                        + e.what() ) );
+                }
             }
         }
 
-        // Set green circle using trailing angle
+        // Inner circles
         {
-            const float ANG = PRIME_ANGLE 
-                                + ANG_DIFF_IN_REVS * MCK_TWO_PI;
-            const int X = PATH_CENTER_X 
-                            + int( sin( ANG )
-                                    * PATH_RADIUS_X + 0.5f );
-            
-            const int Y = PATH_CENTER_Y
-                            + int( cos( ANG )
-                                    * PATH_RADIUS_Y + 0.5f );
-            
-            const int Z = MCK::DEFAULT_Z_VALUE
-                            + int( cos( ANG )
-                                    * PATH_RADIUS_Z + 0.5f );
-
-            green_circle->dest_rect.set_x( X );
-            green_circle->dest_rect.set_y( Y );
-
-            // Change 'z' value
-            try
+            size_t count = 0;
+            for( auto circ : inner_circles )
             {
-                MCK::GameEng::change_z(
-                    green_circle,
-                    game_eng.get_prime_render_block(),
-                    Z
-                );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to change z, error: ")
-                    + e.what() ) );
-            }
-        }
-
-        // Set blue circle using trailing angle
-        {
-            const float ANG = PRIME_ANGLE 
-                                + 2.0f * ANG_DIFF_IN_REVS * MCK_TWO_PI;
-            const int X = PATH_CENTER_X 
-                            + int( sin( ANG )
-                                    * PATH_RADIUS_X + 0.5f );
-            
-            const int Y = PATH_CENTER_Y
-                            + int( cos( ANG )
-                                    * PATH_RADIUS_Y + 0.5f );
-            
-            const int Z = MCK::DEFAULT_Z_VALUE
-                            + int( cos( ANG )
-                                    * PATH_RADIUS_Z + 0.5f );
-
-            blue_circle->dest_rect.set_x( X );
-            blue_circle->dest_rect.set_y( Y );
-
-            // Change 'z' value
-            try
-            {
-                MCK::GameEng::change_z(
-                    blue_circle,
-                    game_eng.get_prime_render_block(),
-                    Z
-                );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to change z, error: ")
-                    + e.what() ) );
+                // Set circle positions based on prime angle
+                try
+                {
+                    set_circle_pos(
+                        game_eng,
+                        circ, 
+                        - PRIME_ANGLE  // Note inversion of angle
+                            - ANG_DIFF_IN_REVS
+                                * MCK_TWO_PI 
+                                    * float( count++ ),
+                        0.75f  // radial scale
+                    );
+                }
+                catch( std::exception &e )
+                {
+                    throw( std::runtime_error(
+                        std::string( "set_circle_pos failed, error: ")
+                        + e.what() ) );
+                }
             }
         }
 
@@ -508,5 +668,3 @@ int main( int argc, char** argv )
     // Note: SDL is closed down when 'game_eng'
     // goes out of scope
 }
-
-

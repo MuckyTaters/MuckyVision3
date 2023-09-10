@@ -283,6 +283,7 @@ class GameEng
         //! Change the 'z' value of a render instance
         /*! @param render_instance: Instance being changed
          *  @param parent_block: Parent block
+         *  @param new_z: New value of 'z'
          *  @param use_current_z_as_hint: Set to true if 'z' not changing my much
          */
         static void change_z(
@@ -291,6 +292,27 @@ class GameEng
             uint32_t new_z,
             bool use_current_z_as_hint = true
         );
+
+        //! Change the 'z' value of a render instance
+        /*! @param render_instance: Instance being changed
+         *  @param parent_block: Parent block
+         *  @param new_z: New value of 'z' RELATIVE to DEFAULT_Z_VALUE
+         *  @param use_current_z_as_hint: Set to true if 'z' not changing my much
+         */
+        static void change_z_rel_to_default(
+            std::shared_ptr<MCK::GameEngRenderBase> render_instance,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+            int32_t new_z,
+            bool use_current_z_as_hint = true
+        )
+        {
+            return MCK::GameEng::change_z(
+                render_instance,
+                parent_block,
+                new_z + MCK::DEFAULT_Z_VALUE,
+                use_current_z_as_hint = true
+            );
+        }
 
 
     private:

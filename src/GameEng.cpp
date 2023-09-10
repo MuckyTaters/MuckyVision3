@@ -2162,10 +2162,10 @@ void MCK::GameEng::change_z(
     }
 
     // Remove existing instance from parent block
-    // and move iterator in to next element (or end)
+    // Returns iterator to next element (or end)
     // This is so 'it' can safely be used as a hint
     // below
-    parent_block->render_instances.erase( it );
+    it = parent_block->render_instances.erase( it );
 
     // Temporarily store ID of render instance
     const uint32_t ID = render_instance->get_id();
@@ -2181,7 +2181,7 @@ void MCK::GameEng::change_z(
         )
         {
             parent_block->render_instances.insert(
-                // it,  // Hint
+                it,  // Hint
                 std::pair<
                     uint64_t,
                     std::shared_ptr<MCK::GameEngRenderBase>
