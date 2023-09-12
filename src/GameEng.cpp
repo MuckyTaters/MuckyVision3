@@ -1581,7 +1581,15 @@ void MCK::GameEng::remove_block(
         )
         {
             // Remove this instance
-            block_to_start_search->render_instances.erase( it++ );
+            it = block_to_start_search->render_instances.erase( it );
+         
+            // If render instances is now empty, end here
+            // THIS IS IMPORTANT AS OTHERWISE THIS FOR LOOP WILL
+            // HANG WHEN IT NEXT TRIES TO EXECUTE 'it++'
+            if( block_to_start_search->render_instances.size() == 0 )
+            {
+                return;
+            }
         }
         // Otherwise, if item is a non-matching block,
         // continue search recursively
