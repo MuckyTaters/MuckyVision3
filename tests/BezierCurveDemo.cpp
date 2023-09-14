@@ -29,6 +29,8 @@
 ////////////////////////////////////////////
 
 #include "GameEng.h"
+#include "ImageMan.h"
+#include "ImageText.h"
 
 ///////////////////////////////////////////
 // DEMO PARAMETERS
@@ -55,7 +57,60 @@ const int SQUARES_HIGH = WINDOW_HEIGHT_IN_PIXELS
                             / SCALED_GRID_SIZE_IN_PIXELS;
 const uint8_t BG_COL = MCK::COL_ROTTING_PURPLE;
 const uint8_t GRID_COL = MCK::COL_MID_GRAY;
+const uint8_t CHAR_WIDTH_IN_PIXELS = 8;
+const uint8_t CHAR_HEIGHT_IN_PIXELS = 14;
+const uint8_t CHAR_SPACING_IN_PIXELS = 0;
+const uint8_t TEXT_CHARS = 16;
 
+/////////////////////////////////////////////////////////
+// STRUCT FOR WAYPOINTS
+struct Waypoint
+{
+    int id;
+    float x;
+    float y;
+    float z;
+    float dx;
+    float dy;
+    float dz;
+    uint32_t ticks;
+    std::shared_ptr<MCK::GameEngRenderBlock> block;
+    std::shared_ptr<MCK::GameEngRenderInfo> marker;
+    std::vector<std::shared_ptr<MCK::ImageText>> text;
+
+    Waypoint( void )
+    {
+        id = -1;
+        x = 0.0f;
+        y = 0.0f;
+        z = 0.0f;
+        dx = 0.0f;
+        dy = 0.0f;
+        dz = 0.0f;
+        ticks = 0;
+    }
+
+    Waypoint(
+        int _id,
+        float _x,
+        float _y,
+        float _z,
+        float _dx,
+        float _dy,
+        float _dz,
+        uint32_t _ticks
+    )
+    {
+        id = _id;
+        x = _x;
+        y = _y;
+        z = _z;
+        dx = _dx;
+        dy = _dy;
+        dz = _dz;
+        ticks = _ticks;
+    }
+};
 
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
@@ -83,6 +138,21 @@ int main( int argc, char** argv )
     }
 
 
+    //////////////////////////////////////////////
+    // INITIALIZE IMAGE MANAGER
+    MCK::ImageMan &image_man = MCK::ImageMan::get_singleton();
+    try
+    {
+        image_man.init( game_eng );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to initialize Image Manager, error: ")
+            + e.what() ) );
+    }
+
+
     ///////////////////////////////////////////
     // SET BACKGROUND COLO(U)R (BEST EFFORT)
     game_eng.set_clearing_color( BG_COL );
@@ -91,30 +161,53 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE LOCAL COLO(U)R PALETTES
     // (subsets of the core 32 colo(u)r palette)
-    
+   
+    // Note: When ImageMan is used, palettes should
+    //       be registered with ImageMan
+
+    // Palette for text
+    std::shared_ptr<std::vector<uint8_t>> TEXT_PALETTE =
+        std::make_shared<std::vector<uint8_t>>(
+            std::vector<uint8_t>{
+                MCK::COL_BLACK,
+                MCK::COL_WHITE
+            }
+        );
+    const MCK_PAL_ID_TYPE TEXT_PALETTE_ID 
+        = image_man.create_local_palette( TEXT_PALETTE );
+
     // Palette for grid
-    const MCK_PAL_ID_TYPE GRID_PALETTE_ID = 0;
-    const std::vector<uint8_t> GRID_PALETTE =
-    {
-        MCK::COL_TRANSPARENT,
-        GRID_COL
-    };
+    std::shared_ptr<std::vector<uint8_t>> GRID_PALETTE =
+        std::make_shared<std::vector<uint8_t>>(
+            std::vector<uint8_t>{
+                MCK::COL_TRANSPARENT,
+                GRID_COL
+            }
+        );
+    const MCK_PAL_ID_TYPE GRID_PALETTE_ID
+        = image_man.create_local_palette( GRID_PALETTE );
 
     // Palette for red objects
-    const MCK_PAL_ID_TYPE RED_PALETTE_ID = 0;
-    const std::vector<uint8_t> RED_PALETTE =
-    {
-        MCK::COL_TRANSPARENT,
-        MCK::COL_RED
-    };
+    std::shared_ptr<std::vector<uint8_t>> RED_PALETTE =
+        std::make_shared<std::vector<uint8_t>>(
+            std::vector<uint8_t>{
+                MCK::COL_TRANSPARENT,
+                MCK::COL_RED
+            }
+        );
+    const MCK_PAL_ID_TYPE RED_PALETTE_ID
+        = image_man.create_local_palette( RED_PALETTE );
 
     // Palette for blue objects
-    const MCK_PAL_ID_TYPE BLUE_PALETTE_ID = 1;
-    const std::vector<uint8_t> BLUE_PALETTE =
-    {
-        MCK::COL_TRANSPARENT,
-        MCK::COL_BLUE
-    };
+    std::shared_ptr<std::vector<uint8_t>> BLUE_PALETTE =
+        std::make_shared<std::vector<uint8_t>>(
+            std::vector<uint8_t>{
+                MCK::COL_TRANSPARENT,
+                MCK::COL_BLUE
+            }
+        );
+    const MCK_PAL_ID_TYPE BLUE_PALETTE_ID
+        = image_man.create_local_palette( BLUE_PALETTE );
 
 
     ///////////////////////////////////////////
@@ -203,7 +296,7 @@ int main( int argc, char** argv )
                 1,  // bits_per_pixel,
                 UNSCALED_GRID_SIZE_IN_PIXELS,  // pitch_in_pixels,
                 GRID_IMAGE,
-                GRID_PALETTE,
+                *GRID_PALETTE,
                 grid_tex_id,
                 height_in_pixels,
                 true  // throw if exists
@@ -236,7 +329,7 @@ int main( int argc, char** argv )
                 1,  // bits_per_pixel,
                 UNSCALED_GRID_SIZE_IN_PIXELS,  // pitch_in_pixels,
                 CIRCLE_IMAGE,
-                RED_PALETTE,
+                *RED_PALETTE,
                 red_circle_tex_id,
                 height_in_pixels,
                 true  // throw if exists
@@ -269,7 +362,7 @@ int main( int argc, char** argv )
                 1,  // bits_per_pixel,
                 UNSCALED_GRID_SIZE_IN_PIXELS,  // pitch_in_pixels,
                 CIRCLE_IMAGE,
-                BLUE_PALETTE,
+                *BLUE_PALETTE,
                 blue_circle_tex_id,
                 height_in_pixels,
                 true  // throw if exists
@@ -302,7 +395,7 @@ int main( int argc, char** argv )
                 1,  // bits_per_pixel,
                 UNSCALED_GRID_SIZE_IN_PIXELS,  // pitch_in_pixels,
                 SQUARE_IMAGE,
-                RED_PALETTE,
+                *RED_PALETTE,
                 red_square_tex_id,
                 height_in_pixels,
                 true  // throw if exists
@@ -335,7 +428,7 @@ int main( int argc, char** argv )
                 1,  // bits_per_pixel,
                 UNSCALED_GRID_SIZE_IN_PIXELS,  // pitch_in_pixels,
                 SQUARE_IMAGE,
-                BLUE_PALETTE,
+                *BLUE_PALETTE,
                 blue_square_tex_id,
                 height_in_pixels,
                 true  // throw if exists
@@ -357,14 +450,69 @@ int main( int argc, char** argv )
     }
 
 
+    //////////////////////////////////////////////////////
+    // CREATE WAYPOINTS (ID, POSITION AND TICKS ONLY)
+    std::vector<Waypoint> waypoints;
+    waypoints.reserve( 4 );
+    waypoints.push_back( Waypoint(
+            0,  // ID
+            SCALED_GRID_SIZE_IN_PIXELS * 2,
+            SCALED_GRID_SIZE_IN_PIXELS * 6,
+            0,  // No z dimenion for now
+            0,  // No hoz velocity
+            -8,  // Vert velocity 8 pixels per sec upwards
+            0,  // No z dimenion for now
+            0   // ticks
+        ) 
+    );
+    waypoints.push_back( Waypoint(
+            1,  // ID
+            SCALED_GRID_SIZE_IN_PIXELS * 8,
+            SCALED_GRID_SIZE_IN_PIXELS * 1,
+            0,  // No z dimenion for now
+            8,  // Hoz velocity 8 pixels per sec right
+            0,  // No vert velocity
+            0,  // No z dimenion for now
+            0   // ticks
+        ) 
+    );
+    waypoints.push_back( Waypoint(
+            2,  // ID
+            SCALED_GRID_SIZE_IN_PIXELS * 14,
+            SCALED_GRID_SIZE_IN_PIXELS * 3,
+            0,  // No z dimenion for now
+            -8,  // Hoz velocity 8 pixels per sec left
+            0,  // No vert velocity
+            0,  // No z dimenion for now
+            0   // ticks
+        ) 
+    );
+    waypoints.push_back( Waypoint(
+            3,  // ID
+            SCALED_GRID_SIZE_IN_PIXELS * 12,
+            SCALED_GRID_SIZE_IN_PIXELS * 8,
+            0,  // No z dimenion for now
+            8,  // Hoz velocity 8 pixels per sec right
+            0,  // No vert velocity
+            0,  // No z dimenion for now
+            0   // ticks
+        ) 
+    );
+
+
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
     std::shared_ptr<MCK::GameEngRenderBlock> grid_block;
+    std::shared_ptr<MCK::GameEngRenderBlock> waypoint_block;
     try
     {
         grid_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             MCK::MIN_Z_VALUE  // Render behind everything else
+        );
+        waypoint_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE - 1
         );
     }
     catch( std::exception &e )
@@ -414,32 +562,102 @@ int main( int argc, char** argv )
             }
         }
     }
-   
-    // Test Circle
-    try
+
+    // Create render block, render info and text for waypoints
+    for( Waypoint &wp : waypoints )
     {
-        game_eng.create_render_info(
-            red_circle_tex_id,
-            game_eng.get_prime_render_block(),
-            MCK::GameEngRenderInfo::Rect(
-                100,
-                150,
-                SCALED_CIRCLE_SIZE_IN_PIXELS,
-                SCALED_CIRCLE_SIZE_IN_PIXELS
-            ),
-            false,  // No clip
-            MCK::GameEngRenderInfo::Rect(),
-            0,  // No rotation
-            false,  // No flip x
-            false,  // No flip y
-            MCK::DEFAULT_Z_VALUE
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create circle, error = " )
-            + e.what() ) );
+        // Create block (best effort, not likely to fail)
+        wp.block = game_eng.create_empty_render_block(
+                waypoint_block,
+                MCK::DEFAULT_Z_VALUE
+            );
+
+        // Create render info
+        try
+        {
+            wp.marker = game_eng.create_render_info(
+                red_circle_tex_id,
+                wp.block,
+                MCK::GameEngRenderInfo::Rect(
+                    wp.x - SCALED_CIRCLE_SIZE_IN_PIXELS / 2,
+                    wp.y - SCALED_CIRCLE_SIZE_IN_PIXELS / 2,
+                    SCALED_CIRCLE_SIZE_IN_PIXELS,
+                    SCALED_CIRCLE_SIZE_IN_PIXELS
+                ),
+                false,  // No clip
+                MCK::GameEngRenderInfo::Rect(),
+                0,  // No rotation
+                false,  // No flip x
+                false,  // No flip y
+                MCK::DEFAULT_Z_VALUE
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create waypoint render info" )
+                + std::to_string( wp.id )
+                + std::string( ", error: ")
+                + e.what() ) );
+        }
+    
+        // Create text
+        for( int i = 0; i < 5; i++ )
+        {
+            std::string s;
+            switch( i )
+            {
+                case 0:
+                    s = "x=" + std::to_string( wp.x );
+                    break;
+
+                case 1:
+                    s = "y=" + std::to_string( wp.y );
+                    break;
+
+                case 2:
+                    s = "dx=" + std::to_string( wp.dx );
+                    break;
+
+                case 3:
+                    s = "dy=" + std::to_string( wp.dy );
+                    break;
+
+                case 4:
+                    s = "ticks=" + std::to_string( wp.ticks );
+                    break;
+            }
+            
+            wp.text.push_back( std::make_shared<MCK::ImageText>() );
+
+            try
+            {
+                wp.text.back()->init(
+                    game_eng,
+                    image_man,
+                    wp.block,
+                    TEXT_PALETTE_ID,
+                    wp.x + SCALED_CIRCLE_SIZE_IN_PIXELS,
+                    wp.y + float( i - 0.5f )
+                                * SCALED_CIRCLE_SIZE_IN_PIXELS,
+                    TEXT_CHARS,  // Size in chars
+                    CHAR_WIDTH_IN_PIXELS,
+                    CHAR_HEIGHT_IN_PIXELS,
+                    s,
+                    MCK::ImageText::LEFT,  // Justification
+                    CHAR_SPACING_IN_PIXELS,
+                    0,  // Default ascii set
+                    MCK::DEFAULT_Z_VALUE - 1
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create waypoint text" )
+                    + std::string( ", error: ")
+                    + e.what() ) );
+            }
+        }
     }
 
     // Test Square
@@ -468,7 +686,6 @@ int main( int argc, char** argv )
             std::string( "Failed to create square, error = " )
             + e.what() ) );
     }
-
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE

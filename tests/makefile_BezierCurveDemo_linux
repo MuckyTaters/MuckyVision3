@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEngRenderBase.o build/GameEng.o build/BezierCurveDemo.o
+BUILDS := build/GameEngRenderBase.o build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/BezierCurveDemo.o
 
 #CC specifies which compiler we're using
 CC := g++
@@ -88,8 +88,20 @@ build/GameEngRenderBase.o: ../src/GameEngRenderBase.cpp ../include/GameEngRender
 build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h build/GameEngRenderBase.o ../include/Defs.h ../include/KeyEvent.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
 
+## ImageDataASCII ##
+build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h 
+	$(CC) -c ../src/ImageDataASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageDataASCII.o
+
+## ImageMan ##
+build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../include/Defs.h ../include/Version.h ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
+	$(CC) -c ../src/ImageMan.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageMan.o
+
+## ImageText ##
+build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o build/ImageMan.o 
+	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
+
 ## BezierCurveDemo ##
-build/BezierCurveDemo.o: BezierCurveDemo.cpp build/GameEng.o 
+build/BezierCurveDemo.o: BezierCurveDemo.cpp build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o 
 	$(CC) -c BezierCurveDemo.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/BezierCurveDemo.o
 
 

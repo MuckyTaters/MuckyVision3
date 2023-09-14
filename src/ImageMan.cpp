@@ -130,7 +130,7 @@ MCK_PAL_ID_TYPE MCK::ImageMan::create_local_palette(
         throw( std::runtime_error(
 #if defined MCK_STD_OUT
             std::string( "Cannot create local palette as " )
-            + std::string( "global_color_ids vector has zero size." )
+            + std::string( "color id vector has zero size." )
 #else
             ""
 #endif
