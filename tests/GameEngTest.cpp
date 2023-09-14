@@ -298,14 +298,6 @@ int main( int argc, char** argv )
     std::shared_ptr<MCK::GameEngRenderBlock> background_block;
     try
     {
-        // Note: The order here is important as it
-        //       defines the order in which blocks
-        //       are rendered. Those placed at the
-        //       front of the block will be rendered
-        //       in front of the rest of the block.
-        //       The border overlay is the front-most sub-block
-        //       in prime render block, so that it
-        //       is rendered after everything else
         biplane_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             MCK::DEFAULT_Z_VALUE + 1

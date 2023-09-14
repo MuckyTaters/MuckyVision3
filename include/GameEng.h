@@ -136,7 +136,8 @@ class GameEng
             const std::vector<uint8_t> &pixel_data,
             const std::vector<uint8_t> &local_palette,
             MCK_TEX_ID_TYPE &tex_id,
-            uint16_t &height_in_pixels
+            uint16_t &height_in_pixels,
+            bool throw_if_exists = false
         );
 
         //! Returns true if texture with this ID already exists

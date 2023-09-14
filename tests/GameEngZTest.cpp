@@ -42,7 +42,7 @@ const float PATH_RADIUS_X = 300;
 const float PATH_RADIUS_Y = 200;
 const float PATH_RADIUS_Z = 300;
 const int NUM_CIRCLES = 18;
-const float ANG_VEL_IN_REV_PER_SEC = 0.2f;
+const float ANG_VEL_IN_REV_PER_SEC = 5.0f;
 const float ANG_DIFF_IN_REVS = 1.0f / float( NUM_CIRCLES );
 const int MAX_CIRCLE_SCALE = 6;
 const float MAX_CIRCLE_RADIUS = MAX_CIRCLE_SCALE * 8.0f;
@@ -587,7 +587,7 @@ int main( int argc, char** argv )
         // Get current angle
         const float PRIME_ANGLE = float( current_ticks )
                                 / 1000.0f
-                                    * ANG_VEL_IN_REV_PER_SEC
+                                    / ANG_VEL_IN_REV_PER_SEC
                                         * MCK_TWO_PI;
 
         // Outer circles

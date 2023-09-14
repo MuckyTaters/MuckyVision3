@@ -1000,7 +1000,8 @@ void MCK::GameEng::create_texture(
     const std::vector<uint8_t> &pixel_data,
     const std::vector<uint8_t> &local_palette,
     MCK_TEX_ID_TYPE &tex_id,
-    uint16_t &height_in_pixels
+    uint16_t &height_in_pixels,
+    bool throw_if_exists
 )
 {
     // Set answers to default
@@ -1056,16 +1057,6 @@ void MCK::GameEng::create_texture(
     // Calculate texture id
     tex_id = MCK::GameEng::calc_tex_id( image_id, local_palette_id );
 
-    // If this texture already exists, do nothing
-    {
-        std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::iterator it 
-            = this->textures.find( tex_id );
-        if( it != this->textures.end() )
-        {
-            return;
-        }
-    }
-
     // Calculate image height
     height_in_pixels
         = uint16_t(
@@ -1075,6 +1066,31 @@ void MCK::GameEng::create_texture(
                         / float( pitch_in_pixels )
             )
         );
+
+    // If this texture already exists, throw or do nothing
+    {
+        std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::iterator it 
+            = this->textures.find( tex_id );
+        if( it != this->textures.end() )
+        {
+            if( throw_if_exists )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Texture already exists and " )
+                    + std::string( "'throw_if_exists' is selected." )
+#else
+                    ""
+#endif
+                ) );
+            }
+            else
+            {
+                // Do nothing
+                return;
+            }
+        }
+    }
 
     // Declare texture pointer
     SDL_Texture* tex = NULL;
