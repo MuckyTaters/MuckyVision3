@@ -28,9 +28,14 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
+#include <utility>
+
 #include "GameEng.h"
 #include "ImageMan.h"
 #include "ImageText.h"
+
+#define ONE_THIRD 0.3333333333f
+#define TWO_THIRDS 0.6666666666f
 
 ///////////////////////////////////////////
 // DEMO PARAMETERS
@@ -63,54 +68,172 @@ const uint8_t CHAR_SPACING_IN_PIXELS = 0;
 const uint8_t TEXT_CHARS = 16;
 
 /////////////////////////////////////////////////////////
-// STRUCT FOR WAYPOINTS
-struct Waypoint
+// STRUCTS FOR POINTS AND BEZIER CURVES
+
+//! Naive 3D point class
+struct Point
 {
+    // NOTE: This demo struct is built using simple C++
+    //       and is NOT suitable for production use.
+
+    // TODO: Consider applying move sementics etc.
+
     int id;
-    float x;
-    float y;
-    float z;
-    float dx;
-    float dy;
-    float dz;
-    uint32_t ticks;
+    float x;  // Hoz pos (in pixels)
+    float y;  // Vert pos (in pixels)
+    float z;  // Depth (abstract units)
     std::shared_ptr<MCK::GameEngRenderBlock> block;
     std::shared_ptr<MCK::GameEngRenderInfo> marker;
     std::vector<std::shared_ptr<MCK::ImageText>> text;
-
-    Waypoint( void )
+   
+    //! Default constructor
+    Point( void ) noexcept
     {
         id = -1;
         x = 0.0f;
         y = 0.0f;
         z = 0.0f;
-        dx = 0.0f;
-        dy = 0.0f;
-        dz = 0.0f;
-        ticks = 0;
     }
 
-    Waypoint(
+    //! Coords only constructor
+    Point(
+        float _x,
+        float _y,
+        float _z
+    ) noexcept
+    {
+        // id left as default
+        x = _x;
+        y = _y;
+        z = _z;
+    }
+
+    //! ID and coords constructor
+    Point(
         int _id,
         float _x,
         float _y,
-        float _z,
-        float _dx,
-        float _dy,
-        float _dz,
-        uint32_t _ticks
-    )
+        float _z
+    ) noexcept
     {
         id = _id;
         x = _x;
         y = _y;
         z = _z;
-        dx = _dx;
-        dy = _dy;
-        dz = _dz;
-        ticks = _ticks;
+    }
+
+    //! Assignment operator
+    Point& operator = ( const Point other ) noexcept
+    {
+        x = other.x;
+        y = other.y;
+        z = other.z;
+        return *this;
+    }
+
+    //! Scalar multiplication
+    Point operator * ( float scalar ) const noexcept
+    {
+        // Leave id as default '-1'
+        return Point(
+            -1,
+            x * scalar,
+            y * scalar,
+            z * scalar
+        );
+    }
+
+    //! Addition
+    Point operator + ( const Point other ) const noexcept
+    {
+        // Leave id as default '-1'
+        return Point(
+            -1,
+            x + other.x,
+            y + other.y,
+            z + other.z
+        );
+    }
+    
+    //! Subtraction
+    Point operator - ( const Point other ) const noexcept
+    {
+        // Leave id as default '-1'
+        return Point(
+            -1,
+            x - other.x,
+            y - other.y,
+            z - other.z
+        );
+    }
+
+    // DEBUG
+    void str( void ) const noexcept
+    {
+        std::cout << "Point id=" << id
+                  << ", x=" << x
+                  << ", y=" << y
+                  << ", z=" << z
+                  << std::endl;
     }
 };
+
+//! Cubic bezier curve class
+struct CubicBezier
+{
+    Point p0;
+    Point p1;
+    Point p2;
+    Point p3;
+
+    CubicBezier( void ) {}
+
+    CubicBezier(
+        Point &_p0,
+        Point &_p1,
+        Point &_p2,
+        Point &_p3
+    )
+    {
+        p0 = _p0;
+        p1 = _p1;
+        p2 = _p2;
+        p3 = _p3;
+    }
+
+    //! Calculate point on bezier curve
+    /*! @param t: position parameter (must be on unit interval, i.e. [0,1])
+     */
+    Point calc_point(
+        float t
+    )
+    {
+        // Constrain 't' to unit interval
+        t = std::max( 0.0f, std::min( 1.0f, t ) );
+
+        const float INV_T = 1.0f - t;
+
+        return(
+            p0 * ( INV_T ) * ( INV_T ) * ( INV_T )
+            + p1 * 3 * ( INV_T ) * ( INV_T ) * t
+            + p2 * 3 * ( INV_T ) * t * t
+            + p3 * t * t * t
+        );
+    }
+
+    void str( void ) const noexcept
+    {
+        std::cout << "p0 ";
+        p0.str();
+        std::cout << "p1 ";
+        p1.str();
+        std::cout << "p2 ";
+        p2.str();
+        std::cout << "p3 ";
+        p3.str();
+    }
+};
+
 
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
@@ -451,59 +574,110 @@ int main( int argc, char** argv )
 
 
     //////////////////////////////////////////////////////
-    // CREATE WAYPOINTS (ID, POSITION AND TICKS ONLY)
-    std::vector<Waypoint> waypoints;
+    // CREATE WAYPOINTS
+    std::vector<Point> waypoints;
     waypoints.reserve( 4 );
-    waypoints.push_back( Waypoint(
+    waypoints.push_back( Point(
             0,  // ID
             SCALED_GRID_SIZE_IN_PIXELS * 2,
             SCALED_GRID_SIZE_IN_PIXELS * 6,
-            0,  // No z dimenion for now
-            0,  // No hoz velocity
-            -8,  // Vert velocity 8 pixels per sec upwards
-            0,  // No z dimenion for now
-            0   // ticks
+            0  // No z dimenion for now
         ) 
     );
-    waypoints.push_back( Waypoint(
+    waypoints.push_back( Point(
             1,  // ID
             SCALED_GRID_SIZE_IN_PIXELS * 8,
             SCALED_GRID_SIZE_IN_PIXELS * 1,
-            0,  // No z dimenion for now
-            8,  // Hoz velocity 8 pixels per sec right
-            0,  // No vert velocity
-            0,  // No z dimenion for now
-            0   // ticks
+            0  // No z dimenion for now
         ) 
     );
-    waypoints.push_back( Waypoint(
+    waypoints.push_back( Point(
             2,  // ID
             SCALED_GRID_SIZE_IN_PIXELS * 14,
             SCALED_GRID_SIZE_IN_PIXELS * 3,
-            0,  // No z dimenion for now
-            -8,  // Hoz velocity 8 pixels per sec left
-            0,  // No vert velocity
-            0,  // No z dimenion for now
-            0   // ticks
+            0  // No z dimenion for now
         ) 
     );
-    waypoints.push_back( Waypoint(
+    waypoints.push_back( Point(
             3,  // ID
             SCALED_GRID_SIZE_IN_PIXELS * 12,
             SCALED_GRID_SIZE_IN_PIXELS * 8,
-            0,  // No z dimenion for now
-            8,  // Hoz velocity 8 pixels per sec right
-            0,  // No vert velocity
-            0,  // No z dimenion for now
-            0   // ticks
+            0  // No z dimenion for now
         ) 
     );
+
+    
+    //////////////////////////////////////////////////////
+    // CREATE BEZIER CURVES
+    std::vector<Point> control_points;
+    control_points.reserve( 8 );
+    std::vector<CubicBezier> curves;
+    curves.reserve( 4 );
+    for( int i = 0; i < 4; i++ )
+    {
+        Point p0 = waypoints[i];
+        Point p3 = waypoints[(i + 1 ) % 4];
+
+        Point p1, p2;
+
+        float control_offset = 100.0f;
+
+        if( p3.x > p0.x )
+        {
+            if( p3.y < p0.y )
+            {
+                // NE quadrant
+                p1.x = p0.x;
+                p1.y = p0.y - control_offset;
+                p2.x = p3.x - control_offset;
+                p2.y = p3.y; 
+            }
+            else
+            {
+                // SE quadrant
+                p1.x = p0.x + control_offset;
+                p1.y = p0.y; 
+                p2.x = p3.x;
+                p2.y = p3.y - control_offset;
+            }
+        }
+        else
+        {
+            if( p3.y < p0.y )
+            {
+                // NW quadrant
+                p1.x = p0.x - control_offset;
+                p1.y = p0.y;
+                p2.x = p3.x;
+                p2.y = p3.y + control_offset; 
+            }
+            else
+            {
+                // SW quadrant
+                p1.x = p0.x;
+                p1.y = p0.y + control_offset;
+                p2.x = p3.x + control_offset;
+                p2.y = p3.y;
+            }
+        }
+
+        // Store control points
+        control_points.push_back( p1 );
+        control_points.push_back( p2 );
+
+        // Create curve
+        curves.push_back(
+            CubicBezier( p0, p1, p2, p3 )
+        );
+    }
 
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
     std::shared_ptr<MCK::GameEngRenderBlock> grid_block;
     std::shared_ptr<MCK::GameEngRenderBlock> waypoint_block;
+    std::shared_ptr<MCK::GameEngRenderBlock> control_point_block;
+    std::shared_ptr<MCK::GameEngRenderBlock> bezier_point_block;
     try
     {
         grid_block = game_eng.create_empty_render_block(
@@ -513,6 +687,14 @@ int main( int argc, char** argv )
         waypoint_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             MCK::DEFAULT_Z_VALUE - 1
+        );
+        control_point_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE - 2
+        );
+        bezier_point_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE + 1
         );
     }
     catch( std::exception &e )
@@ -564,7 +746,7 @@ int main( int argc, char** argv )
     }
 
     // Create render block, render info and text for waypoints
-    for( Waypoint &wp : waypoints )
+    for( Point &wp : waypoints )
     {
         // Create block (best effort, not likely to fail)
         wp.block = game_eng.create_empty_render_block(
@@ -600,9 +782,10 @@ int main( int argc, char** argv )
                 + std::string( ", error: ")
                 + e.what() ) );
         }
-    
+   
+        /*
         // Create text
-        for( int i = 0; i < 5; i++ )
+        for( int i = 0; i < 2; i++ )
         {
             std::string s;
             switch( i )
@@ -613,18 +796,6 @@ int main( int argc, char** argv )
 
                 case 1:
                     s = "y=" + std::to_string( wp.y );
-                    break;
-
-                case 2:
-                    s = "dx=" + std::to_string( wp.dx );
-                    break;
-
-                case 3:
-                    s = "dy=" + std::to_string( wp.dy );
-                    break;
-
-                case 4:
-                    s = "ticks=" + std::to_string( wp.ticks );
                     break;
             }
             
@@ -658,34 +829,139 @@ int main( int argc, char** argv )
                     + e.what() ) );
             }
         }
+        */
     }
 
-    // Test Square
-    try
+    // Create render block, render info and text for control points
+    for( Point &cp : control_points )
     {
-        game_eng.create_render_info(
-            blue_square_tex_id,
-            game_eng.get_prime_render_block(),
-            MCK::GameEngRenderInfo::Rect(
-                150,
-                100,
-                SCALED_SQUARE_SIZE_IN_PIXELS,
-                SCALED_SQUARE_SIZE_IN_PIXELS
-            ),
-            false,  // No clip
-            MCK::GameEngRenderInfo::Rect(),
-            0,  // No rotation
-            false,  // No flip x
-            false,  // No flip y
-            MCK::DEFAULT_Z_VALUE
-        );
+        // Create block (best effort, not likely to fail)
+        cp.block = game_eng.create_empty_render_block(
+                control_point_block,
+                MCK::DEFAULT_Z_VALUE
+            );
+
+        // Create render info
+        try
+        {
+            cp.marker = game_eng.create_render_info(
+                blue_square_tex_id,
+                cp.block,
+                MCK::GameEngRenderInfo::Rect(
+                    cp.x - SCALED_SQUARE_SIZE_IN_PIXELS / 2,
+                    cp.y - SCALED_SQUARE_SIZE_IN_PIXELS / 2,
+                    SCALED_SQUARE_SIZE_IN_PIXELS,
+                    SCALED_SQUARE_SIZE_IN_PIXELS
+                ),
+                false,  // No clip
+                MCK::GameEngRenderInfo::Rect(),
+                0,  // No rotation
+                false,  // No flip x
+                false,  // No flip y
+                MCK::DEFAULT_Z_VALUE
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create control point render info" )
+                + std::to_string( cp.id )
+                + std::string( ", error: ")
+                + e.what() ) );
+        }
+    
+        /*
+        // Create text
+        for( int i = 0; i < 2; i++ )
+        {
+            std::string s;
+            switch( i )
+            {
+                case 0:
+                    s = "x=" + std::to_string( cp.x );
+                    break;
+
+                case 1:
+                    s = "y=" + std::to_string( cp.y );
+                    break;
+            }
+            
+            cp.text.push_back( std::make_shared<MCK::ImageText>() );
+
+            try
+            {
+                cp.text.back()->init(
+                    game_eng,
+                    image_man,
+                    cp.block,
+                    TEXT_PALETTE_ID,
+                    cp.x + SCALED_SQUARE_SIZE_IN_PIXELS,
+                    cp.y + float( i - 0.5f )
+                                * SCALED_SQUARE_SIZE_IN_PIXELS,
+                    TEXT_CHARS,  // Size in chars
+                    CHAR_WIDTH_IN_PIXELS,
+                    CHAR_HEIGHT_IN_PIXELS,
+                    s,
+                    MCK::ImageText::LEFT,  // Justification
+                    CHAR_SPACING_IN_PIXELS,
+                    0,  // Default ascii set
+                    MCK::DEFAULT_Z_VALUE - 1
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create control point text" )
+                    + std::string( ", error: ")
+                    + e.what() ) );
+            }
+        }
+        */
     }
-    catch( std::exception &e )
+
+
+    /////////////////////////////////////////////
+    // PLOT EXAMPLE POINTS ON PATH
+    for( int i = 0; i < 10; i++ )
     {
-        throw( std::runtime_error(
-            std::string( "Failed to create square, error = " )
-            + e.what() ) );
+        float t = 0.1f * i;
+        for( auto &bez : curves )
+        {
+            Point p = bez.calc_point( t );
+
+            // DEBUG
+            std::cout << "Bez point t = " << t << " : "; p.str();
+
+            // Create render info
+            try
+            {
+                game_eng.create_render_info(
+                    red_square_tex_id,
+                    bezier_point_block,
+                    MCK::GameEngRenderInfo::Rect(
+                        p.x - 4,
+                        p.y - 4,
+                        8,
+                        8
+                    ),
+                    false,  // No clip
+                    MCK::GameEngRenderInfo::Rect(),
+                    0,  // No rotation
+                    false,  // No flip x
+                    false,  // No flip y
+                    MCK::DEFAULT_Z_VALUE
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create bezier point render info" )
+                    + std::string( ", error: ")
+                    + e.what() ) );
+            }
+        }
     }
+
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
