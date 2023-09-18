@@ -5,7 +5,7 @@
 //
 //  Point.h
 //
-//  Template class providing 3D coordinate data
+//  Templated class providing 3D coordinate data
 //
 //  There is no associated cpp file.
 //
@@ -35,54 +35,33 @@
 #include<cstdint>  // For uint32_t et al., if needed
 #include<type_traits>  // For is_signed
 
-/////////////////////////////////////////
-// FLOAT DATA TYPE
-// This can be integer or floating point, signed or unsigned.
-// Signed types are more efficient for calculating inter-point
-// distances
-#define MCK_POINT_TYPE float
-
-/////////////////////////////////////////
-// FLOAT DATA TYPE EQUALITY TOLERANCE
-// Maximum amount by which the x,y and z
-// dimension of two points can differ
-// for the two points to  be considered
-// equal (only used for floating point types)
-#define MCK_POINT_TYPE_EQU_TOL 1E-3;
+#include "Defs.h"
 
 namespace MCK
 {
 
-//! True if Point's data type is signed
-const bool POINT_TYPE_SIGNED = std::is_signed<MCK_POINT_TYPE>::value;
-
-//! True if Point's data type is floating point
-const bool POINT_TYPE_FLOATING_POINT
-    = std::is_floating_point<MCK_POINT_TYPE>::value;
-
+template<class T>
 class Point
 {
-    // These non-member functions require direct access to x,y,z
-    friend inline constexpr MCK_POINT_TYPE dist_sq( Point const &lhs, Point const &rhs );
-    friend inline constexpr int comp_x( Point const &lhs, Point const &rhs );
-    friend inline constexpr int comp_y( Point const &lhs, Point const &rhs );
-    friend inline constexpr int comp_z( Point const &lhs, Point const &rhs );
-
-
     public:
 
+        const bool MCK_POINT_IS_SIGNED = std::is_signed<T>::value;
+        const bool MCK_POINT_IS_FLOATING_POINT = std::is_floating_point<T>::value;
+        const size_t MCK_POINT_BITSIZE = sizeof( T ) * 8;
+
         //! Default constructor
-        constexpr Point( void ) :
-            x( MCK::DEFAULT_X_VALUE ),
-            y( MCK::DEFAULT_Y_VALUE ),
+        constexpr Point( void ) noexcept :
+            x( T( 0 ) ),
+            y( T( 0 ) ),
             z( MCK::DEFAULT_Z_VALUE )
         {}
 
         //! Destructor (non-virtual for compatibility with constexpr)
-        ~Point( void ) = default;
+        // Note: constexpr not available for destructors in C++11
+        ~Point( void ) = default;  // noexcept by default
 
         //! 2D constructor
-        constexpr Point( MCK_POINT_TYPE _x, MCK_POINT_TYPE _y ) :
+        constexpr Point( T _x, T _y ) noexcept :
             x( _x ),
             y( _y ),
             z( MCK::DEFAULT_Z_VALUE )
@@ -90,23 +69,71 @@ class Point
 
         //! 3D constructor
         constexpr Point( 
-            MCK_POINT_TYPE _x,
-            MCK_POINT_TYPE _y,
-            MCK_POINT_TYPE _z
-        ): 
+            T _x,
+            T _y,
+            uint32_t _z
+        ) noexcept: 
             x( _x ),
             y( _y ),
-            z( MCK::DEFAULT_Z_VALUE )
+            z( _z )
         {}
 
         //! Copy constructor
-        constexpr Point( const Point &other ) = default;
+        constexpr Point( const Point &other ) noexcept = default;
+
+        //! Heterogeneous copy constructor
+        template <class U>
+        constexpr Point( const Point<U> &other ) noexcept
+        {
+            this->x = T( other.get_x() );
+            this->y = T( other.get_y() );
+            this->z = other.get_z();  // Both are uint32_t
+        }
 
         //! Assignment constructor
-        constexpr Point& operator=( Point const &other ) = default;
-        
+        constexpr Point& operator=( Point const &other ) noexcept = default;
+       
+        //! Get x coord
+        constexpr T get_x( void ) const noexcept
+        {
+            return this->x;
+        }
+
+        //! Get y coord
+        constexpr T get_y( void ) const noexcept
+        {
+            return this->y;
+        }
+
+        //! Get z coord
+        constexpr uint32_t get_z( void ) const noexcept
+        {
+            return this->z;
+        }
+
+        //! Set x coord
+        constexpr void set_x( T new_x ) noexcept
+        {
+            this->x = new_x;
+        }
+
+        //! Set y coord
+        constexpr void set_y( T new_y ) noexcept
+
+        {
+            this->y = new_y;
+        }
+
+        //! Set z coord
+        constexpr void set_z( uint32_t new_z ) noexcept
+
+        {
+            this->z = new_z;
+        }
+
         //! Addition with assignment
-        constexpr Point& operator+=( Point const &other )
+        constexpr Point& operator+=( Point const &other ) noexcept
+
         {
             this->x += other.x;
             this->y += other.y;
@@ -115,7 +142,8 @@ class Point
         }
 
         //! Subtraction with assignment
-        constexpr Point& operator-=( Point const &other )
+        constexpr Point& operator-=( Point const &other ) noexcept
+
         {
             this->x -= other.x;
             this->y -= other.y;
@@ -124,147 +152,174 @@ class Point
         }
 
         //! Scalar multiplication with assignment
-        constexpr Point& operator*=( MCK_POINT_TYPE s )
+        template <typename U>
+        constexpr Point& operator*=( U s ) noexcept
+
         {
             this->x *= s;
             this->y *= s;
-            this->z *= s;
+            this->z = uint32_t( U( this->z ) * s + U( 0.5f ) );
             return *this;
         }
 
         //! Scalar division with assignment
-        constexpr Point& operator/=( MCK_POINT_TYPE s )
+        template <typename U>
+        constexpr Point& operator/=( U s ) noexcept
+
         {
             this->x /= s;
             this->y /= s;
-            this->z /= s;
+            this->z = uint32t( U( this->z ) / s + U( 0.5f ) );
             return *this;
         }
 
+        //! Compares this point to another with respect to all three dimensions
+        constexpr bool operator==( Point const &rhs ) const noexcept
+        {
+            return comp_x( *this, rhs ) == 0
+                   && comp_y( *this, rhs ) == 0
+                   && comp_z( *this, rhs ) == 0;
+        }
+
+        //! Addition operator
+        constexpr Point operator+( Point const &rhs ) const noexcept
+        {
+            Point ans( *this );
+            ans += rhs;
+            return ans;
+        }
+
+        //! Subtraction operator
+        constexpr Point operator-( Point const &rhs ) const noexcept
+        {
+            Point ans( *this );
+            ans -= rhs;
+            return ans;
+        }
+
+        //! Scalar multiplication operator (scalar on rhs)
+        template <typename U>
+        constexpr Point operator*( U s ) const noexcept
+        {
+            Point ans( *this );
+            ans *= s;
+            return ans;
+        }
+
+        //! Scalar division operator
+        template <typename U>
+        constexpr Point operator/( U s ) const noexcept
+        {
+            Point ans( *this );
+            ans /= s;
+            return ans;
+        }
+
+        ///////////////////////////////////////
+        // Static member functions
+        
+        //! Square of distance between two points in xyz space
+        template <typename U>
+        static constexpr U dist_sq( Point const &lhs, Point const &rhs ) noexcept
+        {
+#if POINT_TYPE_SIGNED
+            U ans_x = lhs.x - rhs.x;
+            U ans_y = lhs.y - rhs.y;
+#else
+            U ans_x
+                = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
+            U ans_y
+                = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
+#endif
+
+            // z is always unsigned
+            U ans_z
+                = lhs.z > rhs.z ? lhs.z - rhs.z : rhs.z - lhs.z;
+
+            return ans_x * ans_x + ans_y * ans_y + ans_z * ans_z;
+        }
+
+        //! Square of distance between two points in xy space
+        template <typename U>
+        static constexpr U dist_sq_xy( Point const &lhs, Point const &rhs ) noexcept
+        {
+#if POINT_TYPE_SIGNED
+            U ans_x = lhs.x - rhs.x;
+            U ans_y = lhs.y - rhs.y;
+#else
+            U ans_x
+                = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
+            U ans_y
+                = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
+#endif
+            return ans_x * ans_x + ans_y * ans_y;
+        }
+
+        //! Compares two points with respect to 'x' dimension
+        /*! @returns -1 if lhs.x < rhs.x, 1 if lhs.x > rhs.x, 0 otherwise
+         */
+        static constexpr int comp_x( Point const &lhs, Point const &rhs ) noexcept
+        {
+#if POINT_IS_FLOATING_POINT
+            return ( lhs.x < rhs.x - MCK_POINT_TYPE_EQ_TOL ) ?
+                   -1 : ( lhs.x > rhs.x + MCK_POINT_TYPE_EQ_TOL ) ?
+                   1 : 0;
+#else
+            return ( lhs.x < rhs.x ) ?
+                   -1 : ( lhs.x > rhs.x ) ?
+                   1 : 0;
+#endif
+        }
+
+        //! Compares two points with respect to 'y' dimension
+        /*! @returns -1 if lhs.y < rhs.y, 1 if lhs.y > rhs.y, 0 otherwise
+         */
+        static constexpr int comp_y( Point const &lhs, Point const &rhs ) noexcept
+        {
+#if POINT_TYPE_FLOATING_POINT
+            return ( lhs.y < rhs.y - MCK_POINT_TYPE_EQ_TOL ) ?
+                   -1 : ( lhs.y > rhs.y + MCK_POINT_TYPE_EQ_TOL ) ?
+                   1 : 0;
+#else
+            return ( lhs.y < rhs.y ) ?
+                   -1 : ( lhs.y > rhs.y ) ?
+                   1 : 0;
+#endif
+        }
+
+        //! Compares two points with respect to 'z' dimension
+        /*! @returns -1 if lhs.z < rhs.z, 1 if lhs.z > rhs.z, 0 otherwise
+         */
+        static constexpr int comp_z( Point const &lhs, Point const &rhs ) noexcept
+        {
+            return ( lhs.z < rhs.z ) ?
+                   -1 : ( lhs.z > rhs.z ) ?
+                   1 : 0;
+        }
+
+#if defined MCK_STD_OUT
+        //! Print x,y,z coords
+        constexpr std::string str( void ) const
+        {
+            return "(" + std::to_string( x ) + ","
+                   + std::to_string( y ) + ","
+                   + std::to_string( z ) + ")";
+        }
+        
+        //! Print x,y coords only
+        constexpr std::string str_xy( void ) const
+        {
+            return "(" + std::to_string( x ) + ","
+                   + std::to_string( y ) + ")";
+        }
+#endif
 
     protected:
 
-        MCK_POINT_TYPE x;
-        MCK_POINT_TYPE y;
-        MCK_POINT_TYPE z;
+        T x;
+        T y;
+        uint32_t z;
 };
-
-//////////////////////////////////////////////
-// NON-MEMBER METHODS RELATED TO 'Point'
-
-//! Compares two points with respect to 'x' dimension
-/*! @returns -1 if lhs.x < rhs.x, 1 if lhs.x > rhs.x, 0 otherwise
- */
-constexpr inline int comp_x( Point const &lhs, Point const &rhs )
-{
-#if POINT_TYPE_FLOATING_POINT
-    return ( lhs.x < rhs.x - MCK_POINT_TYPE_EQ_TOL ) ?
-           -1 : ( lhs.x > rhs.x - MCK_POINT_TYPE_EQ_TOL ) ?
-           1 : 0;
-#else
-    return ( lhs.x < rhs.x ) ?
-           -1 : ( lhs.x > rhs.x ) ?
-           1 : 0;
-#endif
-}
-
-//! Compares two points with respect to 'y' dimension
-/*! @returns -1 if lhs.y < rhs.y, 1 if lhs.y > rhs.y, 0 otherwise
- */
-constexpr inline int comp_y( Point const &lhs, Point const &rhs )
-{
-#if POINT_TYPE_FLOATING_POINT
-    return ( lhs.y < rhs.y - MCK_POINT_TYPE_EQ_TOL ) ?
-           -1 : ( lhs.y > rhs.y - MCK_POINT_TYPE_EQ_TOL ) ?
-           1 : 0;
-#else
-    return ( lhs.y < rhs.y ) ?
-           -1 : ( lhs.y > rhs.y ) ?
-           1 : 0;
-#endif
-}
-
-//! Compares two points with respect to 'z' dimension
-/*! @returns -1 if lhs.z < rhs.z, 1 if lhs.z > rhs.z, 0 otherwise
- */
-constexpr inline int comp_z( Point const &lhs, Point const &rhs )
-{
-#if POINT_TYPE_FLOATING_POINT
-    return ( lhs.z < rhs.z - MCK_POINT_TYPE_EQ_TOL ) ?
-           -1 : ( lhs.z > rhs.z - MCK_POINT_TYPE_EQ_TOL ) ?
-           1 : 0;
-#else
-    return ( lhs.z < rhs.z ) ?
-           -1 : ( lhs.z > rhs.z ) ?
-           1 : 0;
-#endif
-}
-
-//! Compares two points with respect to all three dimensions
-constexpr inline bool operator==( Point const &lhs, Point const &rhs )
-{
-    return comp_x( lhs, rhs ) == 0
-           && comp_y( lhs, rhs ) == 0
-           && comp_z( lhs, rhs ) == 0;
-}
-
-//! Addition operator
-inline constexpr Point operator+( Point const &lhs, Point const &rhs )
-{
-    Point ans( lhs );
-    ans += rhs;
-    return ans;
-}
-
-//! Subtraction operator
-inline constexpr Point operator-( Point const &lhs, Point const &rhs )
-{
-    Point ans( lhs );
-    ans -= rhs;
-    return ans;
-}
-
-//! Scalar multiplication operator (scalar on rhs)
-inline constexpr Point operator*( Point const &lhs, float s )
-{
-    Point ans( lhs );
-    ans *= s;
-    return ans;
-}
-
-//! Scalar multiplication operator (scalar on lhs)
-inline constexpr Point operator*( float s, Point const &rhs )
-{
-    Point ans( rhs );
-    ans *= s;
-    return ans;
-}
-
-//! Scalar division operator
-inline constexpr Point operator/( Point const &lhs, float s )
-{
-    Point ans( lhs );
-    ans /= s;
-    return ans;
-}
-
-//! Square of distance between points
-inline constexpr MCK_POINT_TYPE dist_sq( Point const &lhs, Point const &rhs )
-{
-#if POINT_TYPE_SIGNED
-    MCK_POINT_TYPE ans_x = lhs.x - rhs.x;
-    MCK_POINT_TYPE ans_y = lhs.y - rhs.y;
-    MCK_POINT_TYPE ans_z = lhs.z - rhs.z;
-#else
-    MCK_POINT_TYPE ans_x
-        = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
-    MCK_POINT_TYPE ans_y
-        = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
-    MCK_POINT_TYPE ans_z
-        = lhs.z > rhs.z ? lhs.z - rhs.z : rhs.z - lhs.z;
-#endif
-    return ans_x * ans_x + ans_y * ans_y + ans_z * ans_z;
-}
 
 }  // End of namespace MCK
 

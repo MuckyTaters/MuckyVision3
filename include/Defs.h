@@ -42,6 +42,10 @@
 #define MCK_PI 3.14127f
 #define MCK_TWO_PI 6.28254f
 #define MCK_ONE_OVER_ROOT_TWO 0.707106f
+    
+//! Floating point equality tolerance (in decimal places)  for Point classes
+#define MCK_POINT_EQ_TOL 1E-6
+
 
 namespace MCK
 {
@@ -247,12 +251,6 @@ namespace MCK
 
     //! Calculate envelope value every 'n' samples, where 'n' is this value + 1 (and 'n' must be power of 2)
     const uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;
-
-    //! Default x coord value
-    const uint32_t DEFAULT_X_VALUE = 0;
-    
-    //! Default y coord value
-    const uint32_t DEFAULT_Y_VALUE = 0;
     
     //! Minimum z value (determines within-block render order)
     const uint32_t MIN_Z_VALUE = 0x0;
