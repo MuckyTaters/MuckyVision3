@@ -45,15 +45,15 @@ class Point
 {
     public:
 
-        const bool MCK_POINT_IS_SIGNED = std::is_signed<T>::value;
-        const bool MCK_POINT_IS_FLOATING_POINT = std::is_floating_point<T>::value;
-        const size_t MCK_POINT_BITSIZE = sizeof( T ) * 8;
+        static const bool MCK_POINT_IS_SIGNED = std::is_signed<T>::value;
+        static const bool MCK_POINT_IS_FLOATING_POINT = std::is_floating_point<T>::value;
+        static const size_t MCK_POINT_BITSIZE = sizeof( T ) * 8;
 
         //! Default constructor
         constexpr Point( void ) noexcept :
             x( T( 0 ) ),
             y( T( 0 ) ),
-            z( MCK::DEFAULT_Z_VALUE )
+            z( T( 0 ) )
         {}
 
         //! Destructor (non-virtual for compatibility with constexpr)
@@ -64,7 +64,7 @@ class Point
         constexpr Point( T _x, T _y ) noexcept :
             x( _x ),
             y( _y ),
-            z( MCK::DEFAULT_Z_VALUE )
+            z( 0 )
         {}
 
         //! 3D constructor
@@ -82,12 +82,13 @@ class Point
         constexpr Point( const Point &other ) noexcept = default;
 
         //! Heterogeneous copy constructor
+        /*! Made explicit to prevent unintended conversion */
         template <class U>
-        constexpr Point( const Point<U> &other ) noexcept
+        explicit constexpr Point( const Point<U> &other ) noexcept
         {
             this->x = T( other.get_x() );
             this->y = T( other.get_y() );
-            this->z = other.get_z();  // Both are uint32_t
+            this->z = T( other.get_z() );
         }
 
         //! Assignment constructor
@@ -106,7 +107,7 @@ class Point
         }
 
         //! Get z coord
-        constexpr uint32_t get_z( void ) const noexcept
+        constexpr T get_z( void ) const noexcept
         {
             return this->z;
         }
@@ -125,7 +126,7 @@ class Point
         }
 
         //! Set z coord
-        constexpr void set_z( uint32_t new_z ) noexcept
+        constexpr void set_z( T new_z ) noexcept
 
         {
             this->z = new_z;
@@ -154,22 +155,20 @@ class Point
         //! Scalar multiplication with assignment
         template <typename U>
         constexpr Point& operator*=( U s ) noexcept
-
         {
             this->x *= s;
             this->y *= s;
-            this->z = uint32_t( U( this->z ) * s + U( 0.5f ) );
+            this->z *= s;
             return *this;
         }
 
         //! Scalar division with assignment
         template <typename U>
         constexpr Point& operator/=( U s ) noexcept
-
         {
             this->x /= s;
             this->y /= s;
-            this->z = uint32t( U( this->z ) / s + U( 0.5f ) );
+            this->z /= s;
             return *this;
         }
 
@@ -225,16 +224,15 @@ class Point
 #if POINT_TYPE_SIGNED
             U ans_x = lhs.x - rhs.x;
             U ans_y = lhs.y - rhs.y;
+            U ans_z = lhs.z - rhs.z;
 #else
             U ans_x
                 = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
             U ans_y
                 = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
-#endif
-
-            // z is always unsigned
             U ans_z
                 = lhs.z > rhs.z ? lhs.z - rhs.z : rhs.z - lhs.z;
+#endif
 
             return ans_x * ans_x + ans_y * ans_y + ans_z * ans_z;
         }
@@ -292,10 +290,16 @@ class Point
          */
         static constexpr int comp_z( Point const &lhs, Point const &rhs ) noexcept
         {
+#if POINT_TYPE_FLOATING_POINT
+            return ( lhs.y < rhs.y - MCK_POINT_TYPE_EQ_TOL ) ?
+                   -1 : ( lhs.y > rhs.y + MCK_POINT_TYPE_EQ_TOL ) ?
+                   1 : 0;
+#else
             return ( lhs.z < rhs.z ) ?
                    -1 : ( lhs.z > rhs.z ) ?
                    1 : 0;
         }
+#endif
 
 #if defined MCK_STD_OUT
         //! Print x,y,z coords
@@ -318,7 +322,7 @@ class Point
 
         T x;
         T y;
-        uint32_t z;
+        T z;
 };
 
 }  // End of namespace MCK
