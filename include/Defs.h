@@ -83,53 +83,53 @@ namespace MCK
     /*! Note US spelling of GRAY used here
      *  These are separate values rather than an enumeration
      *  so that it is easier to use them as integers*/
-    static const uint8_t COL_BLACK = 0;
-    static const uint8_t COL_BLACK_SEMI_TRANS = 1;
-    static const uint8_t COL_DARK_GRAY = 2;
-    static const uint8_t COL_DARK_RED_SEMI_TRANS = 3;
-    static const uint8_t COL_TRANSPARENT = 4;
-    static const uint8_t COL_WHITE = 5;
-    static const uint8_t COL_LIGHT_GRAY = 6;
-    static const uint8_t COL_MID_GRAY = 7;
-    static const uint8_t COL_V_DARK_GRAY = 8;
-    static const uint8_t COL_DARK_RED = 9;
-    static const uint8_t COL_DARK_GREEN = 10;
-    static const uint8_t COL_DARK_BLUE = 11;
-    static const uint8_t COL_PINK = 12;
-    static const uint8_t COL_PASTEL_GREEN = 13;
-    static const uint8_t COL_PASTEL_BLUE = 14;
-    static const uint8_t COL_PASTEL_YELLOW = 15;
-    static const uint8_t COL_RED = 16;
-    static const uint8_t COL_GREEN = 17;
-    static const uint8_t COL_BLUE = 18;
-    static const uint8_t COL_YELLOW = 19;
-    static const uint8_t COL_CYAN = 20;
-    static const uint8_t COL_MAGENTA = 21;
-    static const uint8_t COL_ORANGE = 22;
-    static const uint8_t COL_LIME = 23;
-    static const uint8_t COL_PURPLE = 24;
-    static const uint8_t COL_FOREST_GREEN = 25;
-    static const uint8_t COL_FIELD_GRAY = 26;
-    static const uint8_t COL_ROTTING_PURPLE = 27;
-    static const uint8_t COL_FLESHTONE = 28;
-    static const uint8_t COL_SAND = 29;
-    static const uint8_t COL_MID_BROWN = 30;
-    static const uint8_t COL_DARK_BROWN = 31;
-    static const uint8_t TOTAL_CORE_COLORS = 32;
+    const uint8_t COL_BLACK = 0;
+    const uint8_t COL_BLACK_SEMI_TRANS = 1;
+    const uint8_t COL_DARK_GRAY = 2;
+    const uint8_t COL_DARK_RED_SEMI_TRANS = 3;
+    const uint8_t COL_TRANSPARENT = 4;
+    const uint8_t COL_WHITE = 5;
+    const uint8_t COL_LIGHT_GRAY = 6;
+    const uint8_t COL_MID_GRAY = 7;
+    const uint8_t COL_V_DARK_GRAY = 8;
+    const uint8_t COL_DARK_RED = 9;
+    const uint8_t COL_DARK_GREEN = 10;
+    const uint8_t COL_DARK_BLUE = 11;
+    const uint8_t COL_PINK = 12;
+    const uint8_t COL_PASTEL_GREEN = 13;
+    const uint8_t COL_PASTEL_BLUE = 14;
+    const uint8_t COL_PASTEL_YELLOW = 15;
+    const uint8_t COL_RED = 16;
+    const uint8_t COL_GREEN = 17;
+    const uint8_t COL_BLUE = 18;
+    const uint8_t COL_YELLOW = 19;
+    const uint8_t COL_CYAN = 20;
+    const uint8_t COL_MAGENTA = 21;
+    const uint8_t COL_ORANGE = 22;
+    const uint8_t COL_LIME = 23;
+    const uint8_t COL_PURPLE = 24;
+    const uint8_t COL_FOREST_GREEN = 25;
+    const uint8_t COL_FIELD_GRAY = 26;
+    const uint8_t COL_ROTTING_PURPLE = 27;
+    const uint8_t COL_FLESHTONE = 28;
+    const uint8_t COL_SAND = 29;
+    const uint8_t COL_MID_BROWN = 30;
+    const uint8_t COL_DARK_BROWN = 31;
+    const uint8_t TOTAL_CORE_COLORS = 32;
     
-    static const uint8_t COL_INVALID = 255;
+    const uint8_t COL_INVALID = 255;
 
     //! ASCII value of blank character in ImageText
-    static const uint8_t BLANK_CHAR = 32;
+    const uint8_t BLANK_CHAR = 32;
 
     //! Height and width (in pixels) of blank textures
-    static const uint8_t BLANK_TEX_SIZE = 8;
+    const uint8_t BLANK_TEX_SIZE = 8;
 
     //! Maximum character spacing, in pixels (max is 255)
-    static const uint8_t MAX_CHAR_SPACING = 32;
+    const uint8_t MAX_CHAR_SPACING = 32;
 
     //! Maximum line spacing, in pixels (max is 255)
-    static const uint8_t MAX_LINE_SPACING = 64;
+    const uint8_t MAX_LINE_SPACING = 64;
 
     ////////////////////////////////
     // AUDIO
@@ -159,22 +159,22 @@ namespace MCK
 #endif
 
     //! This is calculated at compile time, do not alter
-    static const size_t AUDIO_NUM_VOICES_MASK
+    const size_t AUDIO_NUM_VOICES_MASK
         = ( uint8_t( 1 ) << MCK_NUM_VOICES ) - 1;
    
     //! First choice of audio format
-    static const int AUDIO_WANT_FORMAT = 32784;  // == AUDIO_S16SYS ( SDL macro for signed short integer)
+    const int AUDIO_WANT_FORMAT = 32784;  // == AUDIO_S16SYS ( SDL macro for signed short integer)
 
     //! First choice of audio sample rate
-    static const int AUDIO_WANT_SAMPLE_RATE = 44100;
+    const int AUDIO_WANT_SAMPLE_RATE = 44100;
 
     //! First choice for number of system audio channels
     /* This should be set to 1 (mono), as MuckyVision v3
      * does not currently support stereo. */
-    static const int AUDIO_WANT_CHANNELS = 1;
+    const int AUDIO_WANT_CHANNELS = 1;
 
     //! First choice of audio buffer size (choice is usually linked to audio format)
-    static const int AUDIO_WANT_BUFFER_SIZE = 2048;
+    const int AUDIO_WANT_BUFFER_SIZE = 2048;
 
     //! Size (in game ticks) of ring buffer in GameEngAudio
     /* This buffer enables GameEngAudio to take instructions
@@ -184,18 +184,18 @@ namespace MCK
      * to be comfortably larger than the maximum expected gap
      * (in milliseconds) between audio callbacks.
      * ** This number must be power of 2. **/
-    static const size_t AUDIO_RING_BUFFER_SIZE = 0X200;
+    const size_t AUDIO_RING_BUFFER_SIZE = 0X200;
 
     //! This is calculated at compile time, do not alter
-    static const size_t AUDIO_RING_BUFFER_SIZE_MASK
+    const size_t AUDIO_RING_BUFFER_SIZE_MASK
         = AUDIO_RING_BUFFER_SIZE - 1;
   
     //! Minimum time lag (in ticks, i.e. milliseconds) between ring buffer input and output
-    static const size_t AUDIO_RING_BUFFER_LAG_IN_TICKS = 2;
+    const size_t AUDIO_RING_BUFFER_LAG_IN_TICKS = 2;
 
 
     //! Default volume for individual channels (0x00 = mute, 0xFF = max)
-    static const uint8_t AUDIO_DEFAULT_CHANNEL_VOLUME = 0x80;
+    const uint8_t AUDIO_DEFAULT_CHANNEL_VOLUME = 0x80;
 
     enum class AudioDataType
     {
@@ -228,7 +228,7 @@ namespace MCK
     };
 
     //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
-    const static int VOICE_SYNTH_FREQ_A4 = 440;
+    const int VOICE_SYNTH_FREQ_A4 = 440;
 
     //! Max vibrato magnitude equals max voice magnitude divided by this number
     /* E.g. a value of 4 means max vibrato magnitude is 25%
@@ -237,25 +237,31 @@ namespace MCK
      * should be set to no more than 75%, otherwise clipping 
      * may occur.
      */
-    // const static int VOICE_SYNTH_MAX_VIB_PROPORTION = 4;
+    // const int VOICE_SYNTH_MAX_VIB_PROPORTION = 4;
 
     //! These values define the bit content of the commands send to VoiceSynth
-    const static uint8_t VOICE_SYNTH_PITCH_MASK = 0x3F;
-    const static uint8_t VOICE_SYNTH_PITCH_LSHIFT = 0;
-    const static uint8_t VOICE_SYNTH_DURATION_MASK = 0xC0;
-    const static uint8_t VOICE_SYNTH_DURATION_LSHIFT = 6;
+    const uint8_t VOICE_SYNTH_PITCH_MASK = 0x3F;
+    const uint8_t VOICE_SYNTH_PITCH_LSHIFT = 0;
+    const uint8_t VOICE_SYNTH_DURATION_MASK = 0xC0;
+    const uint8_t VOICE_SYNTH_DURATION_LSHIFT = 6;
 
     //! Calculate envelope value every 'n' samples, where 'n' is this value + 1 (and 'n' must be power of 2)
-    const static uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;
+    const uint64_t VOICE_SYNTH_ENVELOPE_INTERVAL_MASK = 0x0F;
 
+    //! Default x coord value
+    const uint32_t DEFAULT_X_VALUE = 0;
+    
+    //! Default y coord value
+    const uint32_t DEFAULT_Y_VALUE = 0;
+    
     //! Minimum z value (determines within-block render order)
-    const static uint32_t MIN_Z_VALUE = 0x0;
+    const uint32_t MIN_Z_VALUE = 0x0;
 
     //! Default z value (determines within-block render order)
-    const static uint32_t DEFAULT_Z_VALUE = 0x80000000;
+    const uint32_t DEFAULT_Z_VALUE = 0x80000000;
     
     //! Maximum z value (determines within-block render order)
-    const static uint32_t MAX_Z_VALUE = 0xFFFFFFFF;
+    const uint32_t MAX_Z_VALUE = 0xFFFFFFFF;
 
 }  // End of namespace MCK
 
