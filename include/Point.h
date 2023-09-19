@@ -5,9 +5,25 @@
 //
 //  Point.h
 //
-//  Templated class providing 3D coordinate data
+//  Class template for 3D coordinate data
 //
 //  There is no associated cpp file.
+//
+//  This class is suitable for use in 
+//  constant expressions
+//
+//  WARNING: This class uses template
+//  metaprogramming techniques and has
+//  only been tested with sensibly
+//  selected template parameters.
+//  It is possible that no-so-sensible
+//  choices will succesfully compile
+//  but produce unexpected (possibly
+//  even undefined) behaviour at
+//  runtime. I will endevour to produce
+//  a list of safe choices for all
+//  template parameters in this class
+//  when time permits.
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -36,6 +52,8 @@
 #include<type_traits>  // For is_signed
 
 #include "Defs.h"
+
+using std::is_signed;
 
 namespace MCK
 {
@@ -216,90 +234,125 @@ class Point
 
         ///////////////////////////////////////
         // Static member functions
-        
-        //! Square of distance between two points in xyz space
-        template <typename U>
+
+        //! Square of distance between two points in xyz space (signed)
+        template<typename U = T, typename std::enable_if<std::is_signed<U>::value, bool>::type = true>
         static constexpr U dist_sq( Point const &lhs, Point const &rhs ) noexcept
         {
-#if POINT_TYPE_SIGNED
+            // Optimised for signed
             U ans_x = lhs.x - rhs.x;
             U ans_y = lhs.y - rhs.y;
             U ans_z = lhs.z - rhs.z;
-#else
+            
+            return ans_x * ans_x + ans_y * ans_y + ans_z * ans_z;
+        }
+
+        //! Square of distance between two points in xyz space (unsigned)
+        template<typename U = T, typename std::enable_if<std::is_unsigned<U>::value, bool>::type = true>
+        static constexpr U dist_sq( Point const &lhs, Point const &rhs ) noexcept
+        {
+            // Safe for unsigned
             U ans_x
                 = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
             U ans_y
                 = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
             U ans_z
                 = lhs.z > rhs.z ? lhs.z - rhs.z : rhs.z - lhs.z;
-#endif
 
             return ans_x * ans_x + ans_y * ans_y + ans_z * ans_z;
         }
 
-        //! Square of distance between two points in xy space
-        template <typename U>
+        //! Square of distance between two points in xy space (signed)
+        template<typename U = T, typename std::enable_if<std::is_signed<U>::value, bool>::type = true>
         static constexpr U dist_sq_xy( Point const &lhs, Point const &rhs ) noexcept
         {
-#if POINT_TYPE_SIGNED
+            // Optimised for signed
             U ans_x = lhs.x - rhs.x;
             U ans_y = lhs.y - rhs.y;
-#else
+            
+            return ans_x * ans_x + ans_y * ans_y;
+        }
+        
+        //! Square of distance between two points in xy space (unsigned)
+        template<typename U = T, typename std::enable_if<std::is_unsigned<U>::value, bool>::type = true>
+        static constexpr U dist_sq_xy( Point const &lhs, Point const &rhs ) noexcept
+        {
+            // Safe for unsigned
             U ans_x
                 = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
             U ans_y
                 = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
-#endif
+
             return ans_x * ans_x + ans_y * ans_y;
         }
 
-        //! Compares two points with respect to 'x' dimension
+        //! Compares two points with respect to 'x' dimension (floating point)
         /*! @returns -1 if lhs.x < rhs.x, 1 if lhs.x > rhs.x, 0 otherwise
          */
+        template<typename U = T, typename std::enable_if<std::is_floating_point<U>::value, bool>::type = true>
         static constexpr int comp_x( Point const &lhs, Point const &rhs ) noexcept
         {
-#if POINT_IS_FLOATING_POINT
-            return ( lhs.x < rhs.x - MCK_POINT_TYPE_EQ_TOL ) ?
-                   -1 : ( lhs.x > rhs.x + MCK_POINT_TYPE_EQ_TOL ) ?
+            // Safe for floating point
+            return ( lhs.x < rhs.x - MCK_POINT_EQ_TOL ) ?
+                   -1 : ( lhs.x > rhs.x + MCK_POINT_EQ_TOL ) ?
                    1 : 0;
-#else
+        }
+
+        //! Compares two points with respect to 'x' dimension (integer)
+        /*! @returns -1 if lhs.x < rhs.x, 1 if lhs.x > rhs.x, 0 otherwise
+         */
+        template<typename U = T, typename std::enable_if<std::is_integral<U>::value, bool>::type = true>
+        static constexpr int comp_x( Point const &lhs, Point const &rhs ) noexcept
+        {
+            // Optimised for integer
             return ( lhs.x < rhs.x ) ?
                    -1 : ( lhs.x > rhs.x ) ?
                    1 : 0;
-#endif
         }
 
-        //! Compares two points with respect to 'y' dimension
+        //! Compares two points with respect to 'y' dimension (floating point)
         /*! @returns -1 if lhs.y < rhs.y, 1 if lhs.y > rhs.y, 0 otherwise
          */
+        template<typename U = T, typename std::enable_if<std::is_floating_point<U>::value, bool>::type = true>
         static constexpr int comp_y( Point const &lhs, Point const &rhs ) noexcept
         {
-#if POINT_TYPE_FLOATING_POINT
-            return ( lhs.y < rhs.y - MCK_POINT_TYPE_EQ_TOL ) ?
-                   -1 : ( lhs.y > rhs.y + MCK_POINT_TYPE_EQ_TOL ) ?
+            return ( lhs.y < rhs.y - MCK_POINT_EQ_TOL ) ?
+                   -1 : ( lhs.y > rhs.y + MCK_POINT_EQ_TOL ) ?
                    1 : 0;
-#else
+        }
+
+        //! Compares two points with respect to 'y' dimension (integer)
+        /*! @returns -1 if lhs.y < rhs.y, 1 if lhs.y > rhs.y, 0 otherwise
+         */
+        template<typename U = T, typename std::enable_if<std::is_integral<U>::value, bool>::type = true>
+        static constexpr int comp_y( Point const &lhs, Point const &rhs ) noexcept
+        {
             return ( lhs.y < rhs.y ) ?
                    -1 : ( lhs.y > rhs.y ) ?
                    1 : 0;
-#endif
         }
 
-        //! Compares two points with respect to 'z' dimension
+        //! Compares two points with respect to 'z' dimension (floating point)
         /*! @returns -1 if lhs.z < rhs.z, 1 if lhs.z > rhs.z, 0 otherwise
          */
+        template<typename U = T, typename std::enable_if<std::is_floating_point<U>::value, bool>::type = true>
         static constexpr int comp_z( Point const &lhs, Point const &rhs ) noexcept
         {
-#if POINT_TYPE_FLOATING_POINT
-            return ( lhs.y < rhs.y - MCK_POINT_TYPE_EQ_TOL ) ?
-                   -1 : ( lhs.y > rhs.y + MCK_POINT_TYPE_EQ_TOL ) ?
+            return ( lhs.y < rhs.y - MCK_POINT_EQ_TOL ) ?
+                   -1 : ( lhs.y > rhs.y + MCK_POINT_EQ_TOL ) ?
                    1 : 0;
-#else
+        }
+
+        //! Compares two points with respect to 'z' dimension (integer)
+        /*! @returns -1 if lhs.z < rhs.z, 1 if lhs.z > rhs.z, 0 otherwise
+         */
+        template<typename U = T, typename std::enable_if<std::is_integral<U>::value, bool>::type = true>
+        static constexpr int comp_z( Point const &lhs, Point const &rhs ) noexcept
+        {
             return ( lhs.z < rhs.z ) ?
                    -1 : ( lhs.z > rhs.z ) ?
                    1 : 0;
         }
-#endif
 
 #if defined MCK_STD_OUT
         //! Print x,y,z coords
