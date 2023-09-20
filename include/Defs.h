@@ -244,6 +244,18 @@ namespace MCK
         CUBIC
     };
 
+    //! Provides reflection to line segment instances
+    /*! Do not alter this enumeration unless you are
+     *  creating/removing a line segment class and know
+     *  what you are doing.
+     */
+    enum class LineSegmentType
+    {
+        BASE,
+        FIXED,  // The end points of the segment are fixed
+        DYNAMIC  // The end points of the segment can move
+    };
+
     //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
     const int VOICE_SYNTH_FREQ_A4 = 440;
 
