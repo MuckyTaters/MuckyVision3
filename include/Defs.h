@@ -231,6 +231,19 @@ namespace MCK
         BLOCK
     };
 
+    //! Provides reflection to Bezier curve instances
+    /*! Do not alter this enumeration unless you are
+     *  creating/removing a Bezier curve class and know
+     *  what you are doing.
+     */
+    enum class BezierCurveType
+    {
+        BASE,
+        LINEAR,
+        QUAD,
+        CUBIC
+    };
+
     //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
     const int VOICE_SYNTH_FREQ_A4 = 440;
 
