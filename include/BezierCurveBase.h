@@ -44,6 +44,12 @@ class BezierCurveBase
 {
     public:
 
+        //! Minimum value of curve parameter
+        static const int PARAM_MIN = 0;
+        
+        //! Maximum value of curve parameter
+        static const int PARAM_MAX = 1;
+
         //! Default constructor
         BezierCurveBase( void ) noexcept
         {

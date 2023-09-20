@@ -41,12 +41,22 @@
 namespace MCK
 {
 
+// Explainer: this template definition ensures that points returned
+// by methods of this class are of the same data type 'T' as those
+// used to define the curve 'U<T>' on which the segment is based.
 template<template<class> class U, class T>
 class LineSegmentBase
 {
     public:
 
         //! Constructor
+        /* @param _curve: Curve (e.g. Bezier) that defines shape of line
+         * Note: The curve is not passed by ref so that r-values
+         *       may be supplied. Also, as each line segment
+         *       typically has a unique curve associated with it,
+         *       there is little benefit to supplying the curve
+         *       as a shared pointer.
+         */
         LineSegmentBase( U<T> _curve )
         {
             std::swap( this->curve, _curve );
