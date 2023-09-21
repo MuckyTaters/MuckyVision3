@@ -182,6 +182,8 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
 
         //! Get position on line by distance measured from the starting end.
         /*! @param arc_len: Arc length, i.e. distance along the line from the starting end
+            Note: Will throw an exception if arc_len is negative
+                  or exceeds the length of the segment
          */
         virtual T get_point_by_arc_len( double arc_len ) const
         {
@@ -198,11 +200,70 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
                 ) );
             }
 
-            // TODO...
+            // Get the two stored points/arc length pairs
+            // whose arc length is closest to the desired arc length
+            bool p1_valid, p2_valid;
+            T p1, p2;
+            double arc_len_1, arc_len_2;
+            
+            // Get iterator for p2 using 'lower_bound' method
+            auto it = this->points_by_arc_len.lower_bound( arc_len );
+            if( it != this->points_by_arc_len.end() )
+            {
+                p2_valid = true;
+                arc_len_2 = it->first;
+                p2 = it->second;
+            }
+            else
+            {
+                p2_valid = false;
+            }
+            
+            if( it != points_by_arc_len.begin() )
+            {
+                // Get iterator for p1 using 'upper_bound' method
+                it--;
+                p1_valid = true;
+                arc_len_1 = it->first;
+                p1 = it->second;
+            }
+            else
+            {
+                p1_valid = false;
+            }
 
-            // Temporary code
-            T ans;
-            return ans; 
+            // If either point invalid, throw
+            if( !p1_valid || !p2_valid )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot get point by arc length " )
+                    + std::string( "for fixed line segment as arc " )
+                    + std::string( "length " )
+                    + std::to_string( arc_len )
+                    + std::string( " is out-of-range." )
+                    
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            // If arc_len_1 and arc_len_2 are tolerably identical,
+            // just return either point, say, p1
+            // This prevents a division by zero error
+            const double DENOM = fabs( arc_len_1 - arc_len_2 );
+            if( DENOM < MCK_POINT_EQ_TOL )
+            {
+                return p1;
+            }
+
+            // Interpolate between p1 and p2,
+            // in proportion to arc length,
+            // and return result
+            const double RATIO 
+                = fabs( arc_len_1 - arc_len ) / DENOM;
+            return p1 * ( 1.0f - RATIO ) + p2 * RATIO;
         }
 
         //! Get maximum (straight line) distance between sample points, set at initialization
