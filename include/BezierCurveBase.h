@@ -34,6 +34,13 @@
 #ifndef MCK_BEZ_CURVE_BASE_H
 #define MCK_BEZ_CURVE_BASE_H
 
+#if defined MCK_STD_OUT
+#include <string>
+#endif
+
+#include <vector>
+#include <stdexcept>  // For exceptions
+
 #include "Defs.h"
 
 namespace MCK
@@ -79,6 +86,31 @@ class BezierCurveBase
             return this->type;
         }
 
+        //! Get read only version of control point
+        /*! This will throw exception if 'n' is out-of-range */
+        const T& get_control_point( size_t n ) const
+        {
+            if( n >= this->control_points.size() )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot get control point as n = " )
+                    + std::to_string( n )
+                    + std::string( " is out-of-range." )
+#else
+                    ""
+#endif
+                ) );
+            }
+            
+            return this->control_points[n];
+        }
+
+        //! Get number of control points
+        size_t get_num_of_control_points( void ) const noexcept
+        {
+            return control_points.size();
+        }
 
     protected:
 

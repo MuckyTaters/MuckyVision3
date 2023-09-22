@@ -35,6 +35,8 @@
 #include<cstdint>  // For uint32_t et al.
 #include "stddef.h" // For 'size_t' guaranteed in global namespace
 
+#include "Version.h" // To propagate this along with Defs.h
+
 // Defines data type used for object IDs
 #define MCK_IMG_ID_TYPE uint32_t
 #define MCK_PAL_ID_TYPE uint32_t

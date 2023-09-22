@@ -37,6 +37,11 @@
 #ifndef MCK_LINE_SEG_FIXED_H
 #define MCK_LINE_SEG_FIXED_H
 
+#if defined MCK_STD_OUT
+#include <string>
+#include <iostream>
+#endif
+
 #include <cmath>  // For sqrt
 #include <stdexcept>  // For exceptions
 #include <map>  // For map
@@ -202,7 +207,6 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
 
             // Get the two stored points/arc length pairs
             // whose arc length is closest to the desired arc length
-            bool p1_valid, p2_valid;
             T p1, p2;
             double arc_len_1, arc_len_2;
             
@@ -210,43 +214,50 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
             auto it = this->points_by_arc_len.lower_bound( arc_len );
             if( it != this->points_by_arc_len.end() )
             {
-                p2_valid = true;
                 arc_len_2 = it->first;
                 p2 = it->second;
             }
             else
             {
-                p2_valid = false;
+                // If result invalid (i.e. arc_len > length of line)
+                // just return the last point on the line
+                auto it2 = this->points_by_arc_len.rbegin();
+                if( it2 != this->points_by_arc_len.rend() )
+                {
+                    return it2->second;
+                }
+                else
+                {
+                    // If even last point invalid, throw
+                    throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                        std::string( "Cannot get point on fixed " )
+                        + std::string( "line segment at arc length " )
+                        + std::to_string( arc_len )
+                        
+#else
+                        ""
+#endif
+                    ) );
+                }
             }
             
-            if( it != points_by_arc_len.begin() )
+            // Try to get preceding point by
+            // decrementing iterator
+            if( it != this->points_by_arc_len.end()
+                && it != points_by_arc_len.begin()
+            )
             {
                 // Get iterator for p1 using 'upper_bound' method
                 it--;
-                p1_valid = true;
                 arc_len_1 = it->first;
                 p1 = it->second;
             }
             else
             {
-                p1_valid = false;
-            }
-
-            // If either point invalid, throw
-            if( !p1_valid || !p2_valid )
-            {
-                throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                    std::string( "Cannot get point by arc length " )
-                    + std::string( "for fixed line segment as arc " )
-                    + std::string( "length " )
-                    + std::to_string( arc_len )
-                    + std::string( " is out-of-range." )
-                    
-#else
-                    ""
-#endif
-                ) );
+                // If p2 is first point on curve, 
+                // just return p2
+                return p2;
             }
 
             // If arc_len_1 and arc_len_2 are tolerably identical,
@@ -295,6 +306,7 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
             }
         }
 #endif
+        
 
     protected:
 

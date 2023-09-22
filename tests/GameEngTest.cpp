@@ -30,6 +30,12 @@
 
 #include "GameEng.h"
 
+// DEBUG
+#include "Point.h"
+#include "BezierCurveLinear.h"
+#include "BezierCurveCubic.h"
+#include "LineSegmentFixed.h"
+
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )

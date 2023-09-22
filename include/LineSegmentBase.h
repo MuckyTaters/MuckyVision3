@@ -82,7 +82,16 @@ class LineSegmentBase
         /*! @param arc_len: Arc length, i.e. distance along the line from the starting end
          */
         virtual T get_point_by_arc_len( double arc_len ) const = 0;
-        
+       
+        //! Get read-only version curve on which line segment is based.
+        virtual const U<T>& get_curve( void ) const noexcept
+        {
+            // Don't pass by ref as this curve instance
+            // must NOT be changed once the the line segment
+            // is initialized.
+            return this->curve;
+        }
+
 
     protected:
 

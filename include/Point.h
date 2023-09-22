@@ -53,6 +53,10 @@
 
 #include "Defs.h"
 
+#if defined MCK_STD_OUT
+#include <string>
+#endif
+
 using std::is_signed;
 
 namespace MCK
