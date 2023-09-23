@@ -28,6 +28,8 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
+#include <iostream>
+
 #include "Point.h"
 #include "BezierCurveCubic.h"
 #include "LineSegmentFixed.h"
@@ -36,15 +38,65 @@
 #include "ImageText.h"
 #include "Console.h"
 
+/////////////////////////////////////////////
+// DEMO PARAMETERS
+// (global for convenience, as only a short program)
+
+// Define window size (these can be changed to any sensible value)
+const int WINDOW_WIDTH_IN_PIXELS = 640;
+const int WINDOW_HEIGHT_IN_PIXELS = 360;
+
+// Demo specific parameters
+const size_t NUM_WAYPOINTS = 500;
+const int BORDER_X = 0;  // 30;
+const float X_MIN = float( BORDER_X );
+const float X_MAX = float( WINDOW_WIDTH_IN_PIXELS - BORDER_X );
+const int X_SPAN = int( X_MAX - X_MIN );
+const int BORDER_Y = 0;  // 20;
+const float Y_MIN = float( BORDER_Y );
+const float Y_MAX = float( WINDOW_HEIGHT_IN_PIXELS - BORDER_Y );
+const int Y_SPAN = int( Y_MAX - Y_MIN );
+const float OFFSET_MAG = 50;
+const size_t START_NUM_BALLS = 10;
+const size_t END_NUM_BALLS = 5000;
+const float BALL_DIST_SEP = 8.0f;  // Ball separation in pixels
+const float BALL_VEL = 200.0f; // Velocity in pixels per sec
+const float Z_MIN = 0.0f;
+const float Z_MAX = 100.0f;
+const int Z_SPAN = int( Z_MAX - Z_MIN );
+const float X_MID = X_MIN + X_SPAN / 2.0f;
+const float Y_MID = Y_MIN + Y_SPAN / 2.0f;
+const float XY_MIN_SCALE = 1.0f; // 0.25f;  // Scale at Z_MIN
+const float XY_SCALE_PER_Z = ( 1.0f - XY_MIN_SCALE ) / float( Z_SPAN );
+const int MAX_CIRCLE_SIZE = 16;  // In pixels
+
+
+// Function to calculate offset and size of image
+// depending on 'z' value
+void set_image_pos_and_size(
+    std::shared_ptr<MCK::GameEngRenderInfo> &render_info,
+    MCK::Point<float> p,
+    std::shared_ptr<MCK::GameEngRenderBlock> &parent_render_block
+)
+{
+    const float XY_SCALE = XY_MIN_SCALE + XY_SCALE_PER_Z * p.get_z();
+    
+    const int SIZE = int( MAX_CIRCLE_SIZE * XY_SCALE  + 0.5f );
+    const int OFFSET = MAX_CIRCLE_SIZE - SIZE;
+    render_info->dest_rect.set_all(
+        int( X_MID + ( ( p.get_x() - X_MID ) ) * XY_SCALE + 0.5f )
+            + OFFSET,
+        int( Y_MID + ( ( p.get_y() - Y_MID ) ) * XY_SCALE + 0.5f )
+            + OFFSET,
+        SIZE,
+        SIZE
+    );
+}
+
 /////////////////////////////////////////////////////////
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )
 {   
-    // Define window size (these can be changed to any sensible value)
-    const int WINDOW_WIDTH_IN_PIXELS = 640;
-    const int WINDOW_HEIGHT_IN_PIXELS = 360;
-   
-
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER
     MCK::GameEng &game_eng = MCK::GameEng::get_singleton();
@@ -113,7 +165,7 @@ int main( int argc, char** argv )
                     MCK::COL_TRANSPARENT,
                     MCK::COL_WHITE,
                     MCK::COL_BLACK,
-                    MCK::COL_GREEN
+                    MCK::COL_DARK_RED
                 }
             )
         );
@@ -123,7 +175,7 @@ int main( int argc, char** argv )
                     MCK::COL_TRANSPARENT,
                     MCK::COL_WHITE,
                     MCK::COL_BLACK,
-                    MCK::COL_BLUE
+                    MCK::COL_DARK_RED_SEMI_TRANS
                 }
             )
         );
@@ -204,58 +256,112 @@ int main( int argc, char** argv )
     }
 
     //////////////////////////////////////////////
-    // CREATE TITLE TEXT BOX
-    std::shared_ptr<MCK::Console> title_text
-        = std::make_shared<MCK::Console>();
-    try
+    // CREATE TITLE TEXT BOXES
+    std::vector<std::shared_ptr<MCK::ImageText>> title_line_text;
     {
         std::string CR( 1, uint8_t( 255 ) );
-        std::string s = "CONSOLE DEMO  " + CR + " MuckyTaters 2023";
-        title_text->init(
+
+        std::vector<std::string> title = {
+            CR + " MuckyTaters 2023",
+            "Bezier curve sprite path stress test"
+            // "github.com/MuckyTaters/MuckyVision3"
+        };
+
+        int line_count = 0;
+        for( auto &s : title )
+        {
+            std::shared_ptr<MCK::ImageText> title_line
+                = std::make_shared<MCK::ImageText>();
+            try
+            {
+                title_line->init(
+                    game_eng,
+                    image_man,
+                    game_eng.get_prime_render_block(),
+                    title_palette_id,
+                    ( WINDOW_WIDTH_IN_PIXELS - s.size() * 16 ) / 2,  // x_pos,
+                    16 + 32 * line_count++,  // y_pos,
+                    s.size(),  // width in chars
+                    16,  // char_width_in_pixels,
+                    16,  // char_height_in_pixels,
+                    s,
+                    MCK::ImageText::Just::CENTER,
+                    0,  // char spacing
+                    0,  // Default ASCII set
+                    MCK::MAX_Z_VALUE  // Render on top
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create title text, error: ")
+                    + e.what() ) );
+            }
+
+            title_line_text.push_back( title_line );
+        }
+    }
+
+    ///////////////////////////////////////////////////
+    // CREATE FPS READ OUT
+    std::shared_ptr<MCK::ImageText> fps_text =
+        std::make_shared<MCK::ImageText>();
+    try
+    {
+        fps_text->init(
             game_eng,
             image_man,
             game_eng.get_prime_render_block(),
             title_palette_id,
             32,  // x_pos,
-            16,  // y_pos,
-            32,  // width in chars
-            1,  // height in chars
+            WINDOW_HEIGHT_IN_PIXELS - 32,  // y_pos,
+            8,  // width in chars
             16,  // char_width_in_pixels,
             16,  // char_height_in_pixels,
-            s,
-            0,  // print_speed_in_ticks_per_char,
-            0,  // scroll_speed_in_ticks_per_pixel,
-            true,  // hoz_text_alignment
-            0, // start_line
-            MCK::COL_BLACK,  // underlay colo(u)r
-            2,  // char spacing in pixels
-            0,  // line spacing in pixels,
-            0,  // default ascii set
-            MCK::MAX_Z_VALUE   // Render on top
+            "0.00",
+            MCK::ImageText::Just::LEFT,
+            0,  // char spacing
+            0,  // Default ASCII set
+            MCK::MAX_Z_VALUE  // Render on top
         );
     }
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create title text, error: ")
+            std::string( "Failed to create FPS text, error: ")
             + e.what() ) );
     }
-
-    /////////////////////////////////////////////
-    // DEMO PARAMETERS
-    const size_t NUM_WAYPOINTS = 80;
-    const int BORDER_X = 30;
-    const float X_MIN = float( BORDER_X );
-    const float X_MAX = float( WINDOW_WIDTH_IN_PIXELS - BORDER_X );
-    const int X_SPAN = int( X_MAX - X_MIN );
-    const int BORDER_Y = 20;
-    const float Y_MIN = float( BORDER_Y );
-    const float Y_MAX = float( WINDOW_HEIGHT_IN_PIXELS - BORDER_Y );
-    const int Y_SPAN = int( Y_MAX - Y_MIN );
-    const float OFFSET_MAG = 50;
-    const size_t NUM_BALLS = 500;
-    const float BALL_DIST_SEP = 20.0f;  // Ball separation in pixels
-    const float BALL_VEL = 100.0f; // Velocity in pixels per sec
+    
+    ///////////////////////////////////////////////////
+    // CREATE BALL COUNT READ OUT
+    std::shared_ptr<MCK::ImageText> count_text =
+        std::make_shared<MCK::ImageText>();
+    try
+    {
+        count_text->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            title_palette_id,
+            WINDOW_WIDTH_IN_PIXELS - 250,  // x_pos,
+            WINDOW_HEIGHT_IN_PIXELS - 32,  // y_pos,
+            14,  // width in chars
+            16,  // char_width_in_pixels,
+            16,  // char_height_in_pixels,
+            "sprites: " + std::to_string( START_NUM_BALLS ),
+            MCK::ImageText::Just::LEFT,
+            0,  // char spacing
+            0,  // Default ASCII set
+            MCK::MAX_Z_VALUE  // Render on top
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create FPS text, error: ")
+            + e.what() ) );
+    }
+    
 
     /////////////////////////////////////////////
     // CREATE LINE SEGMENTS
@@ -273,7 +379,7 @@ int main( int argc, char** argv )
     MCK::Point<float> current_point(
         X_MIN + float( rand() % X_SPAN ),
         Y_MIN + float( rand() % Y_SPAN ),
-        0
+        0 
     );
 
     // Define first control point
@@ -323,6 +429,12 @@ int main( int argc, char** argv )
             );
 
             float new_angle = float( ( rand() & 256 ) / 256 * MCK_TWO_PI );
+            current_control_offset.set_x(
+                float( sin( new_angle ) * OFFSET_MAG )
+            );
+            current_control_offset.set_y(
+                float( cos( new_angle ) * OFFSET_MAG )
+            );
             new_control_offset.set_x(
                 float( sin( new_angle ) * OFFSET_MAG )
             );
@@ -375,16 +487,18 @@ int main( int argc, char** argv )
         std::cout << "Successfully initialized line segment "
                   << i << std::endl;
 
-        // Store curve
-        line_segs.push_back( bez );
-
         current_point = new_point;
         current_control_offset = new_control_offset;
     }
 
+    const MCK::Point<float> START_POINT
+        = line_segs.front().get_curve().get_point( 0.0f );
+
 
     /////////////////////////////////////////////
     // Create animation info
+    std::shared_ptr<MCK::GameEngRenderBlock> prime_render_block
+        = game_eng.get_prime_render_block();
     struct Ball
     {
         std::shared_ptr<MCK::GameEngRenderInfo> render_info;
@@ -396,15 +510,15 @@ int main( int argc, char** argv )
         float dist;  // Distance along line segment
     };
     std::vector<Ball> balls;
-    balls.reserve( NUM_BALLS );
-    for( int i = 0; i < NUM_BALLS; i++ )
+    balls.reserve( END_NUM_BALLS );
+    for( int i = 0; i < START_NUM_BALLS; i++ )
     {
         balls.push_back( Ball() );
         Ball &b = balls.back();
 
         // Calculate starting segment
         // and distance within segment
-        b.dist = i * BALL_DIST_SEP; // + 0.001f;
+        b.dist = i * BALL_DIST_SEP;
         b.seg_index = 0;
         b.seg = &line_segs[0];
         while( b.dist >= b.seg->get_length() )
@@ -453,10 +567,10 @@ int main( int argc, char** argv )
             b.render_info = image_man.create_render_info(
                 circle_image_id,
                 palette_id,
-                p.get_x(),
-                p.get_y(),
-                16,  //  width_in_pixels,
-                16,  //  height_in_pixels,
+                0,
+                0,
+                MAX_CIRCLE_SIZE,  //  width_in_pixels,
+                MAX_CIRCLE_SIZE,  //  height_in_pixels,
                 game_eng.get_prime_render_block()
             );
         }
@@ -467,19 +581,19 @@ int main( int argc, char** argv )
                 + e.what() ) );
         }
         
-        // Set z coord
+        // Set ball's position and size
         try
         {
-            MCK::GameEng::change_z(
-                std::dynamic_pointer_cast<MCK::GameEngRenderBase>( b.render_info ),
-                game_eng.get_prime_render_block(),
-                p.get_z()
+            set_image_pos_and_size(
+                b.render_info,
+                p,
+                prime_render_block
             );
         }
         catch( std::exception &e )
         {
             throw( std::runtime_error(
-                std::string( "Failed to set z, error: ")
+                std::string( "Failed to set image pos and size, error: ")
                 + e.what() ) );
         }
     }
@@ -494,8 +608,9 @@ int main( int argc, char** argv )
     uint32_t current_ticks = game_eng.get_ticks();
     uint32_t start_ticks = current_ticks;
     uint32_t next_frame_ticks = current_ticks + TICKS_PER_FRAME; 
-    uint32_t end_ticks = current_ticks + 50000;
+    uint32_t end_ticks = current_ticks + 250000;
     uint32_t ticks_at_last_animation = current_ticks;
+    uint32_t ticks_at_last_fps_update = current_ticks;
     do
     {
         ////////////////////////////////////////
@@ -517,6 +632,32 @@ int main( int argc, char** argv )
             // Calculate time of *next* frame
             next_frame_ticks = current_ticks + TICKS_PER_FRAME;
             frame_num++;
+        }
+
+        ////////////////////////////////////////
+        // Update FPS
+        if( frame_num % 50 == 0 )
+        {
+            const float TICKS_PASSED_F
+                = current_ticks - ticks_at_last_fps_update;
+            ticks_at_last_fps_update
+                = current_ticks;
+
+            try
+            {
+                fps_text->set_content(
+                    std::string( "FPS " )
+                    + std::to_string(
+                        50.0f / TICKS_PASSED_F * 1000.0f
+                    ).substr( 0, 4 )
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to set fps, error: ")
+                    + e.what() ) );
+            }
         }
 
         ////////////////////////////////////////
@@ -552,6 +693,80 @@ int main( int argc, char** argv )
             }
         }
 
+        ////////////////////////////////////////
+        // Add new balls, intermitently
+        if( ( current_ticks & 0x0600 ) != 0 )
+        {
+            const MCK::Point<float> LAST_BALL( 
+                balls.back().render_info->dest_rect.get_x(),
+                balls.back().render_info->dest_rect.get_y()
+            );
+
+            if( balls.size() < END_NUM_BALLS 
+                && MCK::Point<float>::dist_sq( START_POINT, LAST_BALL )
+                    > BALL_DIST_SEP * BALL_DIST_SEP
+            )
+            {
+                balls.push_back( Ball() );
+                Ball &b = balls.back();
+
+                b.seg_index = 0;
+                b.seg = &line_segs[0];
+
+                MCK_PAL_ID_TYPE palette_id;
+                switch( balls.size() % 3 )
+                {
+                    case 0:
+                        palette_id = palette_A_id;
+                        break;
+                    
+                    case 1:
+                        palette_id = palette_B_id;
+                        break;
+                    
+                    default:
+                        palette_id = palette_C_id;
+                }
+
+                // Create render info, and set x,y coords
+                bool error = false;
+                try
+                {
+                    b.render_info = image_man.create_render_info(
+                        circle_image_id,
+                        palette_id,
+                        START_POINT.get_x(),
+                        START_POINT.get_y(),
+                        MAX_CIRCLE_SIZE,  //  width_in_pixels,
+                        MAX_CIRCLE_SIZE,  //  height_in_pixels,
+                        game_eng.get_prime_render_block()
+                    );
+                }
+                catch( std::exception &e )
+                {
+                    std::cout << "Failed to create render info, error: "
+                              << e.what() << std::endl;
+                    error = true;
+                }
+
+                if( !error )
+                {
+                    try
+                    {
+                        count_text->set_content(
+                            "sprites: " + std::to_string( balls.size() )
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        std::cout << "Failed to update count box, error: "
+                                  << e.what() << std::endl;
+                    }
+                }
+            }
+        }
+
+        ////////////////////////////////////////
         // Animate balls
         const uint32_t TICKS_SINCE_LAST_ANIM
             = current_ticks - ticks_at_last_animation;
@@ -559,7 +774,7 @@ int main( int argc, char** argv )
         if( TICKS_SINCE_LAST_ANIM > 0 )
         {
             const float DIST_INC
-                = float( BALL_VEL ) 
+                = BALL_VEL 
                     * float( TICKS_SINCE_LAST_ANIM ) / 1000.0f;
             for( Ball &b : balls )
             {
@@ -594,23 +809,19 @@ int main( int argc, char** argv )
                         + e.what() ) );
                 }
 
-                // Update render position
-                b.render_info->dest_rect.set_x( p.get_x() );
-                b.render_info->dest_rect.set_y( p.get_y() );
-                
-                // Set z coord
+                // Set ball's position and size
                 try
                 {
-                    MCK::GameEng::change_z(
-                        std::dynamic_pointer_cast<MCK::GameEngRenderBase>( b.render_info ),
-                        game_eng.get_prime_render_block(),
-                        p.get_z()
+                    set_image_pos_and_size(
+                        b.render_info,
+                        p,
+                        prime_render_block
                     );
                 }
                 catch( std::exception &e )
                 {
                     throw( std::runtime_error(
-                        std::string( "Failed to set z, error: ")
+                        std::string( "Failed to set image pos and size, error: ")
                         + e.what() ) );
                 }
             }

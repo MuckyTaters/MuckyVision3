@@ -90,6 +90,15 @@ class GameEngRenderInfo : public GameEngRenderBase
             //! Set height of rectangle
             void set_h( int val ) noexcept { this->r.h = val; }
 
+            void set_all( int x, int y, int w, int h )
+            {
+                SDL_Rect &rct = this->r;
+                rct.x = x;
+                rct.y = y;
+                rct.w = w;
+                rct.h = h;
+            }
+
             //! Default constructor
             Rect( void )
             {
