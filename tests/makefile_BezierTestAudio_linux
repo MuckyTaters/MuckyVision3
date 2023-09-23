@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEngRenderBase.o build/GameEng.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/Console.o build/BezierTest.o 
+BUILDS := build/GameEngRenderBase.o build/GameEng.o build/GameEngAudio.o build/Envelope.o build/VoiceSynth.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/Console.o build/BezierTestAudio.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -65,7 +65,7 @@ LINKER_FLAGS := -lSDL2
 INC := -I../include -I.
 
 #OUTPUT specifies the name of our exectuable
-OUTPUT := BezierTest
+OUTPUT := BezierTestAudio
 
 
 #############################################
@@ -88,6 +88,18 @@ build/GameEngRenderBase.o: ../src/GameEngRenderBase.cpp ../include/GameEngRender
 build/GameEng.o: ../src/GameEng.cpp ../include/GameEng.h ../include/Defs.h ../include/KeyEvent.h ../include/Version.h build/GameEngRenderBase.o ../include/GameEngRenderInfo.h ../include/GameEngRenderBlock.h
 	$(CC) -c ../src/GameEng.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEng.o
 
+## GameEngAudio ##
+build/GameEngAudio.o: ../src/GameEngAudio.cpp ../include/GameEngAudio.h ../include/Defs.h build/GameEng.o
+	$(CC) -c ../src/GameEngAudio.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/GameEngAudio.o
+
+## Envelope ##
+build/Envelope.o: ../src/Envelope.cpp ../include/Envelope.h
+	$(CC) -c ../src/Envelope.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Envelope.o
+
+## VoiceSynth ##
+build/VoiceSynth.o: ../src/VoiceSynth.cpp ../include/VoiceSynth.h build/Envelope.o ../include/VoiceBase.h ../include/Defs.h ../include/Version.h
+	$(CC) -c ../src/VoiceSynth.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/VoiceSynth.o
+
 ## ImageDataASCII ##
 build/ImageDataASCII.o: ../src/ImageDataASCII.cpp ../include/ImageDataASCII.h 
 	$(CC) -c ../src/ImageDataASCII.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageDataASCII.o
@@ -104,9 +116,9 @@ build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o b
 build/Console.o: ../src/Console.cpp ../include/Console.h build/GameEng.o build/ImageMan.o build/ImageText.o
 	$(CC) -c ../src/Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Console.o
 
-## BezierTest ##
-build/BezierTest.o: BezierTest.cpp ../include/LineSegmentBase.h ../include/LineSegmentFixed.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h build/Console.o build/GameEng.o build/ImageText.o 
-	$(CC) -c BezierTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/BezierTest.o
+## BezierTestAudio ##
+build/BezierTestAudio.o: BezierTestAudio.cpp ../include/LineSegmentBase.h ../include/LineSegmentFixed.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h build/Console.o build/GameEng.o build/ImageText.o 
+	$(CC) -c BezierTestAudio.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/BezierTestAudio.o
 
 
 #############################################
