@@ -174,7 +174,7 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
                 ) );
             }
 
-            // Store most proximal point
+            // Store most distal point
             _store_point(
                 this->length_of_segment,
                 END_POINT

@@ -59,7 +59,9 @@ languages.
 MuckyVision's source code is organised in layers. The current commit 
 comprises the lowest layer: "GameEng", the layer above "ImageMan",
 and the utility classes "ImageText", "Console" and "VoiceSynth"
-(a synthesiser that works with the new audio manager).
+(a synthesiser that works with the new audio manager). A number of
+geometric class templates have been added to the 'include' folder
+such as 'Point', 'LineSegment' and various Bezier curves (see below).
 
 GameEng acts as a wrapper for SDL, so that higher layers have no need
 to use SDL commands. This will make it easy to swap out SDL for another
@@ -105,6 +107,18 @@ across a range of octaves. VoiceSynth characteristics (including waveform and oc
 are fixed when the voice is initialised, but you are free to vary settings between
 VoiceSynth instances. For example, you could have a high-pitched sine wave instance,
 a low-pitched square wave instance and a white noise instance all playing simultaneously.
+
+In preparation for developing sprites, the following class templates have been added
+to provide a suite of geometry tools. These will eventually be used to control sprite paths.
+    
+    * Point.h describes a point in 3D space, although can be used solely in 2D space.
+    * BezierCurveBase.h provides a common base for Bezier curve classes.
+    * BezierCurveLinear.h describes a straight line between two Point instances.
+    * BezierCurveQuad.h describes a curved line between two Points, with one additional control Point.
+    * BezierCurveCubic.h describes a straight line between two Points, with two additional control Points.
+    * LineSegmentBase.h provides a common base for LineSegment classes, which add arc length data to curve instances.
+    * LineSegmentFixed.h provides estimation of arc length for any curve instance with fixed end/control Points.
+    * TODO: LineSegmentDynamic.h will provide estimation of arc length for any curve instance, even if its Points change.
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the
@@ -165,10 +179,13 @@ Classes/structs included in this commit:
 
     VoiceSynth: Simple SID chip style sound synthesiser.
 
+    Also see geometry class templates described above (these have no associated .cpp file)
+
 
 3. Future Plans
 
 Next on the TODO list for graphics is sprites and collision detection.
+The development of geometry classes has been a step towards this.
 
 The next step for audio is to implement a self-playing VoiceSynth class.
 At present, the main program holds the song data and sends commands to the
@@ -199,7 +216,7 @@ aspects of the build process, although the default settings should work
 for both Linux and Windows (MinGW).
 
 For the other demos (ImageManTest, ConsoleTest, FancyConsoleTest and 
-GameAudioTest) replace all references to 'GameEng' below
+GameAudioTest, etc.) replace all references to 'GameEng' below
 with the respective demo name, including where it is part of a larger word.
 Hence 'makefile_GameEngTest_linux' becomes 'makefile_ImageManTest_linux'
 or 'makefile_FancyConsole_linux' or whatever. Note that lines numbers in 

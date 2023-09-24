@@ -18,8 +18,7 @@
 //  selected template parameters.
 //  It is possible that no-so-sensible
 //  choices will succesfully compile
-//  but produce unexpected (possibly
-//  even undefined) behaviour at
+//  but produce unexpected behaviour at
 //  runtime. I will endevour to produce
 //  a list of safe choices for all
 //  template parameters in this class
