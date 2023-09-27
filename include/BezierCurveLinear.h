@@ -58,8 +58,17 @@ class BezierCurveLinear : public BezierCurveBase<T>
         //! Destructor
         virtual ~BezierCurveLinear( void ) noexcept {}
 
+        //! Copy constructor
+        BezierCurveLinear( const BezierCurveLinear<T> &other <) noexcept = default;
+
+        //! Assignment constructor
+        BezierCurveLinear& operator=( const BezierCurveLinear<T> &other ) noexcept = default;
+       
+        //! Move constructor
+        BezierCurveLinear( const BezierCurveLinear<T> &&other ) noexcept = default;
+
         //! Initializer
-        virtual void init( const std::vector<T> &_control_points )
+        virtual void init( const std::vector<T> _control_points )
         {
             // Check number of control points is acceptable
             if( _control_points.size() != 2 )
@@ -75,7 +84,7 @@ class BezierCurveLinear : public BezierCurveBase<T>
                 ) );
             }
 
-            this->control_points = _control_points;
+            std::swap( this->control_points, _control_points );
 
             this->initialized = true;
         }
@@ -105,6 +114,40 @@ class BezierCurveLinear : public BezierCurveBase<T>
             //       Of course the result would be garbage.
             return this->control_points[0] * ( 1 - t )
                    + this->control_points[1] * t;
+        }
+        
+        //! Split curve at 't' and return part that includes first contol point
+        virtual MCK::BezierCurveLinear<T> split_lo( double t ) const
+        {
+            // Split using De Casteljau's algorithm
+            // Let calling method catch any (very unlikely) exception here
+            MCK::BezierCurveLinear<T> ans; 
+            ans.init(
+                this->control_point[0],
+                this->control_points[0] * ( 1 - t )
+                    + this->control_points[1] * t
+            );
+
+            // I *think* the explicit 'move' is unneccesary here,
+            // but including anyway
+            return std::move( ans );
+        }
+
+        //! Split curve at 't' and return part that includes last contol point
+        virtual MCK::BezierCurveLinear<T> split_hi( double t ) const
+        {
+            // Split using De Casteljau's algorithm
+            // Let calling method catch any (very unlikely) exception here
+            MCK::BezierCurveLinear<T> ans; 
+            ans.init(
+                this->control_points[0] * ( 1 - t )
+                    + this->control_points[1] * t,
+                this->control_point[1]
+            );
+
+            // I *think* the explicit 'move' is unneccesary here,
+            // but including anyway
+            return std::move( ans );
         }
 };        
 

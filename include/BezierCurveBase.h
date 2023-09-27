@@ -112,6 +112,7 @@ class BezierCurveBase
             return control_points.size();
         }
 
+
     protected:
 
         MCK::BezierCurveType type; 

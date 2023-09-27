@@ -53,6 +53,15 @@ class BezierCurveCubic : public BezierCurveBase<T>
             this->type = MCK::BezierCurveType::CUBIC;
         }
 
+        //! Copy constructor
+        BezierCurveCubic( const BezierCurveCubic<T> &other ) noexcept = default;
+
+        //! Assignment constructor
+        BezierCurveCubic& operator=( const BezierCurveCubic<T> &other ) noexcept = default;
+       
+        //! Move constructor
+        BezierCurveCubic( BezierCurveCubic<T> &&other ) noexcept = default;
+
         //! Destructor
         virtual ~BezierCurveCubic( void ) noexcept {}
 
@@ -112,6 +121,78 @@ class BezierCurveCubic : public BezierCurveBase<T>
                    + this->control_points[1] * ( 3 * INV_T * INV_T * t )
                    + this->control_points[2] * ( 3 * INV_T * t * t )
                    + this->control_points[3] * ( t * t * t );
+        }
+        
+        //! Split curve at 't' and return part that includes first contol point
+        virtual MCK::BezierCurveCubic<T> split_lo( double t ) const
+        {
+            // Split using De Casteljau's algorithm
+            
+            // Create point between P0 and P1
+            const T P01 = this->control_points[0] * ( 1 - t )
+                        + this->control_points[1] * t;
+
+            // Create point between P1 and P2
+            const T P12 = this->control_points[1] * ( 1 - t )
+                        + this->control_points[2] * t;
+
+            // Create point between P2 and P3
+            const T P23 = this->control_points[1] * ( 1 - t )
+                        + this->control_points[2] * t;
+
+            // Create point between P01 and P12
+            const T P012 = P01 * ( 1 - t ) + P12 * t;
+            const T P123 = P12 * ( 1 - t ) + P23 * t;
+
+            // Let calling method catch any (very unlikely) exception here
+            BezierCurveCubic ans;
+            ans.init(
+                this->control_points[0],  // = P0
+                P01,
+                P012,
+                // Point between P012 and P123
+                P012 * ( 1 - t ) + P123 * t
+            );
+
+            // I *think* the explicit 'move' is unneccesary here,
+            // but including anyway
+            return std::move( ans );
+        }
+
+        //! Split curve at 't' and return part that includes first contol point
+        virtual MCK::BezierCurveCubic<T> split_hi( double t ) const
+        {
+            // Split using De Casteljau's algorithm
+            
+            // Create point between P0 and P1
+            const T P01 = this->control_points[0] * ( 1 - t )
+                        + this->control_points[1] * t;
+
+            // Create point between P1 and P2
+            const T P12 = this->control_points[1] * ( 1 - t )
+                        + this->control_points[2] * t;
+
+            // Create point between P2 and P3
+            const T P23 = this->control_points[1] * ( 1 - t )
+                        + this->control_points[2] * t;
+
+            // Create point between P01 and P12
+            const T P012 = P01 * ( 1 - t ) + P12 * t;
+            const T P123 = P12 * ( 1 - t ) + P23 * t;
+
+            // Let calling method catch any (very unlikely) exception here
+            BezierCurveCubic ans;
+            ans.init(
+                // Point between P012 and P123
+                P012 * ( 1 - t ) + P123 * t,
+                P123,
+                P23,
+                this->control_points[3]  // = P3
+            );
+
+            // I *think* the explicit 'move' is unneccesary here,
+            // but including anyway
+            return std::move( ans );
         }
 };        
 

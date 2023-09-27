@@ -113,8 +113,11 @@ class Point
         }
 
         //! Assignment constructor
-        constexpr Point& operator=( Point const &other ) noexcept = default;
+        constexpr Point& operator=( const Point &other ) noexcept = default;
        
+        //! Move constructor
+        constexpr Point( Point &&other ) noexcept = default;
+
         //! Get x coord
         constexpr T get_x( void ) const noexcept
         {

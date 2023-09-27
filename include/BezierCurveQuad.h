@@ -110,7 +110,61 @@ class BezierCurveQuad : public BezierCurveBase<T>
                    + this->control_points[1] * ( 2 * INV_T * t )
                    + this->control_points[2] * ( t * t );
         }
-};        
+        
+        //! Split curve at 't' and return part that includes first contol point
+        virtual MCK::BezierCurveQuad<T> split_lo( double t ) const
+        {
+            // Split using De Casteljau's algorithm
+            
+            // Create point between P0 and P1
+            const T P01 = this->control_points[0] * ( 1 - t )
+                        + this->control_points[1] * t;
+
+            // Create point between P1 and P2
+            const T P12 = this->control_points[1] * ( 1 - t )
+                        + this->control_points[2] * t;
+
+            // Let calling method catch any (very unlikely) exception here
+            BezierCurveQuad ans;
+            ans.init(
+                this->control_point[0],  // = P0
+                P01,
+                // Point between P01 and P12
+                P01 * ( 1 - t ) + P12 * t
+            );
+
+            // I *think* the explicit 'move' is unneccesary here,
+            // but including anyway
+            return std::move( ans );
+        }
+        
+        //! Split curve at 't' and return part that includes last contol point
+        virtual MCK::BezierCurveQuad<T> split_hi( double t ) const
+        {
+            // Split using De Casteljau's algorithm
+            
+            // Create point between P0 and P1
+            const T P01 = this->control_points[0] * ( 1 - t )
+                        + this->control_points[1] * t;
+
+            // Create point between P1 and P2
+            const T P12 = this->control_points[1] * ( 1 - t )
+                        + this->control_points[2] * t;
+
+            // Let calling method catch any (very unlikely) exception here
+            BezierCurveQuad ans;
+            ans.init(
+                // Point between P01 and P12
+                P01 * ( 1 - t ) + P12 * t,
+                P12,
+                this->control_point[3]  // = P2
+            );
+
+            // I *think* the explicit 'move' is unneccesary here,
+            // but including anyway
+            return std::move( ans );
+        }
+};
 
 }  // End of namespace MCK
 
