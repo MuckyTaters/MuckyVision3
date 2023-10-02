@@ -10,7 +10,6 @@
 //  The template parameter
 //  for each line segment is a curve,
 //  e.g. a Bezier curve.
-//  This is an abstract class.
 //
 //  There is no associated cpp file.
 //
@@ -43,8 +42,9 @@
 #endif
 
 #include <cmath>  // For sqrt
-#include <stdexcept>  // For exceptions
 #include <map>  // For map
+#include <memory>  // For shared_ptr
+#include <stdexcept>  // For exceptions
 #include <utility>  // For swap
 
 namespace MCK
@@ -60,16 +60,23 @@ class LineSegment
         {
             std::swap( this->curve, _curve );
             this->initialized = false;
+            id = MCK::DEFAULT_LINE_SEG_ID;
         }
 
         //! Destructor
-        ~LineSegment( void ) = default;
+        virtual ~LineSegment( void ) = default;
         
         //! Copy constructor
         LineSegment( const LineSegment &other ) = default;
 
         //! Assignment constructor
         LineSegment& operator=( LineSegment const &other ) = default;
+
+        //! Returns id of segment, if set during initialization
+        MCK_LINE_SEG_ID_TYPE get_id( void ) const noexcept
+        {
+            return id;
+        }
 
         //! Returns true if segment initialized, false otherwise
         bool is_initialized( void ) const noexcept
@@ -87,7 +94,8 @@ class LineSegment
          */
         virtual void init(
             double distance_step,
-            bool xy_only = false
+            bool xy_only = false,
+            MCK_LINE_SEG_ID_TYPE _id = MCK::DEFAULT_LINE_SEG_ID
         )
         {
             // Forbid re-initialisation
@@ -116,6 +124,8 @@ class LineSegment
 #endif
                 ) );
             }
+
+            id = _id;
 
             // Pre-calculate square of distance step,
             // as this is value actually used
@@ -183,6 +193,162 @@ class LineSegment
             this->initialized = true;
         }
 
+        //! Connect additional line segment(s) to the end of this one
+        virtual void connect_segments(
+            std::map<
+                MCK_JUNC_CODE_TYPE,
+                std::shared_ptr<const MCK::LineSegment<U,T>>
+            > _connections,
+            bool quality_check = true,
+            bool prevent_overwrite = true
+        )
+        {
+            if( prevent_overwrite && connections.size() > 0 )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot connect segments to " )
+                    + std::string( "line segment as segment already " )
+                    + std::string( "has connections and overwrite " )
+                    + std::string( "prevention is selected." )
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            if( quality_check )
+            {
+                for( const auto it : _connections )
+                {
+                    if( it.second.get() == NULL
+                        || !it.second->is_initialized()
+                    )
+                    {
+                        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                            std::string( "Cannot connect segments to " )
+                            + std::string( "line segment as one of " )
+                            + std::string( "segment is NULL or " )
+                            + std::string( "not yet initialized." )
+#else
+                            ""
+#endif
+                        ) );
+                    }
+                }
+            }
+
+            swap( connections, _connections );
+        }
+
+        //! Connect single line segment(s) to the end of this one
+        virtual void connect_single_segment(
+            std::shared_ptr<const MCK::LineSegment<U,T>> next_seg,
+            bool quality_check = true,
+            bool prevent_overwrite = true
+        )
+        {
+            if( prevent_overwrite && connections.size() > 0 )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot connect single segment to " )
+                    + std::string( "line segment as segment already " )
+                    + std::string( "has connections and overwrite " )
+                    + std::string( "prevention is selected." )
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            if( quality_check
+                && ( next_seg.get() == NULL
+                     || !next_seg->is_initialized()
+                )
+            )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot connect single segment to " )
+                    + std::string( "line segment as " )
+                    + std::string( "segment is NULL or " )
+                    + std::string( "not yet initialized." )
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            // Create connection map entry for next segment,
+            // using the default key value.
+            connections.clear();
+            connections.insert(
+                std::pair<
+                    MCK_JUNC_CODE_TYPE,
+                    std::shared_ptr<const MCK::LineSegment<U,T>>
+                >(
+                    MCK::DEFAULT_LINE_SEG_KEY_VALUE,
+                    next_seg
+                )
+            );
+        }
+
+        //! Get single connecting segment
+        /*! Note: if none or > 1 connecting segments, exception is thrown */
+        std::shared_ptr<const MCK::LineSegment<U,T>> get_single_connection( void ) const
+        {
+            if( !has_single_connection() )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot get single connection as " )
+                    + std::string( "line segment with id " )
+                    + ( id != MCK::DEFAULT_LINE_SEG_ID ?
+                            std::to_string( id ) : "NONE"
+                      )
+                    + std::string( " does not have " )
+                    + std::string( "a single connection, it has " )
+                    + std::to_string( connections.size() )
+                    + std::string( " connections." )
+#else
+                    ""
+#endif
+                ) );
+            }
+            
+            return connections.begin()->second;
+        }
+
+        // Get read-only pointer to connecting segments
+        // Note: this pointer is valid as long as the segment
+        //       instance exists, however the connections
+        //       themsevles *might* be overwritten, so do not
+        //       retain iterators or size info between frames.
+        virtual const std::map<
+            MCK_JUNC_CODE_TYPE,
+            std::shared_ptr<const MCK::LineSegment<U,T>>
+        >* get_connections( void ) const noexcept
+        {
+            return &connections;
+        }
+
+        bool has_connections( void ) const noexcept
+        {
+            return connections.size() > 0;
+        }
+
+        bool has_single_connection( void ) const noexcept
+        {
+            return connections.size() == 1;
+        }
+
+        bool get_num_connections( void ) const noexcept
+        {
+            return connections.size();
+        }
+
         //! Get position on line by distance measured from the starting end.
         /*! @param arc_len: Arc length, i.e. distance along the line from the starting end
             Note: Will throw an exception if arc_len is negative
@@ -195,7 +361,7 @@ class LineSegment
                 throw( std::runtime_error(
 #if defined MCK_STD_OUT
                     std::string( "Cannot get point by arc length " )
-                    + std::string( "for fixed line segment as it is " )
+                    + std::string( "for line segment as it is " )
                     + std::string( "not yet initialized." )
 #else
                     ""
@@ -229,7 +395,7 @@ class LineSegment
                     // If even last point invalid, throw
                     throw( std::runtime_error(
 #if defined MCK_STD_OUT
-                        std::string( "Cannot get point on fixed " )
+                        std::string( "Cannot get point on " )
                         + std::string( "line segment at arc length " )
                         + std::to_string( arc_len )
                         
@@ -287,7 +453,7 @@ class LineSegment
             return this->length_of_segment;
         }
 
-        //! Get read-only version curve on which line segment is based.
+        //! Get read-only version of curve on which line segment is based.
         virtual const U<T>& get_curve( void ) const noexcept
         {
             // Don't pass by ref as this curve instance
@@ -438,6 +604,8 @@ class LineSegment
 
         bool initialized;
 
+        MCK_LINE_SEG_ID_TYPE id;
+
         double distance_step_squared;
 
         double length_of_segment;
@@ -445,6 +613,11 @@ class LineSegment
         U<T> curve;
 
         std::map<double,T> points_by_arc_len;
+
+        std::map<
+            MCK_JUNC_CODE_TYPE,
+            std::shared_ptr<const MCK::LineSegment<U,T>>
+        > connections;
 };
 
 }  // End of namespace MCK

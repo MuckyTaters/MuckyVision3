@@ -62,7 +62,7 @@ const int BORDER_Y = 0;
 const float Y_MIN = float( BORDER_Y );
 const float Y_MAX = float( WINDOW_HEIGHT_IN_PIXELS - BORDER_Y );
 const int Y_SPAN = int( Y_MAX - Y_MIN );
-const float OFFSET_MAG = TEXT_SIZE * 20;
+const float OFFSET_MAG = TEXT_SIZE * 10;  // 20;
 const size_t START_NUM_BALLS = 0;
 const size_t END_NUM_BALLS = 5000;
 const float BALL_DIST_SEP = TEXT_SIZE * 1.5f;  // Ball separation in pixels
@@ -80,7 +80,7 @@ const float XY_MIN_SCALE = 1.0f;
 const float XY_SCALE_PER_Z = ( 1.0f - XY_MIN_SCALE ) / float( Z_SPAN );
 const int MAX_CIRCLE_SIZE = TEXT_SIZE * 2;  // In pixels
 const float SONG_SPEED = 1.5f; 
-
+const float DISTANCE_STEP = 10.0f;
 
 /////////////////////////////////////////////////////
 // UTILITY FUNCTION(S)
@@ -547,8 +547,6 @@ int main( int argc, char** argv )
     // CREATE TITLE TEXT BOXES
     std::vector<std::shared_ptr<MCK::ImageText>> title_line_text;
     {
-        // std::string CR( 1, uint8_t( 255 ) );
-
         std::vector<std::string> title = {
             "MuckyVision v3 Game Engine",
             "Bezier curve interpolation stress test"
@@ -653,131 +651,282 @@ int main( int argc, char** argv )
     /////////////////////////////////////////////
     // CREATE LINE SEGMENTS
 
-    // Declare (empty) vector of line fixed segments
-    std::vector<
+    // Declare pointer to a starting line segment
+    std::shared_ptr<
         MCK::LineSegment<
             MCK::BezierCurveCubic,
             MCK::Point<float>
         >
-    > line_segs;
-    line_segs.reserve( NUM_WAYPOINTS );
-
-    // Define start point
-    MCK::Point<float> current_point(
-        X_MIN + float( rand() % X_SPAN ),
-        Y_MIN + float( rand() % Y_SPAN ),
-        0 
-    );
-
-    // Define first control point
-    MCK::Point<float> current_control_offset;
+    > start_seg;
+   
     {
-        float angle = float( ( rand() & 256 ) / 256 * MCK_TWO_PI );
-        current_control_offset.set_x(
-            float( sin( angle ) * OFFSET_MAG )
+        // Define first control point
+        MCK::Point<float> p0(
+            X_MIN + float( rand() % X_SPAN ),
+            Y_MIN + float( rand() % Y_SPAN ),
+            0 
         );
-        current_control_offset.set_y(
-            float( cos( angle ) * OFFSET_MAG )
-        );
-    }
 
-    // Construct the line segments using cubic Bezier curves
-    for( int i = 0; i < NUM_WAYPOINTS; i++ )
-    {
-        // Declare new end point and final control point offset
-        MCK::Point<float> new_point;
-        MCK::Point<float> new_control_offset;
-
-        // In order to loop the line segments:
-        // If this is last line segment, make end point
-        // (and final control point offset) match the start point
-        // (and first control point offset) of the first section.
-        if( NUM_WAYPOINTS > 1 && i == NUM_WAYPOINTS - 1 )
+        // Define second control point
+        MCK::Point<float> p1;
         {
-            // Get first bezier curve
-            const MCK::BezierCurveCubic<MCK::Point<float>> &first_bez
-                = line_segs[0].get_curve();
-
-            // Copy start point
-            new_point = first_bez.get_control_point( 0 );
-
-            // Work out first control point offset of first curve
-            new_control_offset
-                = first_bez.get_control_point( 1 ) - new_point;
+            float angle = float( ( rand() & 256 ) / 256 * MCK_TWO_PI );
+            p1.set_x(
+                p0.get_x() + float( sin( angle ) * OFFSET_MAG )
+            );
+            p1.set_y(
+                p0.get_y() + float( cos( angle ) * OFFSET_MAG )
+            );
         }
-        else
+
+        // Define fourth control point
+        MCK::Point<float> p3(
+            X_MIN + float( rand() % X_SPAN ),
+            Y_MIN + float( rand() % Y_SPAN ),
+            0 
+        );
+
+        // Define third control point
+        MCK::Point<float> p2;
         {
+            float angle = float( ( rand() & 256 ) / 256 * MCK_TWO_PI );
+            p2.set_x(
+                p3.get_x() + float( sin( angle ) * OFFSET_MAG )
+            );
+            p2.set_y(
+                p3.get_y() + float( cos( angle ) * OFFSET_MAG )
+            );
+        }
+
+        // Create start segment 
+        start_seg = std::make_shared<
+            MCK::LineSegment<
+                MCK::BezierCurveCubic,
+                MCK::Point<float>
+            >
+        >( 
+            MCK::BezierCurveCubic<
+                MCK::Point<float>
+            >( p0, p1, p2, p3 )
+        );
+        
+        // Initialize first line segment
+        try
+        {
+            start_seg->init(
+                DISTANCE_STEP,
+                false,  // xyz
+                0  // ID
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to init start segment, error: ")
+                + e.what() ) );
+        }
+        std::cout << "Successfully initialized start segment "
+                  << std::endl;
+    
+        // Declare pointer to a previous line segment,
+        // initially the start segment
+        std::shared_ptr<
+            MCK::LineSegment<
+                MCK::BezierCurveCubic,
+                MCK::Point<float>
+            >
+        > prev_seg = start_seg;
+       
+        // Construct the other line segments
+        // and connect to start segment
+        for( int i = 1; i < NUM_WAYPOINTS - 1; i++ )
+        {
+            // Declare new control points
+            MCK::Point<float> new_p0;
+            MCK::Point<float> new_p1;
+            MCK::Point<float> new_p2;
+            MCK::Point<float> new_p3;
+
             // Get new end point and associated control point
-            new_point.set_x(
+            new_p3.set_x(
                 X_MIN + float( rand() % X_SPAN )
             );
-            new_point.set_y(
+            new_p3.set_y(
                 Y_MIN + float( rand() % Y_SPAN )
             );
 
             float new_angle = float( ( rand() & 256 ) / 256 * MCK_TWO_PI );
-            current_control_offset.set_x(
-                float( sin( new_angle ) * OFFSET_MAG )
+            new_p2.set_x(
+                new_p3.get_x() + float( sin( new_angle ) * OFFSET_MAG )
             );
-            current_control_offset.set_y(
-                float( cos( new_angle ) * OFFSET_MAG )
+            new_p2.set_y(
+                new_p3.get_y() + float( cos( new_angle ) * OFFSET_MAG )
             );
-            new_control_offset.set_x(
-                float( sin( new_angle ) * OFFSET_MAG )
+
+            // Get first and second control points from
+            // third and forth contol points of previous segment
+            const MCK::BezierCurveCubic<MCK::Point<float>> &PREV_BEZ
+                = prev_seg->get_curve();
+            new_p0 = PREV_BEZ.get_control_point( 3 ); // from 4th point
+            // Set new_p1 to previous fouth control point 
+            //      + vector from previous third to previous fourth
+            //      = new_p0 + new_p0 - prev third control point
+            //      = 2 * new_p0 - prev third control point
+            new_p1 = new_p0 * 2 - PREV_BEZ.get_control_point( 2 );
+
+            // Create new segment, using cubic bezier curve
+            // based on control points new_p0 to new_p3
+            std::shared_ptr<
+                MCK::LineSegment<
+                    MCK::BezierCurveCubic,
+                    MCK::Point<float>
+                >
+            > new_seg = std::make_shared<
+                MCK::LineSegment<
+                    MCK::BezierCurveCubic,
+                    MCK::Point<float>
+                >
+            >( 
+                MCK::BezierCurveCubic<MCK::Point<float>>(
+                    new_p0,
+                    new_p1,
+                    new_p2,
+                    new_p3
+                )
             );
-            new_control_offset.set_y(
-                float( cos( new_angle ) * OFFSET_MAG )
-            );
+            
+            // Initialize new line segment
+            try
+            {
+                new_seg->init(
+                    DISTANCE_STEP,
+                    false,  // xyz
+                    i  // ID
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to init line segment, error: ")
+                    + e.what() ) );
+            }
+            std::cout << "Successfully initialized line segment "
+                      << i << std::endl;
+
+            // Connect new segment to previous segment
+            try
+            {
+                prev_seg->connect_single_segment( new_seg );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to connect line segment, error: ")
+                    + e.what() ) );
+            }
+
+            // Make new segment previous segment
+            prev_seg = new_seg;
         }
 
-        // Create new bezier curve
-        MCK::BezierCurveCubic<MCK::Point<float>> bez;
-        try
+        // Create final segment by combining penultimate
+        // segment and start segment
         {
-            bez.init(
-                current_point,
-                current_point + current_control_offset,
-                new_point - new_control_offset,
-                new_point
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create cubic Bezier, error: ")
-                + e.what() ) );
-        }
-        std::cout << "Successfully initialized bezier curve "
-                  << i << std::endl;
+            // Declare new control points
+            MCK::Point<float> new_p0;
+            MCK::Point<float> new_p1;
+            MCK::Point<float> new_p2;
+            MCK::Point<float> new_p3;
 
-        // Create new line segment
-        line_segs.push_back(
-            MCK::LineSegment<
-                MCK::BezierCurveCubic,
-                MCK::Point<float>
-            >( bez )
-        );
-        
-        // Initialize line segment
-        try
-        {
-            line_segs.back().init(
-                1.0f  // Distance step 1 pixel
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to init line segment, error: ")
-                + e.what() ) );
-        }
-        std::cout << "Successfully initialized line segment "
-                  << i << std::endl;
+            // Get curve of starting segment
+            const MCK::BezierCurveCubic<MCK::Point<float>> START_BEZ
+                = start_seg->get_curve();
 
-        current_point = new_point;
-        current_control_offset = new_control_offset;
+            // Set new_p3 to start segment's first control point
+            new_p3 = START_BEZ.get_control_point( 0 );
+            
+            // Set new_p2 to start segment's first control point 
+            //      + vector from start segment's second to first
+            //      = new_p3 + new_p3 - prev second control point
+            //      = 2 * new_p3 - prev second control point
+            new_p2 = new_p3 * 2 - START_BEZ.get_control_point( 1 );
+
+            // Get curve of previous segment
+            const MCK::BezierCurveCubic<MCK::Point<float>> PREV_BEZ
+                = prev_seg->get_curve();
+
+            // Set new_p0 to prev segment's fourth control point
+            new_p0 = PREV_BEZ.get_control_point( 3 );
+            
+            // Set new_p1 to prev segment's fourth control point 
+            //      + vector from start segment's third to fourth
+            //      = new_p0 + new_p0 - prev third control point
+            //      = 2 * new_p0 - prev third control point
+            new_p1 = new_p0 * 2 - START_BEZ.get_control_point( 1 );
+
+            // Create new segment
+            std::shared_ptr<
+                MCK::LineSegment<
+                    MCK::BezierCurveCubic,
+                    MCK::Point<float>
+                >
+            > new_seg = std::make_shared<
+                MCK::LineSegment<
+                    MCK::BezierCurveCubic,
+                    MCK::Point<float>
+                >
+            >( 
+                MCK::BezierCurveCubic<MCK::Point<float>>(
+                    new_p0,
+                    new_p1,
+                    new_p2,
+                    new_p3
+                )
+            );
+            
+            // Initialize new line segment
+            try
+            {
+                new_seg->init(
+                    DISTANCE_STEP,
+                    false,  // xyz
+                    NUM_WAYPOINTS - 1  // ID
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to init final line segment, error: ")
+                    + e.what() ) );
+            }
+            std::cout << "Successfully initialized final line segment "
+                      << std::endl;
+
+            // Connect new segment to previous segment
+            try
+            {
+                prev_seg->connect_single_segment( new_seg );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to connect final line segment, error: ")
+                    + e.what() ) );
+            }
+            
+            // Connect start segment to new segment
+            try
+            {
+                new_seg->connect_single_segment( start_seg );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to connect final line segment, error: ")
+                    + e.what() ) );
+            }
+        }
     }
-
 
     /////////////////////////////////////////////
     // Create animation info
@@ -787,11 +936,12 @@ int main( int argc, char** argv )
     struct Ball
     {
         std::shared_ptr<MCK::GameEngRenderInfo> render_info;
-        size_t seg_index;
-        const MCK::LineSegment<
-            MCK::BezierCurveCubic,
-            MCK::Point<float>
-        >* seg;
+        std::shared_ptr<
+            const MCK::LineSegment<
+                MCK::BezierCurveCubic,
+                MCK::Point<float>
+            >
+        > seg;
         float dist;  // Distance along line segment
     };
     std::vector<Ball> balls;
@@ -1035,8 +1185,33 @@ int main( int argc, char** argv )
                 balls.push_back( Ball() );
                 Ball &b = balls.back();
 
-                b.seg_index = size_t( n * 20 ) % line_segs.size();
-                b.seg = &line_segs[ b.seg_index ];
+                b.seg = std::dynamic_pointer_cast<
+                    const MCK::LineSegment<
+                        MCK::BezierCurveCubic,
+                        MCK::Point<float>
+                    >
+                >( start_seg );
+                
+                // Calculate starting segment
+                // and distance within segment
+                if( n > 0 )
+                {
+                    b.dist = n * 10000.0f;
+                    while( b.dist >= b.seg->get_length() )
+                    {
+                        b.dist -= b.seg->get_length();
+
+                        try
+                        {
+                            b.seg = b.seg->get_single_connection();
+                        }
+                        catch( std::exception &e )
+                        {
+                            std::cout << "Failed to get next segment, error: "
+                                  << e.what() << std::endl;
+                        }
+                    }
+                }
 
                 const MCK::Point<float> P = b.seg->get_curve().get_point( 0.0f );
 
@@ -1110,11 +1285,16 @@ int main( int argc, char** argv )
                 while( b.dist >= b.seg->get_length() )
                 {
                     b.dist -= b.seg->get_length();
-                    if( ++b.seg_index >= line_segs.size() )
+
+                    try
                     {
-                        b.seg_index = 0; 
+                        b.seg = b.seg->get_single_connection();
                     }
-                    b.seg = &line_segs[b.seg_index];
+                    catch( std::exception &e )
+                    {
+                        std::cout << "Failed to get next segment, error: "
+                              << e.what() << std::endl;
+                    }
                 }
                 
                 // Get current coords
@@ -1127,7 +1307,6 @@ int main( int argc, char** argv )
                 {
                     throw( std::runtime_error(
                         std::string( "Failed to get point on line seg, error: ")
-                        + std::to_string( b.seg_index )
                         + std::string( " error: ")
                         + e.what() ) );
                 }
@@ -1173,4 +1352,3 @@ int main( int argc, char** argv )
     }
     while( current_ticks < end_ticks );
 }
-

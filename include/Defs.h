@@ -37,14 +37,20 @@
 
 #include "Version.h" // To propagate this along with Defs.h
 
-// Defines data type used for object IDs
+// Data types used for object IDs
 #define MCK_IMG_ID_TYPE uint32_t
 #define MCK_PAL_ID_TYPE uint32_t
 #define MCK_TEX_ID_TYPE uint64_t
+#define MCK_LINE_SEG_ID_TYPE uint32_t
+
+// Math constants
 #define MCK_PI 3.14127f
 #define MCK_TWO_PI 6.28254f
 #define MCK_ONE_OVER_ROOT_TWO 0.707106f
-    
+
+// Data type of sprite path junction code 
+#define MCK_JUNC_CODE_TYPE uint8_t 
+
 //! Floating point equality tolerance (in decimal places)  for Point classes
 #define MCK_POINT_EQ_TOL 1E-6
 
@@ -287,6 +293,12 @@ namespace MCK
     
     //! Maximum z value (determines within-block render order)
     const uint32_t MAX_Z_VALUE = 0xFFFFFFFF;
+
+    //! Default value used for key when adding a single line segment to another line segment
+    const MCK_JUNC_CODE_TYPE DEFAULT_LINE_SEG_KEY_VALUE = 0;
+
+    //! Default ID value used for line segments
+    const MCK_LINE_SEG_ID_TYPE DEFAULT_LINE_SEG_ID = 0xFFFFFFFF;
 
 }  // End of namespace MCK
 
