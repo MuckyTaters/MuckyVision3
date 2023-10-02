@@ -35,7 +35,7 @@
 
 #include "Point.h"
 #include "BezierCurveCubic.h"
-#include "LineSegmentFixed.h"
+#include "LineSegment.h"
 #include "GameEng.h"
 #include "ImageMan.h"
 #include "ImageText.h"
@@ -655,7 +655,7 @@ int main( int argc, char** argv )
 
     // Declare (empty) vector of line fixed segments
     std::vector<
-        MCK::LineSegmentFixed<
+        MCK::LineSegment<
             MCK::BezierCurveCubic,
             MCK::Point<float>
         >
@@ -752,7 +752,7 @@ int main( int argc, char** argv )
 
         // Create new line segment
         line_segs.push_back(
-            MCK::LineSegmentFixed<
+            MCK::LineSegment<
                 MCK::BezierCurveCubic,
                 MCK::Point<float>
             >( bez )
@@ -788,7 +788,7 @@ int main( int argc, char** argv )
     {
         std::shared_ptr<MCK::GameEngRenderInfo> render_info;
         size_t seg_index;
-        const MCK::LineSegmentFixed<
+        const MCK::LineSegment<
             MCK::BezierCurveCubic,
             MCK::Point<float>
         >* seg;

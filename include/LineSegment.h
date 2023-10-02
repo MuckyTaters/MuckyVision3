@@ -3,7 +3,7 @@
 //  ---MUCKY VISION 3 (BASIC ENGINE) ---
 //  ------------------------------------
 //
-//  LineSegmentFixed.h
+//  LineSegment.h
 //
 //  Class template for a line segment
 //  with fixed end points.
@@ -34,8 +34,8 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
-#ifndef MCK_LINE_SEG_FIXED_H
-#define MCK_LINE_SEG_FIXED_H
+#ifndef MCK_LINE_SEG_H
+#define MCK_LINE_SEG_H
 
 #if defined MCK_STD_OUT
 #include <string>
@@ -47,31 +47,29 @@
 #include <map>  // For map
 #include <utility>  // For swap
 
-#include "LineSegmentBase.h"
-
 namespace MCK
 {
 
 template<template<class> class U, class T>
-class LineSegmentFixed : public LineSegmentBase<U,T>
+class LineSegment
 {
     public:
 
         //! Constructor
-        LineSegmentFixed( U<T> _curve ) : LineSegmentBase<U,T>( _curve )
+        LineSegment( U<T> _curve )
         {
-            this->type = MCK::LineSegmentType::FIXED;
+            std::swap( this->curve, _curve );
             this->initialized = false;
         }
 
         //! Destructor
-        ~LineSegmentFixed( void ) = default;
+        ~LineSegment( void ) = default;
         
         //! Copy constructor
-        LineSegmentFixed( const LineSegmentFixed &other ) = default;
+        LineSegment( const LineSegment &other ) = default;
 
         //! Assignment constructor
-        LineSegmentFixed& operator=( LineSegmentFixed const &other ) = default;
+        LineSegment& operator=( LineSegment const &other ) = default;
 
         //! Returns true if segment initialized, false otherwise
         bool is_initialized( void ) const noexcept
@@ -289,10 +287,19 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
             return this->length_of_segment;
         }
 
+        //! Get read-only version curve on which line segment is based.
+        virtual const U<T>& get_curve( void ) const noexcept
+        {
+            // Don't pass by ref as this curve instance
+            // must NOT be changed once the the line segment
+            // is initialized.
+            return this->curve;
+        }
+
 #if defined MCK_STD_OUT
         void str( void )
         {
-            std::cout << "MCK::LineSegmentFixed points_by_arc_len:"
+            std::cout << "MCK::LineSegment points_by_arc_len:"
                       << std::endl;
             if( points_by_arc_len.size() == 0 )
             {
@@ -434,6 +441,8 @@ class LineSegmentFixed : public LineSegmentBase<U,T>
         double distance_step_squared;
 
         double length_of_segment;
+        
+        U<T> curve;
 
         std::map<double,T> points_by_arc_len;
 };
