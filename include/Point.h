@@ -48,6 +48,7 @@
 #define MCK_POINT_H
 
 #include<cstdint>  // For uint32_t et al., if needed
+#include<memory>  // For shared pointer
 #include<type_traits>  // For is_signed
 
 #include "Defs.h"
@@ -60,6 +61,9 @@ using std::is_signed;
 
 namespace MCK
 {
+
+// Forward declaration
+class GameEngRenderBlock;
 
 template<class T>
 class Point
@@ -99,6 +103,31 @@ class Point
             z( _z )
         {}
 
+        //! 2D constructor (with block)
+        constexpr Point(
+            T _x,
+            T _y,
+            std::shared_ptr<MCK::GameEngRenderBlock> _block
+        ) noexcept :
+            x( _x ),
+            y( _y ),
+            z( 0 ),
+            block( _block )
+        {}
+
+        //! 3D constructor (with block)
+        constexpr Point( 
+            T _x,
+            T _y,
+            T _z,
+            std::shared_ptr<MCK::GameEngRenderBlock> _block
+        ) noexcept: 
+            x( _x ),
+            y( _y ),
+            z( _z ),
+            block( _block )
+        {}
+
         //! Copy constructor
         constexpr Point( const Point &other ) noexcept = default;
 
@@ -110,6 +139,7 @@ class Point
             this->x = T( other.get_x() );
             this->y = T( other.get_y() );
             this->z = T( other.get_z() );
+            this->block = other.get_block();
         }
 
         //! Assignment constructor
@@ -360,6 +390,18 @@ class Point
                    1 : 0;
         }
 
+        constexpr void set_block( 
+            std::shared_ptr<MCK::GameEngRenderBlock> _block
+        ) noexcept
+        {
+            block = _block;
+        }
+
+        constexpr std::shared_ptr<MCK::GameEngRenderBlock> get_block ( void ) const noexcept
+        {
+            return block;
+        }
+
 #if defined MCK_STD_OUT
         //! Print x,y,z coords
         constexpr std::string str( void ) const
@@ -382,6 +424,8 @@ class Point
         T x;
         T y;
         T z;
+
+        std::shared_ptr<MCK::GameEngRenderBlock> block;
 };
 
 }  // End of namespace MCK

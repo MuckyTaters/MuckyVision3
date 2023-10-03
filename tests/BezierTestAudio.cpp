@@ -664,7 +664,7 @@ int main( int argc, char** argv )
         MCK::Point<float> p0(
             X_MIN + float( rand() % X_SPAN ),
             Y_MIN + float( rand() % Y_SPAN ),
-            0 
+            game_eng.get_prime_render_block()
         );
 
         // Define second control point
@@ -677,13 +677,14 @@ int main( int argc, char** argv )
             p1.set_y(
                 p0.get_y() + float( cos( angle ) * OFFSET_MAG )
             );
+            p1.set_block( game_eng.get_prime_render_block() );
         }
 
         // Define fourth control point
         MCK::Point<float> p3(
             X_MIN + float( rand() % X_SPAN ),
             Y_MIN + float( rand() % Y_SPAN ),
-            0 
+            game_eng.get_prime_render_block()
         );
 
         // Define third control point
@@ -696,6 +697,7 @@ int main( int argc, char** argv )
             p2.set_y(
                 p3.get_y() + float( cos( angle ) * OFFSET_MAG )
             );
+            p2.set_block( game_eng.get_prime_render_block() );
         }
 
         // Create start segment 
@@ -754,6 +756,7 @@ int main( int argc, char** argv )
             new_p3.set_y(
                 Y_MIN + float( rand() % Y_SPAN )
             );
+            new_p3.set_block( game_eng.get_prime_render_block() );
 
             float new_angle = float( ( rand() & 256 ) / 256 * MCK_TWO_PI );
             new_p2.set_x(
@@ -762,6 +765,7 @@ int main( int argc, char** argv )
             new_p2.set_y(
                 new_p3.get_y() + float( cos( new_angle ) * OFFSET_MAG )
             );
+            new_p2.set_block( game_eng.get_prime_render_block() );
 
             // Get first and second control points from
             // third and forth contol points of previous segment
