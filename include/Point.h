@@ -96,7 +96,7 @@ class Point
         constexpr Point( 
             T _x,
             T _y,
-            uint32_t _z
+            T _z
         ) noexcept: 
             x( _x ),
             y( _y ),

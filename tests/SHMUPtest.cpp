@@ -75,6 +75,13 @@ const int ALIEN_COLS = 6;
 const int ALIEN_V_SPACE = 4;
 const int ALIEN_H_SPACE = 12;
 const int ALIEN_BASE_Y = 100;
+const float ALIEN_FORMATION_SPEED = 64.0f / 1000.0f;  // Pixels per tick
+const int ALIEN_FORMATION_PIXEL_WIDTH 
+            = ALIEN_COLS * ALIEN_PIXEL_WIDTH
+                + ( ALIEN_COLS - 1 ) * ALIEN_H_SPACE;
+const int ALIEN_FORMATION_X_SPAN
+            = X_SPAN - ALIEN_FORMATION_PIXEL_WIDTH;
+const int PATH_SCALE = WINDOW_WIDTH_IN_PIXELS / 40;
 
 // Waveform shortcuts
 uint32_t SIN = uint32_t( MCK::VoiceSynth::SINE );
@@ -98,6 +105,18 @@ const std::vector<uint32_t> VOICE_DATA = {
 };
 const int VOICE_DATA_COLS = 8;
 
+/////////////////////////////////////////////
+// ALIEN PATH DATA
+//  X   Y  ( units = window width in pixels / 40 )
+const std::vector<int16_t> PATH_DATA = {
+    0,  0,  // p0
+    2,  4,  // p1
+    5,  15, // p2
+    20, 15, // p3/p0
+    30, 15, // p1
+    38, 15, // p2
+    38, 10  // p3/p0
+};
 
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
@@ -394,59 +413,182 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
     std::shared_ptr<MCK::GameEngRenderBlock> sprite_block;
+    std::shared_ptr<MCK::GameEngRenderBlock> alien_formation_block;
     try
     {
         sprite_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             MCK::DEFAULT_Z_VALUE
         );
+        alien_formation_block = game_eng.create_empty_render_block(
+            sprite_block,
+            MCK::DEFAULT_Z_VALUE - 1
+        );
     }
     catch( std::exception &e )
     {
         throw( std::runtime_error(
-            std::string( "Failed to create render blocks, error: ")
+            std::string( "Failed to create render block(s), error: ")
             + e.what() ) );
     }
-    
+    // Set starting offset for alien formation
+    alien_formation_block->hoz_offset = BORDER_X; 
+    alien_formation_block->vert_offset = BORDER_Y; 
+
 
     /////////////////////////////////////////////
     // Create animation info
+
+    // Create entry path for aliens (in sprite_block)
+    std::shared_ptr<
+        MCK::LineSegment<
+            MCK::BezierCurveCubic,
+            MCK::Point<float>
+        >
+    > start_seg;
+    std::shared_ptr<
+        MCK::LineSegment<
+            MCK::BezierCurveCubic,
+            MCK::Point<float>
+        >
+    > prev_seg;
+    {
+        const size_t NUM_SEGS = ( PATH_DATA.size() - 2  ) / 6;
+
+        // DEBUG
+        std::cout << "NUM_SEGS = " << NUM_SEGS << std::endl;
+
+        for( size_t i = 0; i < NUM_SEGS; i++ )
+        {
+            // Calculate starting position of the control point
+            // coords within PATH_DATA
+            const size_t BASE = i * 6;
+
+            // Construct a shared pointer to a line segment,
+            // based on a cubic Bezier curve using the
+            // control point coords stored in PATH_DATA
+            std::shared_ptr<
+                MCK::LineSegment<
+                    MCK::BezierCurveCubic,
+                    MCK::Point<float>
+                >
+            > new_seg = std::make_shared<
+                MCK::LineSegment<
+                    MCK::BezierCurveCubic,
+                    MCK::Point<float>
+                >
+            >( MCK::BezierCurveCubic<MCK::Point<float>>(
+                    MCK::Point<float>(  // p0
+                        PATH_DATA[ BASE + 0 ] * PATH_SCALE,
+                        PATH_DATA[ BASE + 1 ] * PATH_SCALE,
+                        sprite_block
+                    ),
+                    MCK::Point<float>(  // p1
+                        PATH_DATA[ BASE + 2 ] * PATH_SCALE,
+                        PATH_DATA[ BASE + 3 ] * PATH_SCALE,
+                        sprite_block
+                    ),
+                    MCK::Point<float>(  // p2
+                        PATH_DATA[ BASE + 4 ] * PATH_SCALE,
+                        PATH_DATA[ BASE + 5 ] * PATH_SCALE,
+                        sprite_block
+                    ),
+                    MCK::Point<float>(  // p3
+                        PATH_DATA[ BASE + 6 ] * PATH_SCALE,
+                        PATH_DATA[ BASE + 7 ] * PATH_SCALE,
+                        sprite_block
+                    )
+                )
+            );
+
+            // Initialise this line segment
+            try
+            {
+                new_seg->init(
+                    LINE_SEG_DISTANCE_STEP,
+                    true,  // xy only
+                    i  // Use 'i' as segment id
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to init line segment " )
+                    + std::to_string( i )
+                    + std::string( ", error: " )
+                    + e.what() ) );
+            }
+
+            // DEBUG
+            std::cout << ">> Line seg " << i << ": " << std::endl;
+            new_seg->str();
+
+            // Store pointer to first segment only
+            if( i == 0 )
+            {
+                start_seg = new_seg;
+            }
+            // Otherwise, connect segment to previous segment
+            else {
+                try
+                {
+                    prev_seg->connect_single_segment( new_seg );
+                }
+                catch( std::exception &e )
+                {
+                    throw( std::runtime_error(
+                        std::string( "Failed to connect line segment " )
+                        + std::to_string( i )
+                        + std::string( ", error: " )
+                        + e.what() ) );
+                }
+            }
+
+            // Store current segment as previous segment
+            prev_seg = new_seg;            
+        }
+    }
 
     // POD struct to hold sprite info
     struct BasicSprite
     {
         std::shared_ptr<MCK::GameEngRenderInfo> render_info;
-        std::shared_ptr<
-            const MCK::LineSegment<
-                MCK::BezierCurveCubic,
-                MCK::Point<float>
-            >
-        > start_seg;
+       
+        // Line segment currently being traversed
         std::shared_ptr<
             const MCK::LineSegment<
                 MCK::BezierCurveCubic,
                 MCK::Point<float>
             >
         > current_seg;
-        float dist;  // Distance along line segment
+
+        float dist;  // Distance along current line segment
         float current_speed;  // Current speed, pixels per tick
         float target_speed;  // Target speed, pixels per tick
         float acc;  // Acceleration, pixels per tick per tick
     };
 
     // Alien sprites
-    std::vector<BasicSprite> aliens;
+    struct AlienSprite : public BasicSprite
+    {
+        // Coordinates of alien within alien_formation_block
+        MCK::Point<float> formation_pos;
+
+        bool in_formation;
+    };
+
+    std::vector<AlienSprite> aliens;
     aliens.resize( ALIEN_ROWS * ALIEN_COLS );
     for( int j = 0; j < ALIEN_ROWS; j++ )
     {
         MCK_PAL_ID_TYPE palette_id;
         MCK_IMG_ID_TYPE image_id;
-        if( j < 2 )
+        if( j > 1 )
         {
             palette_id = alien_1_palette_id; 
             image_id = alien_1_image_id;
         }
-        else if( j < 3 )
+        else if( j > 0 )
         {
             palette_id = alien_2_palette_id; 
             image_id = alien_2_image_id;
@@ -460,28 +602,64 @@ int main( int argc, char** argv )
         for( int i = 0; i < ALIEN_COLS; i++ )
         {
             // Get pointer to sprite
-            BasicSprite* const ALIEN
+            AlienSprite* const ALIEN
                 = &aliens[ j * ALIEN_ROWS + i ];
 
+            // DEBUG
+            ALIEN->in_formation = !(
+                ( i == ALIEN_COLS - 1 )
+                && ( j == ALIEN_ROWS - 1 )
+            );
+            
+            // Set intial path location
+            ALIEN->current_seg = start_seg;
+            ALIEN->dist = 0.0f;
+
+            // Set speed
+            ALIEN->current_speed = 640.0f / 1000.0f;
+            ALIEN->target_speed = 32.0f / 1000.0f;
+            ALIEN->acc = -0.25f / 1000.0f;
+
+            // Set (evantual) position within formation
+            ALIEN->formation_pos.set_x(
+                i * ( ALIEN_PIXEL_WIDTH + ALIEN_H_SPACE )
+            );
+            ALIEN->formation_pos.set_y(
+                j * ( ALIEN_PIXEL_HEIGHT + ALIEN_V_SPACE )
+            );
+
             // Create render info, and set x,y coords
-            bool error = false;
             try
             {
-                ALIEN->render_info = image_man.create_render_info(
-                    image_id,
-                    palette_id,
-                    BORDER_X + i * ( ALIEN_PIXEL_WIDTH + ALIEN_H_SPACE ),
-                    ALIEN_BASE_Y - j * ( ALIEN_PIXEL_HEIGHT + ALIEN_V_SPACE ),
-                    ALIEN_PIXEL_WIDTH,
-                    ALIEN_PIXEL_HEIGHT,
-                    sprite_block
-                );
+                if( ALIEN->in_formation )
+                {
+                    ALIEN->render_info = image_man.create_render_info(
+                        image_id,
+                        palette_id,
+                        ALIEN->formation_pos.get_x(),
+                        ALIEN->formation_pos.get_y(),
+                        ALIEN_PIXEL_WIDTH,
+                        ALIEN_PIXEL_HEIGHT,
+                        alien_formation_block 
+                    );
+                }
+                else
+                {
+                    ALIEN->render_info = image_man.create_render_info(
+                        image_id,
+                        palette_id,
+                        -1 * ALIEN_PIXEL_WIDTH,
+                        -1 * ALIEN_PIXEL_HEIGHT,
+                        ALIEN_PIXEL_WIDTH,
+                        ALIEN_PIXEL_HEIGHT,
+                        sprite_block
+                    );
+                }
             }
             catch( std::exception &e )
             {
                 std::cout << "Failed to create render info, error: "
                   << e.what() << std::endl;
-                error = true;
             }
 
         }
@@ -586,16 +764,119 @@ int main( int argc, char** argv )
             }
         }
 
-        /*
-        // Animate
+        // Animate formation
         const uint32_t TICKS_SINCE_LAST_ANIM
             = current_ticks - ticks_at_last_animation;
         ticks_at_last_animation = current_ticks;
         if( TICKS_SINCE_LAST_ANIM > 0 )
         {
-            // TODO...
+            // Get total pixels moved by formation since
+            // start.
+            const uint32_t RAW_X_POS 
+                = uint32_t( 
+                    float( current_ticks - START_TICKS )
+                        * ALIEN_FORMATION_SPEED
+                );
+
+            // Determine if formation is now moving left (true)
+            // or right (false)
+            const bool LEFT
+                = ( RAW_X_POS / ALIEN_FORMATION_X_SPAN ) % 2;
+
+            // Calculate pixel displacement (from left or right)
+            const uint32_t X_DISP 
+                = RAW_X_POS % ALIEN_FORMATION_X_SPAN;
+
+            // Calculate actual screen position
+            alien_formation_block->hoz_offset
+                = LEFT ?
+                    X_DISP + BORDER_X
+                    : ALIEN_FORMATION_X_SPAN - X_DISP + BORDER_X;
         }
-        */
+
+        // Animate aliens not in formation
+        for( AlienSprite &aln : aliens )
+        {
+            // Ignore those not formation
+            if( aln.in_formation )
+            {
+                continue;
+            }
+
+            // NULL pointer check
+            if( aln.current_seg.get() == NULL
+                || aln.render_info.get() == NULL
+            )
+            {
+                std::cout << "Alien's current segment and/or "
+                          << "render_info pointer is NULL"
+                          << std::endl;
+                continue;
+            }
+
+            // Update distance travelled for alien
+            if( aln.acc > 0 )
+            {
+                aln.current_speed = std::min(
+                    aln.target_speed,
+                    aln.current_speed 
+                        + aln.acc * TICKS_SINCE_LAST_ANIM
+                );
+            }
+            else
+            {
+                aln.current_speed = std::max(
+                    aln.target_speed,
+                    aln.current_speed 
+                        + aln.acc * TICKS_SINCE_LAST_ANIM
+                );
+            }
+
+            aln.dist += aln.current_speed * TICKS_SINCE_LAST_ANIM;
+            while( aln.dist > aln.current_seg->get_length() )
+            {
+                aln.dist -= aln.current_seg->get_length();
+                
+                if( aln.current_seg->has_single_connection() )
+                {
+                    try
+                    {
+                        aln.current_seg = aln.current_seg->get_single_connection();
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+                            std::string( "Failed to get next segment, error: ")
+                            + e.what() ) );
+                    }
+                }
+                else
+                {
+                    // DEBUG
+                    std::cout << "end of path" << std::endl;
+
+                    aln.in_formation = true;
+                    aln.render_info->dest_rect.set_x(
+                        aln.formation_pos.get_x()
+                    );
+                    aln.render_info->dest_rect.set_y(
+                        aln.formation_pos.get_y()
+                    );
+                    aln.dist = aln.current_seg->get_length();
+                    break;
+                }
+            }
+
+            // DEBUG
+            std::cout << "aln.dist = " << aln.dist << std::endl;
+
+            // Calculate position of alien, within sprite block
+            const MCK::Point<float> POS
+                = aln.current_seg->get_point_by_arc_len( aln.dist );
+
+            aln.render_info->dest_rect.set_x( POS.get_x() );
+            aln.render_info->dest_rect.set_y( POS.get_y() );
+        }
 
         // Clear, render and present
         {
