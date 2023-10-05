@@ -575,6 +575,18 @@ int main( int argc, char** argv )
         MCK::Point<float> formation_pos;
 
         bool in_formation;
+
+        int id;
+
+        // Used only when docking with formation
+        MCK::Point<float> temp_control_point;
+
+        // Default constructor
+        AlienSprite( void )
+        {
+            in_formation = true;
+            id = -1;
+        }
     };
 
     std::vector<AlienSprite> aliens;
@@ -601,9 +613,13 @@ int main( int argc, char** argv )
 
         for( int i = 0; i < ALIEN_COLS; i++ )
         {
+            const int COUNT = j * ALIEN_COLS + i;
+
             // Get pointer to sprite
             AlienSprite* const ALIEN
-                = &aliens[ j * ALIEN_ROWS + i ];
+                = &aliens[ COUNT ];
+
+            ALIEN->id = COUNT;
 
             // DEBUG
             ALIEN->in_formation = !(
@@ -713,7 +729,7 @@ int main( int argc, char** argv )
             ticks_at_last_fps_update
                 = current_ticks;
 
-            try
+            try/
             {
                 fps_text->set_content(
                     std::string( "FPS " )
@@ -797,24 +813,25 @@ int main( int argc, char** argv )
         // Animate aliens not in formation
         for( AlienSprite &aln : aliens )
         {
-            // Ignore those not formation
+            // DEBUG
+            // std::cout << "aln.id = " << aln.id << std::endl;
+
+            // Ignore those in formation
             if( aln.in_formation )
             {
                 continue;
             }
 
             // NULL pointer check
-            if( aln.current_seg.get() == NULL
-                || aln.render_info.get() == NULL
-            )
+            if( aln.render_info.get() == NULL )
             {
-                std::cout << "Alien's current segment and/or "
-                          << "render_info pointer is NULL"
+                std::cout << "Alien " << aln.id
+                          << " render_info pointer is NULL"
                           << std::endl;
                 continue;
             }
 
-            // Update distance travelled for alien
+            // Update alien's speed
             if( aln.acc > 0 )
             {
                 aln.current_speed = std::min(
@@ -832,13 +849,139 @@ int main( int argc, char** argv )
                 );
             }
 
+            // If no line segment assigned, assume
+            // alien is docking with formation
+            if( aln.current_seg.get() == NULL )
+            {
+                // Estimate distance travelled (in pixels)
+                // since last animation update
+                const float DIST
+                    = aln.current_speed * TICKS_SINCE_LAST_ANIM;
+
+                // Create a cubic Bezier curve plotting a route
+                // from aliens current position to it's (current)
+                // formation position.........
+
+                // Set first control point, P0, as current position
+                const MCK::Point<float> P0(
+                    aln.render_info->dest_rect.get_x(),
+                    aln.render_info->dest_rect.get_y()
+                );
+
+                // Set last control point, P3, as alien's formation
+                // position (within formation block),
+                // tranformed into sprite block's coord
+                // system.
+                const MCK::Point<float> P3
+                    = aln.formation_pos
+                        - MCK::Point<float>(
+                            alien_formation_block->hoz_offset,  
+                            alien_formation_block->vert_offset
+                        );
+                
+                // Set third control point, P2, a fixed hoz distance
+                // from P3, in direction of P0.
+                const MCK::Point<float> P2(
+                    P3.get_x() + MCK::Point<float>::comp_x( P0, P3 ) * 100,
+                    P3.get_y()
+                );
+                
+                // Second control point, P1, is simply the 
+                // alien's 'temp_control_point'
+                const MCK::Point<float> &P1 = aln.temp_control_point;
+
+                // Create Bezier
+                const MCK::BezierCurveCubic<MCK::Point<float>> bez(
+                    P0,
+                    P1,
+                    P2,
+                    P3
+                );
+
+                // Estimate 't' value on Bezier Curve by assuming
+                // that, for small 't' values, direction is in
+                // a straight line from P0 towards P1, with 't'
+                // being the dis proportion of distance P0->P1.
+                // For safety, the 't' value is capped at 1.0f.
+                const double EST_T
+                    = std::min(
+                        1.0f,
+                        DIST / sqrt( 
+                            MCK::Point<float>::dist_sq( P0, P1 ) 
+                        )
+                    );
+
+                // Calculate new position for alien, using
+                // the Bezier curve and the estimated 't' value
+                const MCK::Point<float> NEW_POS
+                    = bez.get_point( EST_T );
+
+                // If we've (tolerably) reached the formation point,
+                // move the alien to the formation block and declare
+                // it to be in formation
+                if( MCK::Point<float>::dist_sq( NEW_POS, P3 )
+                        < 0.001f
+                )
+                {
+                    // Move alien to formation block
+                    try
+                    {
+                        MCK::GameEng::move_render_instance(
+                            aln.render_info,
+                            sprite_block,
+                            alien_formation_block
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+                            std::string( "Failed to move alien to formation block, error: ")
+                            + e.what() ) );
+                    }
+                    
+                    // Set formation position
+                    aln.render_info->dest_rect.set_x(
+                        aln.formation_pos.get_x()
+                    ); 
+                    aln.render_info->dest_rect.set_y(
+                        aln.formation_pos.get_y()
+                    ); 
+                   
+                    aln.in_formation = true;
+                }
+                else
+                {
+                    // If not yet in formation,
+                    // set alien position
+                    aln.render_info->dest_rect.set_x(
+                        NEW_POS.get_x()
+                    ); 
+                    aln.render_info->dest_rect.set_y(
+                        NEW_POS.get_y()
+                    ); 
+                   
+                    // We need to calculate a new temporary control
+                    // point, for use in the next animation step.
+                    // To do this we split the Bezier curve at 'EST_T',
+                    // and take the second control point of the resulting
+                    // sub-curve.
+                    aln.temp_control_point
+                        = bez.split_hi( EST_T ).get_control_point( 1 );
+                }
+
+                // Skip to next alien
+                continue;
+            }
+
             aln.dist += aln.current_speed * TICKS_SINCE_LAST_ANIM;
+            bool skip = false;
             while( aln.dist > aln.current_seg->get_length() )
             {
                 aln.dist -= aln.current_seg->get_length();
                 
                 if( aln.current_seg->has_single_connection() )
                 {
+                    // Move alien to next segment on path
                     try
                     {
                         aln.current_seg = aln.current_seg->get_single_connection();
@@ -855,20 +998,45 @@ int main( int argc, char** argv )
                     // DEBUG
                     std::cout << "end of path" << std::endl;
 
-                    aln.in_formation = true;
-                    aln.render_info->dest_rect.set_x(
-                        aln.formation_pos.get_x()
-                    );
-                    aln.render_info->dest_rect.set_y(
-                        aln.formation_pos.get_y()
-                    );
-                    aln.dist = aln.current_seg->get_length();
+                    // Get third and fourth contol points for
+                    // existing segment
+                    const MCK::BezierCurveCubic<MCK::Point<float>> CURVE
+                        = aln.current_seg->get_curve();
+                    const MCK::Point<float> P2 = CURVE.get_control_point( 2 );
+                    const MCK::Point<float> P3 = CURVE.get_control_point( 3 );
+                    
+                    // Set temporary control point by adding
+                    // vector P2->P3 to P3
+                    aln.temp_control_point = P3 * 2 - P2;
+
+                    // Set current location of alien as P3
+                    // plus a vector of magnitude 'dist' in 
+                    // direction P2->P3
+                    const MCK::Point<float> NEW_POS
+                        = P3 + ( P3 - P2 )
+                            / sqrt(
+                                MCK::Point<float>::dist_sq( P2, P3 ) 
+                            ) * aln.dist;
+                    aln.render_info->dest_rect.set_x( NEW_POS.get_x() );
+                    aln.render_info->dest_rect.set_y( NEW_POS.get_y() );
+
+                    // Clear current segment but do NOT set
+                    // 'in_formation' flag; this indicates
+                    // alien is docking
+                    aln.current_seg.reset();
+
+                    skip = true;
                     break;
                 }
             }
 
+            if( skip )
+            {
+                continue;
+            }
+
             // DEBUG
-            std::cout << "aln.dist = " << aln.dist << std::endl;
+            // std::cout << "aln.dist = " << aln.dist << std::endl;
 
             // Calculate position of alien, within sprite block
             const MCK::Point<float> POS

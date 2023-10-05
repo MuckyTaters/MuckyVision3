@@ -279,6 +279,48 @@ class GameEng
         static void remove_block(
             std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove, 
             std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
+        )
+        {
+            if( block_to_remove.get() == NULL 
+                || block_to_remove->get_type() 
+                    != MCK::RenderInstanceType::BLOCK
+            )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot remove block as render " )
+                    + std::string( "instance supplied is not a block." )
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            // Convert block pointer to base pointer, as this is
+            // what we will actually searching for
+            std::shared_ptr<MCK::GameEngRenderBase> instance_to_remove
+                = std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
+                    block_to_remove
+                );
+
+            MCK::GameEng::remove_render_instance(
+                instance_to_remove,
+                block_to_start_search
+            );
+        }
+        
+        //! Remove render instance from render tree
+        static void remove_render_instance(
+            std::shared_ptr<MCK::GameEngRenderBase> instance_to_remove, 
+            std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
+        );
+
+        //! Move render instance to different block
+        static void move_render_instance(
+            std::shared_ptr<MCK::GameEngRenderBase> instance_to_move, 
+            std::shared_ptr<MCK::GameEngRenderBlock> old_block,
+            std::shared_ptr<MCK::GameEngRenderBlock> new_block,
+            uint32_t new_z = MCK::DEFAULT_Z_VALUE
         );
 
         //! Change the 'z' value of a render instance

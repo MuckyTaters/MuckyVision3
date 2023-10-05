@@ -1560,25 +1560,20 @@ void MCK::GameEng::change_render_info_tex(
     info->tex = tex;
 }
         
-void MCK::GameEng::remove_block(
-    std::shared_ptr<MCK::GameEngRenderBlock> block_to_remove,
+void MCK::GameEng::remove_render_instance(
+    std::shared_ptr<MCK::GameEngRenderBase> instance_to_remove,
     std::shared_ptr<MCK::GameEngRenderBlock> block_to_start_search
 )
 {
-    // If block pointer is NULL, ignore
-    if( block_to_start_search.get() == NULL )
+    // If instance or block pointer is NULL, ignore
+    if( instance_to_remove.get() == NULL
+        || block_to_start_search.get() == NULL
+    )
     {
         return;
     }
     
-    // Convert block pointer to base pointer, as this is
-    // what we will actually searching for
-    std::shared_ptr<MCK::GameEngRenderBase> item_to_remove
-        = std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
-            block_to_remove
-        );
-
-    // Loop over blocks, looking for the one to remove
+    // Loop over instances, looking for the one to remove
     std::multimap<uint64_t,std::shared_ptr<MCK::GameEngRenderBase>>::iterator it;
     for( it = block_to_start_search->render_instances.begin();
          it != block_to_start_search->render_instances.end();
@@ -1593,7 +1588,7 @@ void MCK::GameEng::remove_block(
         // Note: Carry on searching after removal, in case
         //       the block to be removed has multiple entries
         if( item.get() == NULL
-            || item.get() == item_to_remove.get() 
+            || item.get() == instance_to_remove.get() 
         )
         {
             // Remove this instance
@@ -1611,12 +1606,97 @@ void MCK::GameEng::remove_block(
         // continue search recursively
         else if( item->get_type() == MCK::RenderInstanceType::BLOCK )
         {
-            GameEng::remove_block(
-                block_to_remove,
+            GameEng::remove_render_instance(
+                instance_to_remove,
                 std::dynamic_pointer_cast<MCK::GameEngRenderBlock>( item )
             );
         }
     }
+}
+
+void MCK::GameEng::move_render_instance(
+    std::shared_ptr<MCK::GameEngRenderBase> instance_to_move, 
+    std::shared_ptr<MCK::GameEngRenderBlock> old_block,
+    std::shared_ptr<MCK::GameEngRenderBlock> new_block,
+    uint32_t new_z
+)
+{
+    // If any pointer is NULL, throw
+    if( instance_to_move.get() == NULL
+        || old_block.get() == NULL
+        || new_block.get() == NULL
+    )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot move render instance as at " )
+            + std::string( "least one pointer is NULL." )
+#else
+            ""
+#endif
+        ) );
+    }
+    
+    // Loop over instances, looking for the one to remove
+    bool found = false;
+    std::multimap<uint64_t,std::shared_ptr<MCK::GameEngRenderBase>>::iterator it;
+    for( it = old_block->render_instances.begin();
+         it != old_block->render_instances.end();
+         it++
+    )
+    {
+        // Get pointer to item
+        std::shared_ptr<MCK::GameEngRenderBase> item = it->second;
+
+        // If item matches remove it
+        // Note: Carry on searching after removal, in case
+        //       the block to be removed has multiple entries
+        if( item.get() == instance_to_move.get() )
+        {
+            // Remove this instance
+            it = old_block->render_instances.erase( it );
+         
+            found = true;
+
+            // If render instances is now empty, end here
+            // THIS IS IMPORTANT AS OTHERWISE THIS FOR LOOP WILL
+            // HANG WHEN IT NEXT TRIES TO EXECUTE 'it++'
+            if( old_block->render_instances.size() == 0 )
+            {
+                break;
+            }
+        }
+    }
+
+    if( !found )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Render instance not found in old block " )
+            + std::string( "do cannot remove." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Calculate new render order
+    // (done using private access)
+    instance_to_move->render_order 
+        = ( uint64_t( new_z ) << 32 )
+          | instance_to_move->get_id();
+
+    // Add to new block
+    // (done using private access)
+    new_block->render_instances.insert(
+        std::pair<
+            uint64_t,
+            std::shared_ptr<MCK::GameEngRenderBase>
+        >( 
+            instance_to_move->render_order, 
+            instance_to_move
+        )
+    );
 }
 
 void MCK::GameEng::basic_create_texture(
