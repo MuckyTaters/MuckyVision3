@@ -455,9 +455,6 @@ int main( int argc, char** argv )
     {
         const size_t NUM_SEGS = ( PATH_DATA.size() - 2  ) / 6;
 
-        // DEBUG
-        std::cout << "NUM_SEGS = " << NUM_SEGS << std::endl;
-
         for( size_t i = 0; i < NUM_SEGS; i++ )
         {
             // Calculate starting position of the control point
@@ -518,10 +515,6 @@ int main( int argc, char** argv )
                     + std::string( ", error: " )
                     + e.what() ) );
             }
-
-            // DEBUG
-            std::cout << ">> Line seg " << i << ": " << std::endl;
-            new_seg->str();
 
             // Store pointer to first segment only
             if( i == 0 )
@@ -813,9 +806,6 @@ int main( int argc, char** argv )
         // Animate aliens not in formation
         for( AlienSprite &aln : aliens )
         {
-            // DEBUG
-            // std::cout << "aln.id = " << aln.id << std::endl;
-
             // Ignore those in formation
             if( aln.in_formation )
             {
@@ -874,7 +864,7 @@ int main( int argc, char** argv )
                 // system.
                 const MCK::Point<float> P3
                     = aln.formation_pos
-                        - MCK::Point<float>(
+                        + MCK::Point<float>(
                             alien_formation_block->hoz_offset,  
                             alien_formation_block->vert_offset
                         );
@@ -882,7 +872,14 @@ int main( int argc, char** argv )
                 // Set third control point, P2, a fixed hoz distance
                 // from P3, in direction of P0.
                 const MCK::Point<float> P2(
-                    P3.get_x() + MCK::Point<float>::comp_x( P0, P3 ) * 100,
+                    P3.get_x() 
+                        - MCK::Point<float>::comp_x( P0, P3 )
+                            * std::min(
+                                fabs( 
+                                    P0.get_x() - P3.get_x()
+                                ),
+                                100.0f
+                            ),
                     P3.get_y()
                 );
                 
@@ -916,12 +913,12 @@ int main( int argc, char** argv )
                 const MCK::Point<float> NEW_POS
                     = bez.get_point( EST_T );
 
+                const float DIST_SQ = MCK::Point<float>::dist_sq( NEW_POS, P3 );
+
                 // If we've (tolerably) reached the formation point,
                 // move the alien to the formation block and declare
                 // it to be in formation
-                if( MCK::Point<float>::dist_sq( NEW_POS, P3 )
-                        < 0.001f
-                )
+                if( DIST_SQ < 1.0f  /* < 0.001f */ )
                 {
                     // Move alien to formation block
                     try
@@ -995,9 +992,6 @@ int main( int argc, char** argv )
                 }
                 else
                 {
-                    // DEBUG
-                    std::cout << "end of path" << std::endl;
-
                     // Get third and fourth contol points for
                     // existing segment
                     const MCK::BezierCurveCubic<MCK::Point<float>> CURVE
@@ -1034,9 +1028,6 @@ int main( int argc, char** argv )
             {
                 continue;
             }
-
-            // DEBUG
-            // std::cout << "aln.dist = " << aln.dist << std::endl;
 
             // Calculate position of alien, within sprite block
             const MCK::Point<float> POS

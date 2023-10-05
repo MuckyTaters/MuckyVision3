@@ -1697,6 +1697,9 @@ void MCK::GameEng::move_render_instance(
             instance_to_move
         )
     );
+
+    // Set parent block of render instance
+    instance_to_move->parent_block = &*new_block;
 }
 
 void MCK::GameEng::basic_create_texture(
