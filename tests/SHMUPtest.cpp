@@ -48,6 +48,9 @@ const int WINDOW_WIDTH_IN_PIXELS = 640;
 const int WINDOW_HEIGHT_IN_PIXELS = 360;
 
 // Demo specific parameters
+const int CHAR_WIDTH = 16;
+const int CHAR_HEIGHT = 16;
+const int CHAR_SPACING = 2;
 const int BORDER_X = 20;
 const float X_MIN = float( BORDER_X );
 const float X_MAX = float( WINDOW_WIDTH_IN_PIXELS - BORDER_X );
@@ -86,7 +89,29 @@ const int ALIEN_FORMATION_PIXEL_WIDTH
 const int ALIEN_FORMATION_X_SPAN
             = X_SPAN - ALIEN_FORMATION_PIXEL_WIDTH;
 const int PATH_SCALE = WINDOW_WIDTH_IN_PIXELS / 40;
+
 const uint32_t BEEP_INTERVAL = 800;
+
+const int STAR_1_WIDTH = 4;
+const int STAR_1_HEIGHT = 2;
+const int STAR_2_WIDTH = 4;
+const int STAR_2_HEIGHT = 2;
+const size_t STARFIELD_1_SIZE
+    = WINDOW_WIDTH_IN_PIXELS / STAR_1_WIDTH / 8
+        * WINDOW_HEIGHT_IN_PIXELS / STAR_1_HEIGHT;
+const size_t STARFIELD_2_SIZE
+    = WINDOW_WIDTH_IN_PIXELS / STAR_2_WIDTH / 8
+        * WINDOW_HEIGHT_IN_PIXELS / STAR_2_HEIGHT;
+const int STARFIELD_1_PIXEL_WIDTH 
+    = WINDOW_WIDTH_IN_PIXELS / STAR_1_WIDTH;
+const int STARFIELD_1_PIXEL_HEIGHT 
+    = WINDOW_HEIGHT_IN_PIXELS / STAR_1_HEIGHT;
+const int STARFIELD_2_PIXEL_WIDTH 
+    = WINDOW_WIDTH_IN_PIXELS / STAR_2_WIDTH;
+const int STARFIELD_2_PIXEL_HEIGHT 
+    = WINDOW_HEIGHT_IN_PIXELS / STAR_2_HEIGHT;
+const float STARFIELD_1_SPEED = 32.0f / 1000.0f;  // Pixels per tick
+const float STARFIELD_2_SPEED = 24.0f / 1000.0f;  // Pixels per tick
 
 // Waveform shortcuts
 uint32_t SIN = uint32_t( MCK::VoiceSynth::SINE );
@@ -284,6 +309,8 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE LOCAL PALETTE(S)
     MCK_PAL_ID_TYPE title_palette_id;
+    MCK_PAL_ID_TYPE starfield_1_palette_id;
+    MCK_PAL_ID_TYPE starfield_2_palette_id;
     MCK_PAL_ID_TYPE alien_1_palette_id;
     MCK_PAL_ID_TYPE alien_2_palette_id;
     MCK_PAL_ID_TYPE alien_3_palette_id;
@@ -294,6 +321,22 @@ int main( int argc, char** argv )
                 std::vector<uint8_t>{
                     MCK::COL_BLACK,
                     MCK::COL_YELLOW,
+                }
+            )
+        );
+        starfield_1_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_MID_GRAY,
+                }
+            )
+        );
+        starfield_2_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_DARK_GRAY,
                 }
             )
         );
@@ -371,9 +414,72 @@ int main( int argc, char** argv )
         0b01010100,
         0b01010100
     };
-    
+   
+    // Starfield 1
+    std::vector<uint8_t> starfield_1(
+        STARFIELD_1_SIZE,
+        0x00000000
+    );
+    for( int i = 0; i < 40; i++ )
+    {
+        // Set random pixel to '1'
+        starfield_1.at( rand() % STARFIELD_1_SIZE )
+            |= ( 1 << rand() % 8 ); 
+    }
+
+    // Starfield 2
+    std::vector<uint8_t> starfield_2(
+        STARFIELD_2_SIZE,
+        0x00000000
+    );
+    for( int i = 0; i < 40; i++ )
+    {
+        // Set random pixel to '1'
+        starfield_2.at( rand() % STARFIELD_2_SIZE )
+            |= ( 1 << rand() % 8 ); 
+    }
+
+
     ////////////////////////////////////////////
     // CREATE IMAGES
+    
+    MCK_IMG_ID_TYPE starfield_1_image_id;
+    try
+    {
+        starfield_1_image_id = image_man.create_custom_image(
+            std::make_shared<const std::vector<uint8_t>>(
+                starfield_1
+            ),
+            1,  // bits_per_pixel,
+            STARFIELD_1_PIXEL_WIDTH,
+            STARFIELD_1_PIXEL_HEIGHT
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create starfield 1 image, error: ")
+            + e.what() ) );
+    }
+    
+    MCK_IMG_ID_TYPE starfield_2_image_id;
+    try
+    {
+        starfield_2_image_id = image_man.create_custom_image(
+            std::make_shared<const std::vector<uint8_t>>(
+                starfield_2
+            ),
+            1,  // bits_per_pixel,
+            STARFIELD_2_PIXEL_WIDTH,
+            STARFIELD_2_PIXEL_HEIGHT
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create starfield 2 image, error: ")
+            + e.what() ) );
+    }
     
     MCK_IMG_ID_TYPE alien_1_image_id;
     try
@@ -450,10 +556,20 @@ int main( int argc, char** argv )
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
+    std::shared_ptr<MCK::GameEngRenderBlock> starfield_1_block;
+    std::shared_ptr<MCK::GameEngRenderBlock> starfield_2_block;
     std::shared_ptr<MCK::GameEngRenderBlock> sprite_block;
     std::shared_ptr<MCK::GameEngRenderBlock> alien_formation_block;
     try
     {
+        starfield_1_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE - 1
+        );
+        starfield_2_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE - 2
+        );
         sprite_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             MCK::DEFAULT_Z_VALUE
@@ -727,6 +843,107 @@ int main( int argc, char** argv )
         }
     }
 
+    
+    /////////////////////////////////////////////
+    // CREATE STARFIELDS
+    {
+        // Starfield 1
+        try
+        {
+            image_man.create_render_info(
+                starfield_1_image_id,
+                starfield_1_palette_id,
+                0,
+                -1 * WINDOW_HEIGHT_IN_PIXELS,
+                WINDOW_WIDTH_IN_PIXELS,
+                WINDOW_HEIGHT_IN_PIXELS,
+                starfield_1_block
+            );
+            image_man.create_render_info(
+                starfield_1_image_id,
+                starfield_1_palette_id,
+                0,
+                0,
+                WINDOW_WIDTH_IN_PIXELS,
+                WINDOW_HEIGHT_IN_PIXELS,
+                starfield_1_block
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create starfield 1 " )
+                + std::string( "render info, error: " )
+                + e.what() ) );
+        }
+        
+        // Starfield 2
+        try
+        {
+            image_man.create_render_info(
+                starfield_2_image_id,
+                starfield_2_palette_id,
+                0,
+                -1 * WINDOW_HEIGHT_IN_PIXELS,
+                WINDOW_WIDTH_IN_PIXELS,
+                WINDOW_HEIGHT_IN_PIXELS,
+                starfield_2_block
+            );
+            image_man.create_render_info(
+                starfield_2_image_id,
+                starfield_2_palette_id,
+                0,
+                0,
+                WINDOW_WIDTH_IN_PIXELS,
+                WINDOW_HEIGHT_IN_PIXELS,
+                starfield_2_block
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create starfield 2 " )
+                + std::string( "render info, error: " )
+                + e.what() ) );
+        }
+    }
+
+    /////////////////////////////////////////////
+    // ADD TITLE
+    MCK::ImageText title_text;
+    {
+        std::string copyright( 1, uint8_t( 255  ));
+        std::string s = "MUCKYVADERS " + copyright + " 2023";
+
+        try
+        {
+            title_text.init(
+                game_eng,
+                image_man,
+                game_eng.get_prime_render_block(),
+                title_palette_id,
+                ( WINDOW_WIDTH_IN_PIXELS
+                    - s.length() * CHAR_WIDTH
+                        - ( s.length() - 1 ) * CHAR_SPACING
+                ) / 2,
+                ( WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT ) / 2,
+                s.length(),
+                CHAR_WIDTH,
+                CHAR_HEIGHT,
+                s,
+                MCK::ImageText::CENTER,
+                CHAR_SPACING,
+                0,  // basic ascii set
+                MCK::MAX_Z_VALUE
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create title text, error :" )
+                + e.what() ) );
+        }
+    }
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
@@ -829,35 +1046,69 @@ int main( int argc, char** argv )
 
         //////////////////////////////////////////////
         // ANIMATION
-        
-        // Move alien formation
+
         const uint32_t TICKS_SINCE_LAST_ANIM
             = CURRENT_TICKS - ticks_at_last_animation;
         ticks_at_last_animation = CURRENT_TICKS;
         if( TICKS_SINCE_LAST_ANIM > 0 )
         {
-            // Get total pixels moved by formation since
-            // start.
-            const uint32_t RAW_X_POS 
-                = uint32_t( 
-                    float( CURRENT_TICKS - START_TICKS )
-                        * ALIEN_FORMATION_SPEED
-                );
+            /////////////////////////
+            // Move starfields
+            { 
+                // Get total pixels moved by starfield 1 since
+                // start
+                const uint32_t RAW_Y_POS 
+                    = uint32_t( 
+                        float( CURRENT_TICKS - START_TICKS )
+                            * STARFIELD_1_SPEED
+                    );
 
-            // Determine if formation is now moving left (true)
-            // or right (false)
-            const bool LEFT
-                = ( RAW_X_POS / ALIEN_FORMATION_X_SPAN ) % 2;
+                // Apply this to starfield block using modulo
+                // to create wrap around effect.
+                starfield_1_block->vert_offset
+                    = RAW_Y_POS % WINDOW_HEIGHT_IN_PIXELS; 
+            }
+            { 
+                // Get total pixels moved by starfield 2 since
+                // start
+                const uint32_t RAW_Y_POS 
+                    = uint32_t( 
+                        float( CURRENT_TICKS - START_TICKS )
+                            * STARFIELD_2_SPEED
+                    );
 
-            // Calculate pixel displacement (from left or right)
-            const uint32_t X_DISP 
-                = RAW_X_POS % ALIEN_FORMATION_X_SPAN;
+                // Apply this to starfield block using modulo
+                // to create wrap around effect.
+                starfield_2_block->vert_offset
+                    = RAW_Y_POS % WINDOW_HEIGHT_IN_PIXELS; 
+            }
 
-            // Calculate actual screen position
-            alien_formation_block->hoz_offset
-                = LEFT ?
-                    X_DISP + BORDER_X
-                    : ALIEN_FORMATION_X_SPAN - X_DISP + BORDER_X;
+            /////////////////////////
+            // Move alien formation
+            {
+                // Get total pixels moved by formation since
+                // start.
+                const uint32_t RAW_X_POS 
+                    = uint32_t( 
+                        float( CURRENT_TICKS - START_TICKS )
+                            * ALIEN_FORMATION_SPEED
+                    );
+
+                // Determine if formation is now moving left (true)
+                // or right (false)
+                const bool LEFT
+                    = ( RAW_X_POS / ALIEN_FORMATION_X_SPAN ) % 2;
+
+                // Calculate pixel displacement (from left or right)
+                const uint32_t X_DISP 
+                    = RAW_X_POS % ALIEN_FORMATION_X_SPAN;
+
+                // Calculate actual screen position
+                alien_formation_block->hoz_offset
+                    = LEFT ?
+                        X_DISP + BORDER_X
+                        : ALIEN_FORMATION_X_SPAN - X_DISP + BORDER_X;
+            }
         }
         
 
