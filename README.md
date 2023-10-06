@@ -116,9 +116,7 @@ to provide a suite of geometry tools. These will eventually be used to control s
     * BezierCurveLinear.h describes a straight line between two Point instances.
     * BezierCurveQuad.h describes a curved line between two Points, with one additional control Point.
     * BezierCurveCubic.h describes a straight line between two Points, with two additional control Points.
-    * LineSegmentBase.h provides a common base for LineSegment classes, which add arc length data to curve instances.
-    * LineSegmentFixed.h provides estimation of arc length for any curve instance with fixed end/control Points.
-    * TODO: LineSegmentDynamic.h will provide estimation of arc length for any curve instance, even if its Points change.
+    * LineSegment.h provides estimation of arc length for any curve instance with fixed end/control Points.
 
 The 'GameEng' layer provides a method of creating textures from
 raw data that is especially useful for small two-colour images, of the

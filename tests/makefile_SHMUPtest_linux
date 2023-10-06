@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build/GameEngRenderBase.o build/GameEng.o build/GameEngAudio.o build/Envelope.o build/VoiceSynth.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/Console.o build/SHMUPtest.o 
+BUILDS := build/GameEngRenderBase.o build/GameEng.o build/GameEngAudio.o build/Envelope.o build/VoiceSynth.o build/ImageDataASCII.o build/ImageMan.o build/ImageText.o build/SHMUPtest.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -112,12 +112,8 @@ build/ImageMan.o: ../src/ImageMan.cpp ../include/ImageMan.h build/GameEng.o ../i
 build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o build/ImageMan.o 
 	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
 
-## Console ##
-build/Console.o: ../src/Console.cpp ../include/Console.h build/GameEng.o build/ImageMan.o build/ImageText.o
-	$(CC) -c ../src/Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/Console.o
-
 ## SHMUPtest ##
-build/SHMUPtest.o: SHMUPtest.cpp ../include/LineSegmentBase.h ../include/LineSegment.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h build/Console.o build/GameEng.o build/ImageText.o 
+build/SHMUPtest.o: SHMUPtest.cpp ../include/LineSegmentBase.h ../include/LineSegment.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h build/GameEng.o build/ImageText.o 
 	$(CC) -c SHMUPtest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/SHMUPtest.o
 
 

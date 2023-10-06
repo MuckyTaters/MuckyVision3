@@ -72,13 +72,14 @@ class BezierCurveCubic : public BezierCurveBase<T>
         }
 
         //! Copy constructor
-        BezierCurveCubic( const BezierCurveCubic<T> &other ) noexcept = default;
+        // BezierCurveCubic( const BezierCurveCubic<T> &other ) noexcept = default;
+        BezierCurveCubic( const BezierCurveCubic<T> &other ) = default;
 
         //! Assignment constructor
-        BezierCurveCubic& operator=( const BezierCurveCubic<T> &other ) noexcept = default;
+        BezierCurveCubic& operator=( const BezierCurveCubic<T> &other ) = default;
        
         //! Move constructor
-        BezierCurveCubic( BezierCurveCubic<T> &&other ) noexcept = default;
+        BezierCurveCubic( BezierCurveCubic<T> &&other ) = default;
 
         //! Destructor
         virtual ~BezierCurveCubic( void ) noexcept {}

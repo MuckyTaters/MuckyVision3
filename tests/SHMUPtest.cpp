@@ -35,7 +35,6 @@
 #include "GameEng.h"
 #include "ImageMan.h"
 #include "ImageText.h"
-#include "Console.h"
 #include "GameEngAudio.h"
 
 
@@ -944,6 +943,80 @@ int main( int argc, char** argv )
                 + e.what() ) );
         }
     }
+    
+    /////////////////////////////////////////////
+    // ADD INFO TEXT
+    MCK::ImageText info_text_1;
+    {
+        std::string s = "Sprite motion demo for the MuckyVision3 game engine";
+        try
+        {
+            info_text_1.init(
+                game_eng,
+                image_man,
+                game_eng.get_prime_render_block(),
+                title_palette_id,
+                ( WINDOW_WIDTH_IN_PIXELS
+                    - s.length() * CHAR_WIDTH / 2
+                        - ( s.length() - 1 ) * CHAR_SPACING
+                ) / 2,
+                ( WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT ) / 2
+                    + CHAR_HEIGHT * 3,
+                s.length(),
+                CHAR_WIDTH / 2,
+                CHAR_HEIGHT,
+                s,
+                MCK::ImageText::CENTER,
+                CHAR_SPACING,
+                0,  // basic ascii set
+                MCK::MAX_Z_VALUE
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create info text, error :" )
+                + e.what() ) );
+        }
+
+        info_text_1.make_inactive();
+    }
+
+    MCK::ImageText info_text_2;
+    {
+        std::string s = "Code here: github.com/MuckyTaters/MuckyVision3";
+        try
+        {
+            info_text_2.init(
+                game_eng,
+                image_man,
+                game_eng.get_prime_render_block(),
+                title_palette_id,
+                ( WINDOW_WIDTH_IN_PIXELS
+                    - s.length() * CHAR_WIDTH / 2
+                        - ( s.length() - 1 ) * CHAR_SPACING
+                ) / 2,
+                ( WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT ) / 2
+                    + CHAR_HEIGHT * 5,
+                s.length(),
+                CHAR_WIDTH / 2,
+                CHAR_HEIGHT,
+                s,
+                MCK::ImageText::CENTER,
+                CHAR_SPACING,
+                0,  // basic ascii set
+                MCK::MAX_Z_VALUE
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create info text, error :" )
+                + e.what() ) );
+        }
+
+        info_text_2.make_inactive();
+    }
 
     /////////////////////////////////////////////
     // MAIN LOOP STARTS HERE
@@ -1113,8 +1186,15 @@ int main( int argc, char** argv )
         
 
         // Process all alien sprites
+        bool all_in_formation = true;
         for( AlienSprite &aln : aliens )
         {
+            // For purpose of making info text active
+            if( !aln.in_formation )
+            {
+                all_in_formation = false;
+            }
+
             // Create render info for newly appearing aliens
             if( aln.render_info.get() == NULL 
                 && aln.appearance_ticks < CURRENT_TICKS
@@ -1424,6 +1504,16 @@ int main( int argc, char** argv )
 
             aln.render_info->dest_rect.set_x( POS.get_x() );
             aln.render_info->dest_rect.set_y( POS.get_y() );
+        }
+
+        if( all_in_formation
+            && ( !info_text_1.is_active()
+                 || !info_text_2.is_active()
+            )
+        )
+        {
+            info_text_1.make_active();
+            info_text_2.make_active();
         }
 
         // Clear, render and present

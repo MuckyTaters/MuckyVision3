@@ -3,7 +3,7 @@
 ##  ---MUCKY VISION 3 (BASIC ENGINE)---
 ##  -----------------------------------
 ##
-##  makefile_BezierTest_windows_MinGW
+##  makefile_SHMUPtest_windows_MinGW
 ##
 ##  Makefile to build test of Bezier curves
 ##  class on Linux using g++.
@@ -37,8 +37,8 @@
 ## DISCLAIMER: Dependencies described herein
 ## are maintained on a best-effort basis and
 ## may not be 100% correct. If in doubt,
-## execute 'make -f makefile_BezierTest_windows_MinGW clean'
-## then 'make -f makefile_BezierTest_windows_MinGW' to
+## execute 'make -f makefile_SHMUPtest_windows_MinGW clean'
+## then 'make -f makefile_SHMUPtest_windows_MinGW' to
 ## rebuild the entire project
 #############################################
 
@@ -47,7 +47,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build\GameEngRenderBase.o build\GameEng.o build\GameEngAudio.o build\Envelope.o build\VoiceSynth.o build\ImageDataASCII.o build\ImageMan.o build\ImageText.o build\Console.o build\BezierTestAudio.o 
+BUILDS := build\GameEngRenderBase.o build\GameEng.o build\GameEngAudio.o build\Envelope.o build\VoiceSynth.o build\ImageDataASCII.o build\ImageMan.o build\ImageText.o build\SHMUPtest.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -67,8 +67,8 @@ $(info BUILD_OPTION set as $(BUILD_OPTION) )
 
 # THESE VARIABLES MUST BE SET BY YOU, REPLACE ??? WITH THE ACTUAL PATH
 # IMPORTANT: There must no NO TRAILING SPACES, OR ANYTHING ELSE AFTER THESE ENTRIES
-SDL_PATH := ???
-MINGW_PATH := ???
+SDL_PATH := C:\SDL2-2.28.2
+MINGW_PATH := C:\MinGW
 
 ifeq '$(SDL_PATH)' '???'
     $(error SDL_PATH must be set by you! You need to edit makefile_ImageManTest_windows_MinGW )
@@ -98,7 +98,7 @@ $(info LINKER_FLAGS = $(LINKER_FLAGS) )
 $(info INC = $(INC) )
 
 #OUTPUT specifies the name of our exectuable
-OUTPUT := BezierTestAudio
+OUTPUT := SHMUPtest
 
 
 #############################################
@@ -145,13 +145,9 @@ build\ImageMan.o: ..\src\ImageMan.cpp ..\include\ImageMan.h build\GameEng.o ..\i
 build\ImageText.o: ..\src\ImageText.cpp ..\include\ImageText.h build\GameEng.o build\ImageMan.o 
 	$(CC) -c ..\src\ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\ImageText.o
 
-## Console ##
-build\Console.o: ..\src\Console.cpp ..\include\Console.h build\GameEng.o build\ImageMan.o build\ImageText.o
-	$(CC) -c ..\src\Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\Console.o
-
-## BezierTestAudio ##
-build\BezierTestAudio.o: BezierTestAudio.cpp ..\include\LineSegmentBase.h ..\include\LineSegmentFixed.h ..\include\BezierCurveBase.h ..\include\BezierCurveLinear.h ..\include\BezierCurveQuad.h ..\include\BezierCurveCubic.h ..\include\Point.h build\Console.o build\GameEng.o build\ImageText.o 
-	$(CC) -c BezierTestAudio.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\BezierTestAudio.o
+## SHMUPtest ##
+build\SHMUPtest.o: SHMUPtest.cpp ..\include\LineSegmentBase.h ..\include\LineSegmentFixed.h ..\include\BezierCurveBase.h ..\include\BezierCurveLinear.h ..\include\BezierCurveQuad.h ..\include\BezierCurveCubic.h ..\include\Point.h build\GameEng.o build\ImageText.o 
+	$(CC) -c SHMUPtest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\SHMUPtest.o
 
 
 #############################################
