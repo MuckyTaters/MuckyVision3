@@ -67,7 +67,12 @@ const float LINE_SEG_DISTANCE_STEP = 10.0f;
 const int ALIEN_RAW_PIXEL_WIDTH = 8;
 const int ALIEN_RAW_PIXEL_HEIGHT = 8;
 const int ALIEN_SCALE = 2;
-const int ALIEN_PIXEL_WIDTH = ALIEN_RAW_PIXEL_WIDTH * ALIEN_SCALE;
+const float ALIEN_ASPECT_RATIO = 2.0f;
+const int ALIEN_PIXEL_WIDTH
+    = int(
+        float( ALIEN_RAW_PIXEL_WIDTH * ALIEN_SCALE )
+            * ALIEN_ASPECT_RATIO
+    );
 const int ALIEN_PIXEL_HEIGHT = ALIEN_RAW_PIXEL_HEIGHT * ALIEN_SCALE;
 const int ALIEN_ROWS = 4;
 const int ALIEN_COLS = 6;
@@ -81,6 +86,7 @@ const int ALIEN_FORMATION_PIXEL_WIDTH
 const int ALIEN_FORMATION_X_SPAN
             = X_SPAN - ALIEN_FORMATION_PIXEL_WIDTH;
 const int PATH_SCALE = WINDOW_WIDTH_IN_PIXELS / 40;
+const uint32_t BEEP_INTERVAL = 800;
 
 // Waveform shortcuts
 uint32_t SIN = uint32_t( MCK::VoiceSynth::SINE );
@@ -93,22 +99,24 @@ uint32_t WHT = uint32_t( MCK::VoiceSynth::WHITENOISE );
 // VOICE DATA
 //  DUR,  WAVE, OCT, ATK,   DEC,   REL,  SUS_PROP, VOL
 const std::vector<uint32_t> VOICE_DATA = {
-    2205, TRI,  2,   550,   550,   8820,   192,    128,  // 0
-    2205, TRI,  2,   550,   550,   8820,   192,    128,  // 1
-    2205, TRI,  2,   550,   550,   8820,   192,    128,  // 2
-    2205, SQU,  3,   550,   550,   8820,   192,     32,  // 3
-    2205, SQU,  3,   550,   550,   8820,   192,     32,  // 4
-    2205, SQU,  3,   550,   550,   8820,   192,     32,  // 5
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 6
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 7
+    2205, TRI,  2,   550,   550,   8820,   192,    255,  // 0
+    2205, TRI,  2,   550,   550,   8820,   192,    255,  // 1
+    2205, TRI,  2,   550,   550,   8820,   192,    255,  // 2
+    2205, SQU,  3,   550,   550,   8820,   192,     64,  // 3
+    2205, SQU,  3,   550,   550,   8820,   192,     64,  // 4
+    2205, SQU,  3,   550,   550,   8820,   192,     64,  // 5
+    2205, TRI,  2,   550,   550,   8820,   192,     32,  // 6
+    2205, TRI,  2,   550,   550,   8820,   192,     32   // 7
 };
 const int VOICE_DATA_COLS = 8;
 
 /////////////////////////////////////////////
 // ALIEN PATH DATA
 //  X   Y  ( units = window width in pixels / 40 )
+//  Note: p0 to p3 are control points for a cubic Bezier curve
 const std::vector<std::vector<int16_t>> PATH_DATA = {
 {
+    // Entry from top-left
     0,  0,  // p0
     2,  4,  // p1
     5,  15, // p2
@@ -118,6 +126,7 @@ const std::vector<std::vector<int16_t>> PATH_DATA = {
     38, 10  // p3/p0
 },
 {
+    // Entry from top-right
     40, 0,  // p0
     38, 4,  // p1
     35, 15, // p2
@@ -221,13 +230,24 @@ int main( int argc, char** argv )
                   << std::endl;
     }
 
-    // Group similar voices
+    // Group similar voices together.
+    // This allows similar FX to be played 
+    // concurrently using different voices,
+    // avoiding the 'popping' sound that results
+    // from FX being cut-off prematurely when new
+    // FX are played
     const std::vector<uint8_t> FX_0_VOICES = { 0, 1, 2 };
     const std::vector<uint8_t> FX_1_VOICES = { 3, 4, 5 };
     const std::vector<uint8_t> FX_2_VOICES = { 6, 7 };
+
+    // These indices point to elements of the above vectors,
+    // and MUST never exceed the length of thier associated
+    // vector. They are not const as they are incremented
+    // each time an FX of that type is played.
     uint8_t fx_0_voice_index = 0;
     uint8_t fx_1_voice_index = 0;
     uint8_t fx_2_voice_index = 0;
+
 
     //////////////////////////////////////////////
     // INITIALIZE SDL AUDIO
@@ -455,7 +475,7 @@ int main( int argc, char** argv )
 
 
     /////////////////////////////////////////////
-    // Create animation info
+    // CREATE SPRITE PATHS
 
     // Declare vector of entry paths for aliens
     // Note: each entry is a "starting segment"
@@ -525,9 +545,6 @@ int main( int argc, char** argv )
                     )
                 );
 
-                // DEBUG
-                new_seg->str();
-
                 // Initialise this line segment
                 try
                 {
@@ -573,7 +590,10 @@ int main( int argc, char** argv )
         }
     }
 
-    // POD struct to hold sprite info
+    /////////////////////////////////////////////
+    // CREATE SPRITES
+
+    // Ad-hoc POD struct to hold sprite info
     struct BasicSprite
     {
         MCK_IMG_ID_TYPE image_id;
@@ -595,7 +615,7 @@ int main( int argc, char** argv )
         float acc;  // Acceleration, pixels per tick per tick
     };
 
-    // Alien sprites
+    // Specialised sprite struct to hold alien sprite info
     struct AlienSprite : public BasicSprite
     {
         // Coordinates of alien within alien_formation_block
@@ -620,6 +640,7 @@ int main( int argc, char** argv )
         }
     };
 
+    // Create alien sprites
     std::vector<AlienSprite> aliens;
     aliens.resize( ALIEN_ROWS * ALIEN_COLS );
     for( int j = 0; j < ALIEN_ROWS; j++ )
@@ -655,56 +676,45 @@ int main( int argc, char** argv )
             ALIEN->image_id = image_id;
             ALIEN->palette_id = palette_id;
 
-            // DEBUG
-            // if( j > ALIEN_ROWS - 3 )
+            ALIEN->in_formation = false;
+
+            // Set intial path location
+            switch( j )
             {
-                ALIEN->in_formation = false;
+                case ALIEN_ROWS - 1:
+                    ALIEN->current_seg = start_segs[0];
+                    ALIEN->appearance_ticks = 1000 + i * 200;
+                    break;
 
-                // Set intial path location
-                switch( j )
-                {
-                    case ALIEN_ROWS - 1:
-                        ALIEN->current_seg = start_segs[0];
-                        ALIEN->appearance_ticks = 1000 + i * 200;
-                        break;
+                case ALIEN_ROWS - 2:
+                    ALIEN->current_seg = start_segs[1];
+                    ALIEN->appearance_ticks
+                        = 3000 + ( ALIEN_COLS - i ) * 200;
+                    break;
+                
+                case ALIEN_ROWS - 3:
+                    ALIEN->current_seg = start_segs[0];
+                    ALIEN->appearance_ticks = 5000 + i * 200;
+                    break;
 
-                    case ALIEN_ROWS - 2:
-                        ALIEN->current_seg = start_segs[1];
-                        ALIEN->appearance_ticks
-                            = 3000 + ( ALIEN_COLS - i ) * 200;
-                        break;
-                    
-                    case ALIEN_ROWS - 3:
-                        ALIEN->current_seg = start_segs[0];
-                        ALIEN->appearance_ticks = 5000 + i * 200;
-                        break;
+                case ALIEN_ROWS - 4:
+                    ALIEN->current_seg = start_segs[1];
+                    ALIEN->appearance_ticks
+                        = 7000 + ( ALIEN_COLS - i ) * 200;
+                    break;
 
-                    case ALIEN_ROWS - 4:
-                        ALIEN->current_seg = start_segs[1];
-                        ALIEN->appearance_ticks
-                            = 7000 + ( ALIEN_COLS - i ) * 200;
-                        break;
-                }
-
-                // Set speed
-                ALIEN->current_speed = 640.0f / 1000.0f;
-                ALIEN->target_speed = 128.0f / 1000.0f;
-                ALIEN->acc = -0.25f / 1000.0f;
+                default:
+                    ALIEN->current_seg.reset();
+                    ALIEN->appearance_ticks = 0;
             }
-            /*
-            else
-            {
-                ALIEN->current_seg.reset();
-            
-                // Set speed
-                ALIEN->current_speed = 0.0f;
-                ALIEN->target_speed = 0.0f;
-                ALIEN->acc = 0.0f;
-           
-                ALIEN->appearance_ticks = 0;
-            }
-            */
 
+
+            // Set speed and acceleration
+            ALIEN->current_speed = 640.0f / 1000.0f;
+            ALIEN->target_speed = 128.0f / 1000.0f;
+            ALIEN->acc = -0.25f / 1000.0f;
+
+            // Set distance along starting segment
             ALIEN->dist = 0.0f;
             
             // Set (evantual) position within formation
@@ -714,32 +724,6 @@ int main( int argc, char** argv )
             ALIEN->formation_pos.set_y(
                 j * ( ALIEN_PIXEL_HEIGHT + ALIEN_V_SPACE )
             );
-
-            // If alien starts in formation,
-            // create render info, and set x,y coords
-            // (unless appearance of alien is delayed)
-            if( ALIEN->appearance_ticks == 0
-                && ALIEN->in_formation
-            )
-            {
-                try
-                {
-                    ALIEN->render_info = image_man.create_render_info(
-                        image_id,
-                        palette_id,
-                        ALIEN->formation_pos.get_x(),
-                        ALIEN->formation_pos.get_y(),
-                        ALIEN_PIXEL_WIDTH,
-                        ALIEN_PIXEL_HEIGHT,
-                        alien_formation_block 
-                    );
-                }
-                catch( std::exception &e )
-                {
-                    std::cout << "Failed to create render info, error: "
-                      << e.what() << std::endl;
-                }
-            }
         }
     }
 
@@ -755,8 +739,7 @@ int main( int argc, char** argv )
     uint32_t next_frame_ticks = START_TICKS + TICKS_PER_FRAME; 
     uint32_t end_ticks = START_TICKS + 250000;
     uint32_t ticks_at_last_animation = START_TICKS;
-    uint32_t ticks_at_last_fps_update = START_TICKS;
-    
+    uint32_t next_beep_ticks = START_TICKS + BEEP_INTERVAL;
     do
     {
         ////////////////////////////////////////
@@ -780,33 +763,36 @@ int main( int argc, char** argv )
             frame_num++;
         }
 
-        /*
         ////////////////////////////////////////
-        // Update FPS
-        if( frame_num % 50 == 0 )
+        // BEEP
+        if( CURRENT_TICKS > next_beep_ticks )
         {
-            const float TICKS_PASSED_F
-                = CURRENT_TICKS - ticks_at_last_fps_update;
-            ticks_at_last_fps_update
-                = CURRENT_TICKS;
+            next_beep_ticks += BEEP_INTERVAL;
 
-            try/
+            // Play sound effect on appearance
+            try
             {
-                fps_text->set_content(
-                    std::string( "FPS " )
-                    + std::to_string(
-                        50.0f / TICKS_PASSED_F * 1000.0f
-                    ).substr( 0, 4 )
+                MCK::GameEngAudio::voice_command(
+                    FX_2_VOICES.at( fx_2_voice_index ),
+                    MCK::VoiceSynth::construct_command(
+                        0x1F + fx_2_voice_index * 0x02, // Pitch ID
+                        0x02  // Duration ID
+                    )
                 );
             }
             catch( std::exception &e )
             {
-                throw( std::runtime_error(
-                    std::string( "Failed to set fps, error: ")
-                    + e.what() ) );
+                std::cout << "(3)Failed to issue voice "
+                          << "command, error = "
+                          << e.what();
             }
+
+            // Update FX 2 index
+            fx_2_voice_index =
+                ( fx_2_voice_index + 1 )
+                    % FX_2_VOICES.size(); 
         }
-        */
+
 
         ////////////////////////////////////////
         // Handle user input
@@ -901,7 +887,7 @@ int main( int argc, char** argv )
                               << e.what();
                 }
 
-                // Update voice 1 index
+                // Update FX 1 index
                 fx_1_voice_index =
                     ( fx_1_voice_index + 1 )
                         % FX_1_VOICES.size(); 
@@ -1014,7 +1000,7 @@ int main( int argc, char** argv )
                 // alien's 'temp_control_point'
                 const MCK::Point<float> &P1 = aln.temp_control_point;
 
-                // Create Bezier
+                // Create cubic Bezier curve
                 const MCK::BezierCurveCubic<MCK::Point<float>> bez(
                     P0,
                     P1,
@@ -1022,10 +1008,10 @@ int main( int argc, char** argv )
                     P3
                 );
 
-                // Estimate 't' value on Bezier Curve by assuming
+                // Estimate 't' value on Bezier curve by assuming
                 // that, for small 't' values, direction is in
                 // a straight line from P0 towards P1, with 't'
-                // being the dis proportion of distance P0->P1.
+                // being the proportion of distance P0->P1.
                 // For safety, the 't' value is capped at 1.0f.
                 const double EST_T
                     = std::min(
@@ -1040,12 +1026,14 @@ int main( int argc, char** argv )
                 const MCK::Point<float> NEW_POS
                     = bez.get_point( EST_T );
 
+                // Calculate (square of) distance from 
+                // the alien's formation point
                 const float DIST_SQ = MCK::Point<float>::dist_sq( NEW_POS, P3 );
 
                 // If we've (tolerably) reached the formation point,
                 // move the alien to the formation block and declare
                 // it to be in formation
-                if( DIST_SQ < 1.0f  /* < 0.001f */ )
+                if( DIST_SQ < 1.0f )  // 1.0f = to nearest pixel
                 {
                     // Move alien to formation block
                     try
@@ -1073,6 +1061,7 @@ int main( int argc, char** argv )
                    
                     aln.in_formation = true;
 
+                    // Play FX when joins formation
                     try
                     {
                         MCK::GameEngAudio::voice_command(
@@ -1090,7 +1079,7 @@ int main( int argc, char** argv )
                                   << e.what();
                     }
 
-                    // Update voice 0 index
+                    // Update FX 0 index
                     fx_0_voice_index =
                         ( fx_0_voice_index + 1 )
                             % FX_0_VOICES.size(); 
