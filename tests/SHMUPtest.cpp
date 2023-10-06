@@ -48,7 +48,6 @@ const int WINDOW_WIDTH_IN_PIXELS = 640;
 const int WINDOW_HEIGHT_IN_PIXELS = 360;
 
 // Demo specific parameters
-const int TEXT_SIZE = 16;
 const int BORDER_X = 20;
 const float X_MIN = float( BORDER_X );
 const float X_MAX = float( WINDOW_WIDTH_IN_PIXELS - BORDER_X );
@@ -94,21 +93,22 @@ uint32_t WHT = uint32_t( MCK::VoiceSynth::WHITENOISE );
 // VOICE DATA
 //  DUR,  WAVE, OCT, ATK,   DEC,   REL,  SUS_PROP, VOL
 const std::vector<uint32_t> VOICE_DATA = {
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 0
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 1
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 2
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 3
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 4
-    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 5
+    2205, TRI,  2,   550,   550,   8820,   192,    128,  // 0
+    2205, TRI,  2,   550,   550,   8820,   192,    128,  // 1
+    2205, TRI,  2,   550,   550,   8820,   192,    128,  // 2
+    2205, SQU,  3,   550,   550,   8820,   192,     32,  // 3
+    2205, SQU,  3,   550,   550,   8820,   192,     32,  // 4
+    2205, SQU,  3,   550,   550,   8820,   192,     32,  // 5
     2205, SAW,  2,   550,   550,   8820,   192,    128,  // 6
-    2205, SAW,  2,   550,   550,   8820,   192,    128   // 7
+    2205, SAW,  2,   550,   550,   8820,   192,    128,  // 7
 };
 const int VOICE_DATA_COLS = 8;
 
 /////////////////////////////////////////////
 // ALIEN PATH DATA
 //  X   Y  ( units = window width in pixels / 40 )
-const std::vector<int16_t> PATH_DATA = {
+const std::vector<std::vector<int16_t>> PATH_DATA = {
+{
     0,  0,  // p0
     2,  4,  // p1
     5,  15, // p2
@@ -116,6 +116,16 @@ const std::vector<int16_t> PATH_DATA = {
     30, 15, // p1
     38, 15, // p2
     38, 10  // p3/p0
+},
+{
+    40, 0,  // p0
+    38, 4,  // p1
+    35, 15, // p2
+    20, 15, // p3/p0
+    10, 15, // p1
+    2,  15, // p2
+    2,  10  // p3/p0
+}
 };
 
 ////////////////////////////////////////////////////////
@@ -210,6 +220,14 @@ int main( int argc, char** argv )
         std::cout << "Successfully created voice " << i
                   << std::endl;
     }
+
+    // Group similar voices
+    const std::vector<uint8_t> FX_0_VOICES = { 0, 1, 2 };
+    const std::vector<uint8_t> FX_1_VOICES = { 3, 4, 5 };
+    const std::vector<uint8_t> FX_2_VOICES = { 6, 7 };
+    uint8_t fx_0_voice_index = 0;
+    uint8_t fx_1_voice_index = 0;
+    uint8_t fx_2_voice_index = 0;
 
     //////////////////////////////////////////////
     // INITIALIZE SDL AUDIO
@@ -439,112 +457,128 @@ int main( int argc, char** argv )
     /////////////////////////////////////////////
     // Create animation info
 
-    // Create entry path for aliens (in sprite_block)
-    std::shared_ptr<
-        MCK::LineSegment<
-            MCK::BezierCurveCubic,
-            MCK::Point<float>
+    // Declare vector of entry paths for aliens
+    // Note: each entry is a "starting segment"
+    //       that connects to further segments in turn
+    const size_t NUM_PATHS = PATH_DATA.size();
+    std::vector<
+        std::shared_ptr<
+            MCK::LineSegment<
+                MCK::BezierCurveCubic,
+                MCK::Point<float>
+            >
         >
-    > start_seg;
-    std::shared_ptr<
-        MCK::LineSegment<
-            MCK::BezierCurveCubic,
-            MCK::Point<float>
-        >
-    > prev_seg;
+    > start_segs( NUM_PATHS );
+
+    // Construct each path, segment by segment
+    for( size_t n = 0; n < NUM_PATHS; n++ )
     {
-        const size_t NUM_SEGS = ( PATH_DATA.size() - 2  ) / 6;
-
-        for( size_t i = 0; i < NUM_SEGS; i++ )
+        std::shared_ptr<
+            MCK::LineSegment<
+                MCK::BezierCurveCubic,
+                MCK::Point<float>
+            >
+        > prev_seg;
         {
-            // Calculate starting position of the control point
-            // coords within PATH_DATA
-            const size_t BASE = i * 6;
+            const size_t NUM_SEGS = ( PATH_DATA[n].size() - 2  ) / 6;
 
-            // Construct a shared pointer to a line segment,
-            // based on a cubic Bezier curve using the
-            // control point coords stored in PATH_DATA
-            std::shared_ptr<
-                MCK::LineSegment<
-                    MCK::BezierCurveCubic,
-                    MCK::Point<float>
-                >
-            > new_seg = std::make_shared<
-                MCK::LineSegment<
-                    MCK::BezierCurveCubic,
-                    MCK::Point<float>
-                >
-            >( MCK::BezierCurveCubic<MCK::Point<float>>(
-                    MCK::Point<float>(  // p0
-                        PATH_DATA[ BASE + 0 ] * PATH_SCALE,
-                        PATH_DATA[ BASE + 1 ] * PATH_SCALE,
-                        sprite_block
-                    ),
-                    MCK::Point<float>(  // p1
-                        PATH_DATA[ BASE + 2 ] * PATH_SCALE,
-                        PATH_DATA[ BASE + 3 ] * PATH_SCALE,
-                        sprite_block
-                    ),
-                    MCK::Point<float>(  // p2
-                        PATH_DATA[ BASE + 4 ] * PATH_SCALE,
-                        PATH_DATA[ BASE + 5 ] * PATH_SCALE,
-                        sprite_block
-                    ),
-                    MCK::Point<float>(  // p3
-                        PATH_DATA[ BASE + 6 ] * PATH_SCALE,
-                        PATH_DATA[ BASE + 7 ] * PATH_SCALE,
-                        sprite_block
+            for( size_t i = 0; i < NUM_SEGS; i++ )
+            {
+                // Calculate starting position of the control point
+                // coords within PATH_DATA
+                const size_t BASE = i * 6;
+
+                // Construct a shared pointer to a line segment,
+                // based on a cubic Bezier curve using the
+                // control point coords stored in PATH_DATA
+                std::shared_ptr<
+                    MCK::LineSegment<
+                        MCK::BezierCurveCubic,
+                        MCK::Point<float>
+                    >
+                > new_seg = std::make_shared<
+                    MCK::LineSegment<
+                        MCK::BezierCurveCubic,
+                        MCK::Point<float>
+                    >
+                >( MCK::BezierCurveCubic<MCK::Point<float>>(
+                        MCK::Point<float>(  // p0
+                            PATH_DATA[n][ BASE + 0 ] * PATH_SCALE,
+                            PATH_DATA[n][ BASE + 1 ] * PATH_SCALE,
+                            sprite_block
+                        ),
+                        MCK::Point<float>(  // p1
+                            PATH_DATA[n][ BASE + 2 ] * PATH_SCALE,
+                            PATH_DATA[n][ BASE + 3 ] * PATH_SCALE,
+                            sprite_block
+                        ),
+                        MCK::Point<float>(  // p2
+                            PATH_DATA[n][ BASE + 4 ] * PATH_SCALE,
+                            PATH_DATA[n][ BASE + 5 ] * PATH_SCALE,
+                            sprite_block
+                        ),
+                        MCK::Point<float>(  // p3
+                            PATH_DATA[n][ BASE + 6 ] * PATH_SCALE,
+                            PATH_DATA[n][ BASE + 7 ] * PATH_SCALE,
+                            sprite_block
+                        )
                     )
-                )
-            );
-
-            // Initialise this line segment
-            try
-            {
-                new_seg->init(
-                    LINE_SEG_DISTANCE_STEP,
-                    true,  // xy only
-                    i  // Use 'i' as segment id
                 );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to init line segment " )
-                    + std::to_string( i )
-                    + std::string( ", error: " )
-                    + e.what() ) );
-            }
 
-            // Store pointer to first segment only
-            if( i == 0 )
-            {
-                start_seg = new_seg;
-            }
-            // Otherwise, connect segment to previous segment
-            else {
+                // DEBUG
+                new_seg->str();
+
+                // Initialise this line segment
                 try
                 {
-                    prev_seg->connect_single_segment( new_seg );
+                    new_seg->init(
+                        LINE_SEG_DISTANCE_STEP,
+                        true,  // xy only
+                        i  // Use 'i' as segment id
+                    );
                 }
                 catch( std::exception &e )
                 {
                     throw( std::runtime_error(
-                        std::string( "Failed to connect line segment " )
+                        std::string( "Failed to init line segment " )
                         + std::to_string( i )
                         + std::string( ", error: " )
                         + e.what() ) );
                 }
-            }
 
-            // Store current segment as previous segment
-            prev_seg = new_seg;            
+                // Store pointer to first segment only
+                if( i == 0 )
+                {
+                    start_segs[n] = new_seg;
+                }
+                // Otherwise, connect segment to previous segment
+                else {
+                    try
+                    {
+                        prev_seg->connect_single_segment( new_seg );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+                            std::string( "Failed to connect line segment " )
+                            + std::to_string( i )
+                            + std::string( ", error: " )
+                            + e.what() ) );
+                    }
+                }
+
+                // Store current segment as previous segment
+                prev_seg = new_seg;            
+            }
         }
     }
 
     // POD struct to hold sprite info
     struct BasicSprite
     {
+        MCK_IMG_ID_TYPE image_id;
+        MCK_PAL_ID_TYPE palette_id;
+
         std::shared_ptr<MCK::GameEngRenderInfo> render_info;
        
         // Line segment currently being traversed
@@ -574,11 +608,15 @@ int main( int argc, char** argv )
         // Used only when docking with formation
         MCK::Point<float> temp_control_point;
 
+        // Sprite remains hidden until this time
+        uint32_t appearance_ticks;
+
         // Default constructor
         AlienSprite( void )
         {
             in_formation = true;
             id = -1;
+            appearance_ticks = 0;
         }
     };
 
@@ -614,21 +652,61 @@ int main( int argc, char** argv )
 
             ALIEN->id = COUNT;
 
+            ALIEN->image_id = image_id;
+            ALIEN->palette_id = palette_id;
+
             // DEBUG
-            ALIEN->in_formation = !(
-                ( i == ALIEN_COLS - 1 )
-                && ( j == ALIEN_ROWS - 1 )
-            );
+            // if( j > ALIEN_ROWS - 3 )
+            {
+                ALIEN->in_formation = false;
+
+                // Set intial path location
+                switch( j )
+                {
+                    case ALIEN_ROWS - 1:
+                        ALIEN->current_seg = start_segs[0];
+                        ALIEN->appearance_ticks = 1000 + i * 200;
+                        break;
+
+                    case ALIEN_ROWS - 2:
+                        ALIEN->current_seg = start_segs[1];
+                        ALIEN->appearance_ticks
+                            = 3000 + ( ALIEN_COLS - i ) * 200;
+                        break;
+                    
+                    case ALIEN_ROWS - 3:
+                        ALIEN->current_seg = start_segs[0];
+                        ALIEN->appearance_ticks = 5000 + i * 200;
+                        break;
+
+                    case ALIEN_ROWS - 4:
+                        ALIEN->current_seg = start_segs[1];
+                        ALIEN->appearance_ticks
+                            = 7000 + ( ALIEN_COLS - i ) * 200;
+                        break;
+                }
+
+                // Set speed
+                ALIEN->current_speed = 640.0f / 1000.0f;
+                ALIEN->target_speed = 128.0f / 1000.0f;
+                ALIEN->acc = -0.25f / 1000.0f;
+            }
+            /*
+            else
+            {
+                ALIEN->current_seg.reset();
             
-            // Set intial path location
-            ALIEN->current_seg = start_seg;
+                // Set speed
+                ALIEN->current_speed = 0.0f;
+                ALIEN->target_speed = 0.0f;
+                ALIEN->acc = 0.0f;
+           
+                ALIEN->appearance_ticks = 0;
+            }
+            */
+
             ALIEN->dist = 0.0f;
-
-            // Set speed
-            ALIEN->current_speed = 640.0f / 1000.0f;
-            ALIEN->target_speed = 32.0f / 1000.0f;
-            ALIEN->acc = -0.25f / 1000.0f;
-
+            
             // Set (evantual) position within formation
             ALIEN->formation_pos.set_x(
                 i * ( ALIEN_PIXEL_WIDTH + ALIEN_H_SPACE )
@@ -637,10 +715,14 @@ int main( int argc, char** argv )
                 j * ( ALIEN_PIXEL_HEIGHT + ALIEN_V_SPACE )
             );
 
-            // Create render info, and set x,y coords
-            try
+            // If alien starts in formation,
+            // create render info, and set x,y coords
+            // (unless appearance of alien is delayed)
+            if( ALIEN->appearance_ticks == 0
+                && ALIEN->in_formation
+            )
             {
-                if( ALIEN->in_formation )
+                try
                 {
                     ALIEN->render_info = image_man.create_render_info(
                         image_id,
@@ -652,25 +734,12 @@ int main( int argc, char** argv )
                         alien_formation_block 
                     );
                 }
-                else
+                catch( std::exception &e )
                 {
-                    ALIEN->render_info = image_man.create_render_info(
-                        image_id,
-                        palette_id,
-                        -1 * ALIEN_PIXEL_WIDTH,
-                        -1 * ALIEN_PIXEL_HEIGHT,
-                        ALIEN_PIXEL_WIDTH,
-                        ALIEN_PIXEL_HEIGHT,
-                        sprite_block
-                    );
+                    std::cout << "Failed to create render info, error: "
+                      << e.what() << std::endl;
                 }
             }
-            catch( std::exception &e )
-            {
-                std::cout << "Failed to create render info, error: "
-                  << e.what() << std::endl;
-            }
-
         }
     }
 
@@ -682,13 +751,12 @@ int main( int argc, char** argv )
     const uint32_t TICKS_PER_FRAME
         = uint32_t( 1000.0f / TARGET_FPS + 0.5f );
     uint32_t frame_num = 0;
-    uint32_t current_ticks = game_eng.get_ticks();
-    const uint32_t START_TICKS = current_ticks;
-    uint32_t start_ticks = current_ticks;
-    uint32_t next_frame_ticks = current_ticks + TICKS_PER_FRAME; 
-    uint32_t end_ticks = current_ticks + 250000;
-    uint32_t ticks_at_last_animation = current_ticks;
-    uint32_t ticks_at_last_fps_update = current_ticks;
+    const uint32_t START_TICKS = game_eng.get_ticks();
+    uint32_t next_frame_ticks = START_TICKS + TICKS_PER_FRAME; 
+    uint32_t end_ticks = START_TICKS + 250000;
+    uint32_t ticks_at_last_animation = START_TICKS;
+    uint32_t ticks_at_last_fps_update = START_TICKS;
+    
     do
     {
         ////////////////////////////////////////
@@ -698,17 +766,17 @@ int main( int argc, char** argv )
         game_eng.delay( TICKS_PER_FRAME / 4 );
 
         // Get current time
-        current_ticks = game_eng.get_ticks();
+        const uint32_t CURRENT_TICKS = game_eng.get_ticks();
 
         // If next frame not due, ignore
-        if( current_ticks < next_frame_ticks )
+        if( CURRENT_TICKS < next_frame_ticks )
         {
             continue;
         }
         else
         {
             // Calculate time of *next* frame
-            next_frame_ticks = current_ticks + TICKS_PER_FRAME;
+            next_frame_ticks = CURRENT_TICKS + TICKS_PER_FRAME;
             frame_num++;
         }
 
@@ -718,9 +786,9 @@ int main( int argc, char** argv )
         if( frame_num % 50 == 0 )
         {
             const float TICKS_PASSED_F
-                = current_ticks - ticks_at_last_fps_update;
+                = CURRENT_TICKS - ticks_at_last_fps_update;
             ticks_at_last_fps_update
-                = current_ticks;
+                = CURRENT_TICKS;
 
             try/
             {
@@ -773,17 +841,20 @@ int main( int argc, char** argv )
             }
         }
 
-        // Animate formation
+        //////////////////////////////////////////////
+        // ANIMATION
+        
+        // Move alien formation
         const uint32_t TICKS_SINCE_LAST_ANIM
-            = current_ticks - ticks_at_last_animation;
-        ticks_at_last_animation = current_ticks;
+            = CURRENT_TICKS - ticks_at_last_animation;
+        ticks_at_last_animation = CURRENT_TICKS;
         if( TICKS_SINCE_LAST_ANIM > 0 )
         {
             // Get total pixels moved by formation since
             // start.
             const uint32_t RAW_X_POS 
                 = uint32_t( 
-                    float( current_ticks - START_TICKS )
+                    float( CURRENT_TICKS - START_TICKS )
                         * ALIEN_FORMATION_SPEED
                 );
 
@@ -802,22 +873,78 @@ int main( int argc, char** argv )
                     X_DISP + BORDER_X
                     : ALIEN_FORMATION_X_SPAN - X_DISP + BORDER_X;
         }
+        
 
-        // Animate aliens not in formation
+        // Process all alien sprites
         for( AlienSprite &aln : aliens )
         {
-            // Ignore those in formation
-            if( aln.in_formation )
+            // Create render info for newly appearing aliens
+            if( aln.render_info.get() == NULL 
+                && aln.appearance_ticks < CURRENT_TICKS
+            )
             {
-                continue;
+                // Play sound effect on appearance
+                try
+                {
+                    MCK::GameEngAudio::voice_command(
+                        FX_1_VOICES.at( fx_1_voice_index ),
+                        MCK::VoiceSynth::construct_command(
+                            0x10, // Pitch ID
+                            2  // Duration ID
+                        )
+                    );
+                }
+                catch( std::exception &e )
+                {
+                    std::cout << "(2)Failed to issue voice "
+                              << "command, error = "
+                              << e.what();
+                }
+
+                // Update voice 1 index
+                fx_1_voice_index =
+                    ( fx_1_voice_index + 1 )
+                        % FX_1_VOICES.size(); 
+
+                // If alien is in formation, use formation pos,
+                // otherwise if starting line segment is defined,
+                // place alien 'dist' pixels along line segment.
+                const MCK::Point<float> POS
+                    = aln.in_formation ?
+                        aln.formation_pos :
+                        aln.current_seg.get() == NULL ?
+                            MCK::Point<float>( 0.0f, 0.0f ) :
+                            aln.current_seg->get_point_by_arc_len(
+                                aln.dist
+                            );
+
+                try
+                {
+                    aln.render_info = image_man.create_render_info(
+                        aln.image_id,
+                        aln.palette_id,
+                        POS.get_x(),
+                        POS.get_y(),
+                        ALIEN_PIXEL_WIDTH,
+                        ALIEN_PIXEL_HEIGHT,
+                        aln.in_formation ?
+                            alien_formation_block :
+                            sprite_block
+                    );
+                }
+                catch( std::exception &e )
+                {
+                    std::cout << "Failed to create render info, error: "
+                      << e.what() << std::endl;
+                }
             }
 
-            // NULL pointer check
-            if( aln.render_info.get() == NULL )
+            // Continue to process only aliens NOT in formation
+            // with render info present
+            if( aln.in_formation
+                || aln.render_info.get() == NULL
+            )
             {
-                std::cout << "Alien " << aln.id
-                          << " render_info pointer is NULL"
-                          << std::endl;
                 continue;
             }
 
@@ -945,6 +1072,28 @@ int main( int argc, char** argv )
                     ); 
                    
                     aln.in_formation = true;
+
+                    try
+                    {
+                        MCK::GameEngAudio::voice_command(
+                            FX_0_VOICES.at( fx_0_voice_index ),
+                            MCK::VoiceSynth::construct_command(
+                                0x1F, // Pitch ID
+                                1  // Duration ID
+                            )
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        std::cout << "Failed to issue voice "
+                                  << "command, error = "
+                                  << e.what();
+                    }
+
+                    // Update voice 0 index
+                    fx_0_voice_index =
+                        ( fx_0_voice_index + 1 )
+                            % FX_0_VOICES.size(); 
                 }
                 else
                 {
@@ -1058,5 +1207,5 @@ int main( int argc, char** argv )
             }
         }
     }
-    while( current_ticks < end_ticks );
+    while( game_eng.get_ticks() < end_ticks );
 }
