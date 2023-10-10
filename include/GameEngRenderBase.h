@@ -83,6 +83,12 @@ class GameEngRenderBase
             return uint32_t( this->render_order >> 32 );
         }
 
+        //! Set x position
+        virtual void set_x( int x ) noexcept = 0;
+
+        //! Set y position
+        virtual void set_y( int y ) noexcept = 0;
+
         //! Get ID of render instance
         /*! This ID is generated at construction and does not change.
          *  It's purpose is to determine render order amongst

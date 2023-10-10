@@ -78,6 +78,18 @@ class GameEngRenderBlock : public GameEngRenderBase
             return render_instances.size() == 0;
         }
 
+        //! Set x position
+        virtual void set_x( int x ) noexcept
+        {
+            hoz_offset = x;
+        }
+
+        //! Set y position
+        virtual void set_y( int y ) noexcept
+        {
+            vert_offset = y;
+        }
+
 
     protected :
 

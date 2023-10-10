@@ -140,6 +140,18 @@ class GameEngRenderInfo : public GameEngRenderBase
          */
         MCK::GameEngRenderInfo::Rect dest_rect;
 
+        //! Set x position
+        virtual void set_x( int x ) noexcept
+        {
+            dest_rect.set_x( x );
+        }
+
+        //! Set y position
+        virtual void set_y( int y ) noexcept
+        {
+            dest_rect.set_y( y );
+        }
+
         //! Flag to indicate whether clipping rectangle used
         bool clip;
 

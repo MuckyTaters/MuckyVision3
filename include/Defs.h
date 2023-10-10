@@ -252,16 +252,53 @@ namespace MCK
         CUBIC
     };
 
-    //! Provides reflection to line segment instances
+    // //! Provides reflection to line segment instances
+    // /*! Do not alter this enumeration unless you are
+    //  *  creating/removing a line segment class and know
+    //  *  what you are doing.
+    //  */
+    // enum class LineSegmentType
+    // {
+    //     BASE,
+    //     FIXED,  // The end points of the segment are fixed
+    //     DYNAMIC  // The end points of the segment can move
+    // };
+
+    //! Provides reflection to sprite motion instances
     /*! Do not alter this enumeration unless you are
-     *  creating/removing a line segment class and know
+     *  creating/removing a sprite class and know
      *  what you are doing.
      */
-    enum class LineSegmentType
+    enum class SpriteMotionType
     {
-        BASE,
-        FIXED,  // The end points of the segment are fixed
-        DYNAMIC  // The end points of the segment can move
+        STATIONARY,
+        BEZIER
+    };
+
+    //! Provides reflection to sprite animation instances
+    /*! Do not alter this enumeration unless you are
+     *  creating/removing a sprite class and know
+     *  what you are doing.
+     */
+    enum class SpriteAnimType
+    {
+        STATIC,
+        TEMPORAL,
+        DISTANCE,
+        DIRECTIONAL
+    };
+
+    //! Provides reflection to sprite collision instances
+    /*! Do not alter this enumeration unless you are
+     *  creating/removing a sprite class and know
+     *  what you are doing.
+     */
+    enum class SpriteCollisionType
+    {
+        NONE,
+        CIRCLE,
+        RECTANGLE,
+        PER_PIXEL
     };
 
     //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
