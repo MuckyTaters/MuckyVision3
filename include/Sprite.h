@@ -7,6 +7,11 @@
 //
 //  Class for sprites
 //
+//  Note: all sprites are an extension of
+//        GameEngRenderInfo or GameEngRenderBlock
+//        and must therefore be constructed
+//        via the GameEng instance.
+//
 //  This is non-abstract, as it can be
 //  used to respresent sprites that 
 //  do not require collision detection
@@ -43,9 +48,16 @@
 namespace MCK
 {
 
+// Forward declaration
+class GameEng;
+
 template<class RENDER>
 class Sprite : public RENDER
 {
+    // Only GameEng instance can set protected members
+    // inherited from RENDER.
+    friend MCK::GameEng;
+
     public:
 
         Sprite(

@@ -2090,6 +2090,9 @@ void MCK::GameEng::basic_create_texture(
 }
 
 std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_info(
+#include "SpriteAnimBase.h"
+#include "SpriteMotionBase.h"
+#include "SpriteCollisionBase.h"
     uint8_t col_id,
     std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
     MCK::GameEngRenderInfo::Rect dest_rect,
@@ -2323,4 +2326,163 @@ void MCK::GameEng::change_z(
 #endif
         ) );
     }
+}
+
+std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> MCK::GameEng::create_sprite(
+    std::shared_ptr<MCK::SpriteAnimBase> _anim,
+    std::shared_ptr<MCK::SpriteMotionBase> _motion,
+    std::shared_ptr<MCK::SpriteCollisionBase> _collision,
+    MCK_TEX_ID_TYPE tex_id,
+    std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+    MCK::GameEngRenderInfo::Rect dest_rect,
+    int rotation,
+    bool flip_x,
+    bool flip_y,
+    uint32_t z
+) const
+{
+    if( !this->initialized )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            "Cannot create simple sprite as SDL not yet init."
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If animation class supplied, ensure it is
+    // initialised
+    if( _anim.get() != NULL && !_anim->is_initialized() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create simple sprite as animation " )
+            + std::string( "instance supplied is not yet init." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If motion class supplied, ensure it is
+    // initialised
+    if( _motion.get() != NULL && !_motion->is_initialized() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create simple sprite as motion " )
+            + std::string( "instance supplied is not yet init." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // If collision class supplied, ensure it is
+    // initialised
+    if( _collision.get() != NULL && !_collision->is_initialized() )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create simple sprite as collision " )
+            + std::string( "instance supplied is not yet init." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Get texture
+    SDL_Texture* tex = NULL;
+    {
+        std::map<MCK_TEX_ID_TYPE,SDL_Texture*>::const_iterator it 
+            = this->textures.find( tex_id );
+        
+        // If texture does not exist, throw exception
+        if( it == this->textures.end() )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Cannot create render info as texture with id " )
+                + std::to_string( tex_id )
+                + std::string( " does not exist." )
+#else
+                ""
+#endif
+            ) );
+        }
+
+        tex = it->second;
+    }
+
+    if( tex == NULL )
+    {
+        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+            std::string( "Cannot create render info as texture with id " )
+            + std::to_string( tex_id )
+            + std::string( " is NULL." )
+#else
+            ""
+#endif
+        ) );
+    }
+
+    // Construct sprite
+    std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> sprite
+        = std::make_shared<MCK::Sprite<MCK::GameEngRenderInfo>>(
+            _anim,
+            _motion,
+            _collision,
+            z
+        );
+
+    // Set variables inherited from GameEngRenderInfo
+    // and GameEngRenderBase
+    sprite->tex_id = tex_id;
+    sprite->tex = tex;
+    sprite->dest_rect = dest_rect;
+    sprite->flags = MCK::GameEngRenderInfo::calc_flags(
+        rotation,
+        flip_x,
+        flip_y
+    );
+
+    // Associate info with render block, if render block
+    // supplied (note, always added to end of render block)
+    if( parent_block.get() != NULL )
+    {
+        sprite->parent_block = parent_block.get();
+
+        try
+        {
+            parent_block->render_instances.insert(
+                std::pair<
+                    uint64_t,
+                    std::shared_ptr<MCK::GameEngRenderBase>
+                >( 
+                    sprite->render_order, 
+                    std::dynamic_pointer_cast<MCK::GameEngRenderBase>(
+                        sprite
+                    )
+                )    
+            );
+        }
+        catch( const std::exception &e )
+        {
+            throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                std::string( "Failed to insert new simple sprite " )
+                + std::string( "into parent block, error = " )
+                + e.what()
+#else
+                ""
+#endif
+            ) );
+        }
+    }
+
+    return sprite;
 }

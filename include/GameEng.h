@@ -58,6 +58,7 @@
 #include "GameEngRenderBlock.h"
 #include "GameEngRenderInfo.h"
 #include "KeyEvent.h"
+#include "Sprite.h"
 #include "Version.h"
 
 namespace MCK
@@ -95,27 +96,27 @@ class GameEng
             return this->initialized;
         }
 
-        //! Create texture
-        /*! @param image_id: Arbitrary ID associated with image data
-         *  @param local_palette_id: Arbitrary ID associated with palette
-         *  data
-         *  @param bits_per_pixel: Number of bits in palette ID
-         *  @param pitch in pixels: Width of image in pixels 
-         *  @param pixel_data: Pixel bits, packed sequentially into bytes
-         *  @param local_palette: Vector of colo(u)r IDs
-         *  @param tex_id: Resulting texture id
-         *  @param height_in_pixels: Resulting image height (for quality checks)
-         */
-        void create_blank_texture(
-            MCK_IMG_ID_TYPE image_id,
-            MCK_PAL_ID_TYPE local_palette_id,
-            uint8_t bits_per_pixel,
-            uint16_t pitch_in_pixels,
-            const std::vector<uint8_t> &pixel_data,
-            const std::vector<uint8_t> &local_palette,
-            MCK_TEX_ID_TYPE &tex_id,
-            uint16_t &height_in_pixels
-        );
+        // //! Create texture
+        // /*! @param image_id: Arbitrary ID associated with image data
+        //  *  @param local_palette_id: Arbitrary ID associated with palette
+        //  *  data
+        //  *  @param bits_per_pixel: Number of bits in palette ID
+        //  *  @param pitch in pixels: Width of image in pixels 
+        //  *  @param pixel_data: Pixel bits, packed sequentially into bytes
+        //  *  @param local_palette: Vector of colo(u)r IDs
+        //  *  @param tex_id: Resulting texture id
+        //  *  @param height_in_pixels: Resulting image height (for quality checks)
+        //  */
+        // void create_blank_texture(
+        //     MCK_IMG_ID_TYPE image_id,
+        //     MCK_PAL_ID_TYPE local_palette_id,
+        //     uint8_t bits_per_pixel,
+        //     uint16_t pitch_in_pixels,
+        //     const std::vector<uint8_t> &pixel_data,
+        //     const std::vector<uint8_t> &local_palette,
+        //     MCK_TEX_ID_TYPE &tex_id,
+        //     uint16_t &height_in_pixels
+        // );
 
         //! Create texture
         /*! @param image_id: Arbitrary ID associated with image data
@@ -356,6 +357,29 @@ class GameEng
                 use_current_z_as_hint = true
             );
         }
+
+        //! Create sprite based on render info 
+        /*! @param tex_id: Initial texture ID
+         *  @param parent_block: Block to which sprite is to be attached
+         *  @param dest_rect: Intial destination of sprite, in game window pixels
+         *  @param rotation: Initial rotated of sprite, in multiples of 90 degrees
+         *  @param flip_x: Intial horizonatal flip
+         *  @param flip_y: Initial vertical flip
+         *  Note: rectangles are intentionally NOT passed by reference as
+         *  they are generally supplied as r-values
+         */
+        std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> create_sprite(
+            std::shared_ptr<MCK::SpriteAnimBase> _anim,
+            std::shared_ptr<MCK::SpriteMotionBase> _motion,
+            std::shared_ptr<MCK::SpriteCollisionBase> _collision,
+            MCK_TEX_ID_TYPE tex_id,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+            MCK::GameEngRenderInfo::Rect dest_rect,
+            int rotation = 0,
+            bool flip_x = false,
+            bool flip_y = false,
+            uint32_t z = MCK::DEFAULT_Z_VALUE
+        ) const;
 
 
     private:

@@ -228,8 +228,8 @@ class GameEngRenderInfo : public GameEngRenderBase
         )
         {
             return ( ( rotation % 4 ) << ROTATION_RSHIFT )
-                   || flip_x ? FLIP_X_MASK : 0
-                   || flip_y ? FLIP_Y_MASK : 0;
+                   || ( flip_x ? FLIP_X_MASK : 0 )
+                   || ( flip_y ? FLIP_Y_MASK : 0 );
         }
         
         // Dummy method to this class non-abstract
