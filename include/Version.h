@@ -52,4 +52,9 @@
 // want verbose console output
 #define MCK_VERBOSE
 
+// Keep this commented IN if you
+// want integrity checks
+// during render (slower but safer)
+#define MCK_RENDER_INTEGRITY_CHK
+
 #endif

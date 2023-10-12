@@ -215,8 +215,7 @@ class GameEng
         void render_all(
             std::shared_ptr<MCK::GameEngRenderBlock> render_block, 
             int16_t hoz_offset = 0,
-            int16_t vert_offset = 0,
-            bool perform_integrity_check = false
+            int16_t vert_offset = 0
         ) const;
 
         //! Set render clearing colo(u)r

@@ -638,8 +638,7 @@ void MCK::GameEng::init(
 void MCK::GameEng::render_all( 
     std::shared_ptr<MCK::GameEngRenderBlock> render_block,
     int16_t hoz_offset,
-    int16_t vert_offset,
-    bool perform_integrity_check
+    int16_t vert_offset
 ) const
 {
     if( !this->initialized || this->renderer == NULL )
@@ -685,20 +684,15 @@ void MCK::GameEng::render_all(
             // Ignore NULL items
             if( item.get() == NULL )
             {
-#if defined MCK_STD_OUT
-                if( perform_integrity_check )
-                {
-                    std::cout << "NULL item found during render"
-                              << std::endl;
-                }
+#if defined MCK_RENDER_INTEGRITY_CHK && defined MCK_STD_OUT
+                std::cout << "NULL item found during render"
+                          << std::endl;
 #endif
                 continue;
             }
 
-#if defined MCK_STD_OUT
-            if( perform_integrity_check
-                && it.first != item->render_order
-            )
+#if defined MCK_RENDER_INTEGRITY_CHK && defined MCK_STD_OUT
+            if( it.first != item->render_order )
             {
                 std::cout << "WARNING: Render order of item (0x"
                           << std::hex << item->render_order
@@ -710,10 +704,9 @@ void MCK::GameEng::render_all(
             }
 #endif
 
+#ifdef MCK_RENDER_INTEGRITY_CHK
             // Check parentage
-            if( perform_integrity_check 
-                && item->parent_block != render_block.get()
-            )
+            if( item->parent_block != render_block.get() )
             {
 #if defined MCK_STD_OUT
                 std::cout << "Cuckoo item found during render, ignoring."
@@ -721,87 +714,41 @@ void MCK::GameEng::render_all(
 #endif
                 continue;
             }
+#endif
 
             // If item is GameEngRenderInfo instance,
             // process accordingly
             if( item->get_type() == MCK::RenderInstanceType::INFO )
             {
+#ifdef MCK_RENDER_INTEGRITY_CHK
                 std::shared_ptr<MCK::GameEngRenderInfo> info
                     = std::dynamic_pointer_cast<MCK::GameEngRenderInfo>(
                         item
                     );
-
                 if( info->tex == NULL )
                 {
 #if defined MCK_STD_OUT
-                    if( perform_integrity_check )
-                    {
-                        std::cout << "NULL texture found during render"
-                                  << std::endl;
-                    }
+                    std::cout << "NULL texture found during render"
+                              << std::endl;
 #endif
                     continue;
                 }
+#endif
 
-                // If no flags, use simpler command
-                if( info->flags == 0 )
+                try
                 {
-                    try
-                    {
-                        SDL_RenderCopy(
-                            this->renderer,
-                            info->tex,
-                            info->clip ? &info->clip_rect.r : NULL,
-                            &info->dest_rect.r
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-                        std::cout << "SDL_RenderCopy failed, error = "
-                                  << SDL_GetError() << std::endl;
-#endif
-                    }
+                    item->render( renderer );
                 }
-                else
+                catch( const std::exception &e )
                 {
-                    // Get rotation angle (in degrees)
-                    const double ANGLE
-                        = ( 
-                            ( info->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
-                                >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
-                        ) * 90.0f;
-                
-                    // Get flip
-                    SDL_RendererFlip flip = SDL_FLIP_NONE;
-                    if( info->get_flip_x() )
-                    {
-                        flip = SDL_RendererFlip( flip | SDL_FLIP_HORIZONTAL );
-                    }
-                    if( info->get_flip_y() )
-                    {
-                        flip = SDL_RendererFlip( flip | SDL_FLIP_VERTICAL );
-                    }
-                    
-                    try
-                    {
-                        SDL_RenderCopyEx(
-                            this->renderer,
-                            &*info->tex,  // Convert from shared_ptr
-                            info->clip ? &info->clip_rect.r : NULL,
-                            &info->dest_rect.r,
-                            ANGLE,
-                            NULL,  // Rotate about centre
-                            flip
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-#if defined MCK_STD_OUT && defined MCK_VERBOSE
-                        std::cout << "SDL_RenderCopyEx failed, error = "
-                                  << SDL_GetError() << std::endl;
+                    throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                        std::string( "Failed to render instance, error = " )
+                        + e.what()
+#else
+                        ""
 #endif
-                    }
+                    ) );
                 }
             }
             else if( item->get_type() == MCK::RenderInstanceType::BLOCK )
@@ -811,8 +758,7 @@ void MCK::GameEng::render_all(
                     this->render_all(
                         std::dynamic_pointer_cast<MCK::GameEngRenderBlock>( item ),
                         0,  // No x offset needed
-                        0,  // No y offset needed
-                        perform_integrity_check
+                        0  // No y offset needed
                     );
                 }
                 catch( std::exception &e )
@@ -850,20 +796,16 @@ void MCK::GameEng::render_all(
             // Ignore NULL pointers and NULL textures
             if( item.get() == NULL )
             {
-#if defined MCK_STD_OUT
-                if( perform_integrity_check )
-                {
-                    std::cout << "(2)NULL item found during render"
-                              << std::endl;
-                }
+#if defined MCK_RENDER_INTEGRITY_CHK && defined MCK_STD_OUT
+                std::cout << "(2)NULL item found during render"
+                          << std::endl;
 #endif
                 continue;
             }
 
+#ifdef MCK_RENDER_INTEGRITY_CHK
             // Check parentage
-            if( perform_integrity_check 
-                && item->parent_block != render_block.get()
-            )
+            if( item->parent_block != render_block.get() )
             {
 #if defined MCK_STD_OUT
                 std::cout << "(2)Cuckoo item found during render, ignoring."
@@ -871,6 +813,7 @@ void MCK::GameEng::render_all(
 #endif
                 continue;
             }
+#endif
 
             if( item->get_type() == MCK::RenderInstanceType::INFO )
             {
@@ -881,12 +824,9 @@ void MCK::GameEng::render_all(
 
                 if( info->tex == NULL )
                 {
-#if defined MCK_STD_OUT
-                    if( perform_integrity_check )
-                    {
-                        std::cout << "(2)NULL texture found during render"
-                                  << std::endl;
-                    }
+#if defined MCK_RENDER_INTEGRITY_CHK && defined MCK_STD_OUT
+                    std::cout << "(2)NULL texture found during render"
+                              << std::endl;
 #endif
                     continue;
                 }
@@ -964,8 +904,7 @@ void MCK::GameEng::render_all(
                     this->render_all(
                         std::dynamic_pointer_cast<MCK::GameEngRenderBlock>( item ),
                         HOZ_OFFSET,
-                        VERT_OFFSET,
-                        perform_integrity_check
+                        VERT_OFFSET
                     );
                 }
                 catch( std::exception &e )

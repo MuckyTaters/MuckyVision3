@@ -972,8 +972,7 @@ int main( int argc, char** argv )
                 game_eng.render_all(
                     game_eng.get_prime_render_block(),
                     0,  // Hoz offset
-                    0,  // Vert offset
-                    true  // Integrity checks
+                    0  // Vert offset
                 );
                 game_eng.show();
             }

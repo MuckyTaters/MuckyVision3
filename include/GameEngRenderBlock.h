@@ -90,6 +90,11 @@ class GameEngRenderBlock : public GameEngRenderBase
             vert_offset = y;
         }
 
+        virtual void render( SDL_Renderer* renderer ) const
+        {
+            // TODO
+        }
+
 
     protected :
 

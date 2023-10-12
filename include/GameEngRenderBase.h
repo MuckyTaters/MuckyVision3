@@ -33,6 +33,16 @@
 
 #include<cstdint>  // For uint32_t et al.
 
+// SDL includes (Linux/Windows specific)
+// This is required if cross-compiling for Windows *on Linux*
+#ifdef MCK_MINGW
+#include <SDL.h>
+#endif
+#ifndef MCK_MINGW
+// This is required if compiling on Linux or Windows (MinGW)
+#include <SDL2/SDL.h>
+#endif
+
 #include "Defs.h"
 
 namespace MCK
@@ -120,6 +130,7 @@ class GameEngRenderBase
             return this->render_order;
         }
        
+        virtual void render( SDL_Renderer* renderer ) const = 0;
 
     protected:
 

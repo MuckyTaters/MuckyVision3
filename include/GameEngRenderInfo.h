@@ -35,16 +35,6 @@
 #ifndef MCK_GAME_ENG_RI_H
 #define MCK_GAME_ENG_RI_H
 
-// SDL includes (Linux/Windows specific)
-// This is required if cross-compiling for Windows *on Linux*
-#ifdef MCK_MINGW
-#include <SDL.h>
-#endif
-#ifndef MCK_MINGW
-// This is required if compiling on Linux or Windows (MinGW)
-#include <SDL2/SDL.h>
-#endif
-
 #include "GameEngRenderBase.h"
 
 namespace MCK
@@ -63,8 +53,9 @@ class GameEngRenderInfo : public GameEngRenderBase
         //!Non-SDL wrapper for SDL_Rect
         struct Rect
         {
-            //! Friendship so GameEng can access protected/private members
+            //! Friendship to access protected/private members
             friend class GameEng;
+            friend class GameEngRenderInfo;
            
             //! Get left position of rectangle
             int get_x( void ) const noexcept { return this->r.x; }
@@ -192,6 +183,55 @@ class GameEngRenderInfo : public GameEngRenderBase
             this->type = MCK::RenderInstanceType::INFO;
         }
 
+        //! Render
+        virtual void render( SDL_Renderer* renderer ) const
+        {
+            // Let calling method catch any exceptions
+
+            // If no flags, use simpler command
+            if( this->flags == 0 )
+            {
+                SDL_RenderCopy(
+                    renderer,
+                    this->tex,
+                    this->clip ? &this->clip_rect.r : NULL,
+                    &this->dest_rect.r
+                );
+            }
+            else
+            {
+                // Get rotation angle (in degrees)
+                const double ANGLE
+                    = ( 
+                        ( this->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
+                            >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
+                    ) * 90.0f;
+            
+                // Get flip
+                // TODO: Make this more efficient
+                SDL_RendererFlip flip = SDL_FLIP_NONE;
+                if( this->get_flip_x() )
+                {
+                    flip = SDL_RendererFlip( flip | SDL_FLIP_HORIZONTAL );
+                }
+                if( this->get_flip_y() )
+                {
+                    flip = SDL_RendererFlip( flip | SDL_FLIP_VERTICAL );
+                }
+                
+                SDL_RenderCopyEx(
+                    renderer,
+                    this->tex,  // Convert from shared_ptr
+                    this->clip ? &this->clip_rect.r : NULL,
+                    &this->dest_rect.r,
+                    ANGLE,
+                    NULL,  // Rotate about centre
+                    flip
+                );
+            }
+        } 
+            
+        
 
     protected:
 

@@ -59,7 +59,7 @@ class BezierCurveLinear : public BezierCurveBase<T>
         virtual ~BezierCurveLinear( void ) noexcept {}
 
         //! Copy constructor
-        BezierCurveLinear( const BezierCurveLinear<T> &other <) noexcept = default;
+        BezierCurveLinear( const BezierCurveLinear<T> &other ) noexcept = default;
 
         //! Assignment constructor
         BezierCurveLinear& operator=( const BezierCurveLinear<T> &other ) noexcept = default;
