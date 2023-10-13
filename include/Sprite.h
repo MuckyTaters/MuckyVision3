@@ -7,10 +7,8 @@
 //
 //  Class for sprites
 //
-//  Note: all sprites are an extension of
-//        GameEngRenderInfo or GameEngRenderBlock
-//        and must therefore be constructed
-//        via the GameEng instance.
+//  Note: all sprites must be constructed
+//        via the GameEngSpriteFactory instance.
 //
 //  This is non-abstract, as it can be
 //  used to respresent sprites that 
@@ -48,40 +46,38 @@
 namespace MCK
 {
 
-// Forward declaration
+// Forward declaration for friendship
 class GameEng;
+template<class MOTION, class ANIM, class COLL, class RENDER>
+class GameEngSpriteFactory;
 
-template<class RENDER>
-class Sprite : public RENDER
+// Class inherents from:
+// MOTION: sprite motion class
+// ANIM: sprite (appearance) animation class
+// COLL: sprite collision class
+// RENDER: GameEngRenderInfo or GameEngRenderBlock
+template<class MOTION, class ANIM, class COLL, class RENDER>
+class Sprite : public MOTION, public ANIM, public COLL, public RENDER
 {
-    // Only GameEng instance can set protected members
-    // inherited from RENDER.
-    friend MCK::GameEng;
-
     public:
+    
+        // Only GameEngSpriteFactory instance can set protected/private members
+        friend class MCK::GameEngSpriteFactory<MOTION,ANIM,COLL,RENDER>;
 
-        Sprite(
-            std::shared_ptr<MCK::SpriteAnimBase> _anim,
-            std::shared_ptr<MCK::SpriteMotionBase> _motion,
-            std::shared_ptr<MCK::SpriteCollisionBase> _collision,
-            uint32_t z = MCK::DEFAULT_Z_VALUE )
-            : anim( _anim ),
-              motion( _motion ),
-              collision( _collision ),
-              RENDER( z )
+        //! (Default) constructor
+        Sprite( uint32_t z = MCK::DEFAULT_Z_VALUE )
+        : RENDER( z )
         {}
 
+        //! Destructor
         virtual ~Sprite( void ) {}
 
         //! Returns true if all sprite components that are present are initialized
         bool is_initialized( void )
         {
-            return ( anim.get() == NULL
-                        || anim->is_initialized()
-                   ) && ( motion.get() == NULL
-                        || motion->is_initialized()
-                   ) && ( collision.get() == NULL
-                        || collision->is_initialized()
+            return ( this->ANIM::is_initialized()
+                     && this->MOTION::is_initialized()
+                     && this->COLL::is_initialized()
                    );
         }
 
@@ -89,48 +85,39 @@ class Sprite : public RENDER
         void process( void )
         {
             // Set sprite position
-            if( this->motion.get() != NULL )
+            try
             {
-                try
-                {
-                    this->motion->set_pos(
-                        // Downcast by reference to avoid
-                        // a temporary copy being made
-                        static_cast<GameEngRenderBase&>( *this )
-                    );
-                }
-                catch( std::exception &e )
-                {
-                    std::cout << "Failed to set sprite position, error: "
-                              << e.what() << std::endl;
-                }
+                this->MOTION::set_pos(
+                    // Downcast by reference to avoid
+                    // a temporary copy being made
+                    static_cast<GameEngRenderBase&>( *this )
+                );
+            }
+            catch( std::exception &e )
+            {
+                std::cout << "Failed to set sprite position, error: "
+                          << e.what() << std::endl;
             }
 
             // Set sprite appearance
-            if( this->anim.get() != NULL )
+            try
             {
-                try
-                {
-                    this->anim->set_appearance(
-                        // Downcast by reference to avoid
-                        // a temporary copy being made
-                        static_cast<GameEngRenderBase&>( *this )
-                    );
-                }
-                catch( std::exception &e )
-                {
-                    std::cout << "Failed to set sprite appearance, error: "
-                              << e.what() << std::endl;
-                }
+                this->ANIM::set_appearance(
+                    // Downcast by reference to avoid
+                    // a temporary copy being made
+                    static_cast<GameEngRenderBase&>( *this )
+                );
+            }
+            catch( std::exception &e )
+            {
+                std::cout << "Failed to set sprite appearance, error: "
+                          << e.what() << std::endl;
             }
         }
 
 
     protected:
 
-        std::shared_ptr<MCK::SpriteAnimBase> anim;
-        std::shared_ptr<MCK::SpriteMotionBase> motion;
-        std::shared_ptr<MCK::SpriteCollisionBase> collision;
 };
 
 }  // End of namespace MCK

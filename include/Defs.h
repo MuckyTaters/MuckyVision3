@@ -252,18 +252,6 @@ namespace MCK
         CUBIC
     };
 
-    // //! Provides reflection to line segment instances
-    // /*! Do not alter this enumeration unless you are
-    //  *  creating/removing a line segment class and know
-    //  *  what you are doing.
-    //  */
-    // enum class LineSegmentType
-    // {
-    //     BASE,
-    //     FIXED,  // The end points of the segment are fixed
-    //     DYNAMIC  // The end points of the segment can move
-    // };
-
     //! Provides reflection to sprite motion instances
     /*! Do not alter this enumeration unless you are
      *  creating/removing a sprite class and know
@@ -336,6 +324,14 @@ namespace MCK
 
     //! Default ID value used for line segments
     const MCK_LINE_SEG_ID_TYPE DEFAULT_LINE_SEG_ID = 0xFFFFFFFF;
+
+    //! Expected max number of sprites
+    /* Note: This is a 'soft' upper limit, exceeding it
+     *       is permissible but may reduce efficiency
+     */
+    const uint16_t MAX_SPRITES = 4096; 
+
+    //! 
 
 }  // End of namespace MCK
 

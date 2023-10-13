@@ -64,9 +64,16 @@
 namespace MCK
 {
 
+// Forward declaration for friendship
+template<class MOTION, class ANIM, class COLL, class RENDER>
+class GameEngSpriteFactory;
+
 class GameEng
 {
     public:
+
+        template<class MOTION, class ANIM, class COLL, class RENDER>
+        friend class MCK::GameEngSpriteFactory;
 
         //! Constructs and initializes singleton instance of class
         static GameEng& get_singleton( void ) noexcept
@@ -357,28 +364,28 @@ class GameEng
             );
         }
 
-        //! Create sprite based on render info 
-        /*! @param tex_id: Initial texture ID
-         *  @param parent_block: Block to which sprite is to be attached
-         *  @param dest_rect: Intial destination of sprite, in game window pixels
-         *  @param rotation: Initial rotated of sprite, in multiples of 90 degrees
-         *  @param flip_x: Intial horizonatal flip
-         *  @param flip_y: Initial vertical flip
-         *  Note: rectangles are intentionally NOT passed by reference as
-         *  they are generally supplied as r-values
-         */
-        std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> create_sprite(
-            std::shared_ptr<MCK::SpriteAnimBase> _anim,
-            std::shared_ptr<MCK::SpriteMotionBase> _motion,
-            std::shared_ptr<MCK::SpriteCollisionBase> _collision,
-            MCK_TEX_ID_TYPE tex_id,
-            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
-            MCK::GameEngRenderInfo::Rect dest_rect,
-            int rotation = 0,
-            bool flip_x = false,
-            bool flip_y = false,
-            uint32_t z = MCK::DEFAULT_Z_VALUE
-        ) const;
+        // //! Create sprite based on render info 
+        // /*! @param tex_id: Initial texture ID
+        //  *  @param parent_block: Block to which sprite is to be attached
+        //  *  @param dest_rect: Intial destination of sprite, in game window pixels
+        //  *  @param rotation: Initial rotated of sprite, in multiples of 90 degrees
+        //  *  @param flip_x: Intial horizonatal flip
+        //  *  @param flip_y: Initial vertical flip
+        //  *  Note: rectangles are intentionally NOT passed by reference as
+        //  *  they are generally supplied as r-values
+        //  */
+        // std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> create_sprite(
+        //     std::shared_ptr<MCK::SpriteAnimBase> _anim,
+        //     std::shared_ptr<MCK::SpriteMotionBase> _motion,
+        //     std::shared_ptr<MCK::SpriteCollisionBase> _collision,
+        //     MCK_TEX_ID_TYPE tex_id,
+        //     std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+        //     MCK::GameEngRenderInfo::Rect dest_rect,
+        //     int rotation = 0,
+        //     bool flip_x = false,
+        //     bool flip_y = false,
+        //     uint32_t z = MCK::DEFAULT_Z_VALUE
+        // ) const;
 
 
     private:

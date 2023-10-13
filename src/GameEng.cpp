@@ -2267,6 +2267,7 @@ void MCK::GameEng::change_z(
     }
 }
 
+/*
 std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> MCK::GameEng::create_sprite(
     std::shared_ptr<MCK::SpriteAnimBase> _anim,
     std::shared_ptr<MCK::SpriteMotionBase> _motion,
@@ -2425,3 +2426,4 @@ std::shared_ptr<MCK::Sprite<MCK::GameEngRenderInfo>> MCK::GameEng::create_sprite
 
     return sprite;
 }
+*/

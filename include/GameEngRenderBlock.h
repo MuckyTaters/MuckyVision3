@@ -43,10 +43,16 @@
 namespace MCK
 {
 
+// Forward declaration for friendship
+template<class MOTION, class ANIM, class COLL, class RENDER>
+class GameEngSpriteFactory;
+
 class GameEngRenderBlock : public GameEngRenderBase
 {
     //! Friendship so GameEng can access protected/private members
     friend class GameEng;
+    template<class MOTION, class ANIM, class COLL, class RENDER>
+    friend class MCK::GameEngSpriteFactory;
 
     public:
 
