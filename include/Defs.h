@@ -260,6 +260,8 @@ namespace MCK
     enum class SpriteMotionType
     {
         STATIONARY,
+        CONST_VEL,
+        CONST_ACC,
         BEZIER
     };
 

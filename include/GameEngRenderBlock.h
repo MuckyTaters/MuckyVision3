@@ -96,6 +96,32 @@ class GameEngRenderBlock : public GameEngRenderBase
             vert_offset = y;
         }
 
+        //! Get x position
+        virtual int get_x( void ) const noexcept
+        {
+            return hoz_offset;
+        }
+
+        //! Get y position
+        virtual int get_y( void ) const noexcept
+        {
+            return vert_offset;
+        }
+
+        //! Set position
+        virtual void set_pos( int x, int y ) noexcept
+        {
+            hoz_offset = x;
+            vert_offset = y;
+        }
+
+        //! Adjust position
+        virtual void adj_pos( int dx, int dy ) noexcept
+        {
+            hoz_offset += dx;
+            vert_offset += dy;
+        }
+
         virtual void render( SDL_Renderer* renderer ) const
         {
             // TODO

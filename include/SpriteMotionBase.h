@@ -60,9 +60,27 @@ class SpriteMotionBase
         ) const noexcept {}
 
         //! Set time for all instances, prior to setting position of individual instances
-        static void set_current_ticks( uint32_t _ticks ) noexcept 
+        static void set_ticks(
+            uint32_t new_ticks,
+            bool set_prev_ticks_same_as_current = false
+        ) noexcept 
         {
-            MCK::SpriteMotionBase::current_ticks = _ticks;
+            if( set_prev_ticks_same_as_current )
+            {
+                MCK::SpriteMotionBase::prev_ticks
+                    = MCK::SpriteMotionBase::current_ticks
+                        = new_ticks;
+            }
+            else
+            {
+                MCK::SpriteMotionBase::prev_ticks
+                    = MCK::SpriteMotionBase::current_ticks;
+                MCK::SpriteMotionBase::current_ticks = new_ticks;
+            }
+
+            MCK::SpriteMotionBase::ticks_elapsed
+                = MCK::SpriteMotionBase::current_ticks 
+                    - MCK::SpriteMotionBase::prev_ticks; 
         }
 
         //! Returns true if instance is initialized
@@ -77,6 +95,8 @@ class SpriteMotionBase
     protected:
 
         static uint32_t current_ticks;
+        static uint32_t prev_ticks;
+        static uint32_t ticks_elapsed;
 
         MCK::SpriteMotionType type;
 };

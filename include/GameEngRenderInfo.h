@@ -81,13 +81,25 @@ class GameEngRenderInfo : public GameEngRenderBase
             //! Set height of rectangle
             void set_h( int val ) noexcept { this->r.h = val; }
 
-            void set_all( int x, int y, int w, int h )
+            void set_pos( int x, int y ) noexcept
+            {
+                this->r.x = x;
+                this->r.y = y;
+            }
+
+            void set_all( int x, int y, int w, int h ) noexcept
             {
                 SDL_Rect &rct = this->r;
                 rct.x = x;
                 rct.y = y;
                 rct.w = w;
                 rct.h = h;
+            }
+
+            void adj_pos( int dx, int dy ) noexcept
+            {
+                this->r.x += dx;
+                this->r.y += dy;
             }
 
             //! Default constructor
@@ -134,13 +146,37 @@ class GameEngRenderInfo : public GameEngRenderBase
         //! Set x position
         virtual void set_x( int x ) noexcept
         {
-            dest_rect.set_x( x );
+            this->dest_rect.set_x( x );
         }
 
         //! Set y position
         virtual void set_y( int y ) noexcept
         {
-            dest_rect.set_y( y );
+            this->dest_rect.set_y( y );
+        }
+
+        //! Set position
+        virtual void set_pos( int x, int y ) noexcept
+        {
+            this->dest_rect.set_pos( x, y );
+        }
+
+        //! Get x position
+        virtual int get_x( void ) const noexcept
+        {
+            return this->dest_rect.get_x();
+        }
+
+        //! Get y position
+        virtual int get_y( void ) const noexcept
+        {
+            return this->dest_rect.get_y();
+        }
+
+        //! Adjust position
+        virtual void adj_pos( int dx, int dy ) noexcept
+        {
+            this->dest_rect.adj_pos( dx, dy );
         }
 
         //! Flag to indicate whether clipping rectangle used

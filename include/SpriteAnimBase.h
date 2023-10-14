@@ -59,7 +59,7 @@ class SpriteAnimBase
         ) const noexcept {}
 
         //! Set time for all instances, prior to setting appearance of individual instances
-        static void set_current_ticks( uint32_t _ticks ) noexcept
+        static void set_ticks( uint32_t _ticks ) noexcept
         {
             MCK::SpriteAnimBase::current_ticks = _ticks;
         }

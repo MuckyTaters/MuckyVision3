@@ -36,3 +36,5 @@
 #include "SpriteMotionBase.h"
 
 uint32_t MCK::SpriteMotionBase::current_ticks = 0;
+uint32_t MCK::SpriteMotionBase::prev_ticks = 0;
+uint32_t MCK::SpriteMotionBase::ticks_elapsed = 0;
