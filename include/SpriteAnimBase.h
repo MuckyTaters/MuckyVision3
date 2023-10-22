@@ -36,16 +36,16 @@
 #define MCK_SPRITE_ANIM_BASE_H
 
 #include "Defs.h"
-#include "GameEngRenderBase.h"
+#include "SpritePos.h"
 
 namespace MCK
 {
 
-class SpriteAnimBase
+class SpriteAnimBase : virtual public SpritePos
 {
     public:
 
-        SpriteAnimBase( void )
+        SpriteAnimBase( void ) : SpritePos()
         {
             this->type = MCK::SpriteAnimType::STATIC;
         }
@@ -54,26 +54,10 @@ class SpriteAnimBase
     
         //! Set appearance of sprite (e.g texture, orientation)
         /*! Note: base version does nothing, i.e. leaves appearance as is.*/
-        virtual void set_appearance( 
-            MCK::GameEngRenderBase &render_instance
-        ) const noexcept {}
+        virtual void calc_frame( void ) {}
 
-        //! Set time for all instances, prior to setting appearance of individual instances
-        static void set_ticks( uint32_t _ticks ) noexcept
-        {
-            MCK::SpriteAnimBase::current_ticks = _ticks;
-        }
-
-        //! Returns true if instance is initialized
-        /*! Note: Base instance is initialized at construction.*/
-        virtual bool is_initialized( void ) const noexcept
-        {
-            return true;
-        }
 
     protected:
-
-        static uint32_t current_ticks;
 
         MCK::SpriteAnimType type;
 };

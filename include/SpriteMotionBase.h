@@ -37,66 +37,40 @@
 #define MCK_SPRITE_MOTION_BASE_H
 
 #include "Defs.h"
-#include "GameEngRenderBase.h"
+#include "SpritePos.h"
 
 namespace MCK
 {
 
-class SpriteMotionBase
+class SpriteMotionBase : virtual public SpritePos
 {
     public:
 
-        SpriteMotionBase( void )
+        // Default constructor
+        SpriteMotionBase( void ) : SpritePos()
         {
             this->type = MCK::SpriteMotionType::STATIONARY;
         }
 
+        //! Constructor
+        SpriteMotionBase(
+            MCK::Point<float> _pos,
+            std::shared_ptr<GameEngRenderBase> _render_instance
+        ) : SpritePos( _pos, _render_instance )
+        {}
+
         virtual ~SpriteMotionBase( void ) {}
+       
+        // Calculate position, based on time 
+        virtual void calc_pos( void ) const noexcept {}
 
-        //! Set position of sprite
-        /*! Note: base version does nothing, i.e. leaves x and y unchanged.*/
-        virtual void set_pos(
-            MCK::GameEngRenderBase &render_instance
-        ) const noexcept {}
-
-        //! Set time for all instances, prior to setting position of individual instances
-        static void set_ticks(
-            uint32_t new_ticks,
-            bool set_prev_ticks_same_as_current = false
-        ) noexcept 
+        MCK::SpriteMotionType get_type ( void ) const noexcept
         {
-            if( set_prev_ticks_same_as_current )
-            {
-                MCK::SpriteMotionBase::prev_ticks
-                    = MCK::SpriteMotionBase::current_ticks
-                        = new_ticks;
-            }
-            else
-            {
-                MCK::SpriteMotionBase::prev_ticks
-                    = MCK::SpriteMotionBase::current_ticks;
-                MCK::SpriteMotionBase::current_ticks = new_ticks;
-            }
-
-            MCK::SpriteMotionBase::ticks_elapsed
-                = MCK::SpriteMotionBase::current_ticks 
-                    - MCK::SpriteMotionBase::prev_ticks; 
+            return this->type;
         }
 
-        //! Returns true if instance is initialized
-        /*! Note: Base instance is initialized at construction.*/
-        virtual bool is_initialized( void ) const noexcept
-        {
-            return true;
-        }
-
-        
 
     protected:
-
-        static uint32_t current_ticks;
-        static uint32_t prev_ticks;
-        static uint32_t ticks_elapsed;
 
         MCK::SpriteMotionType type;
 };

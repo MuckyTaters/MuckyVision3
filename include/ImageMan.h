@@ -69,7 +69,7 @@ class ImageMan
         /*! @param _game_eng: Initialized singleton GameEng instance
          */
         void init(
-            GameEng &_game_eng
+            MCK::GameEng &_game_eng
         );
 
         //! Returns true if initialized, false otherwise
@@ -193,6 +193,9 @@ class ImageMan
          *  @param image_id: ID of (an existing) image that will be used for the new texture
          *  @param local_palette_id: ID of existing local colo(u)r palette, used for new texture
          *  @param keep_orignal_dest_rect_size: If true, size of destination rectangle is preserved, even if new texture is a different size
+         * Note: With 'info' pointing to NULL, this method can be
+         *       used to ensure a texture exists for an existing
+         *       image and palette.
          */
         void change_render_info_tex(
             std::shared_ptr<MCK::GameEngRenderInfo> info,

@@ -39,39 +39,133 @@
 #define MCK_SPRITE_H
 
 #include <memory>  // For shared pointer
-#include "SpriteAnimBase.h"
-#include "SpriteMotionBase.h"
-#include "SpriteCollisionBase.h"
+#include "SpriteAnimTime.h"
+#include "SpriteMotionConstVel.h"
+#include "SpriteCollisionCircle.h"
+// #include "CollisionProcessing.h"
+#include "ImageMan.h"
 
 namespace MCK
 {
 
+/*
 // Forward declaration for friendship
 class GameEng;
-template<class MOTION, class ANIM, class COLL, class RENDER>
+template<class MOTION, class ANIM, class COLL>
 class GameEngSpriteFactory;
+*/
 
-// Class inherents from:
+// This class inherents from:
 // MOTION: sprite motion class
 // ANIM: sprite (appearance) animation class
 // COLL: sprite collision class
-// RENDER: GameEngRenderInfo or GameEngRenderBlock
-template<class MOTION, class ANIM, class COLL, class RENDER>
-class Sprite : public MOTION, public ANIM, public COLL, public RENDER
+template<class MOTION, class ANIM, class COLL>
+class Sprite : public MOTION, public ANIM, public COLL
 {
     public:
     
         // Only GameEngSpriteFactory instance can set protected/private members
-        friend class MCK::GameEngSpriteFactory<MOTION,ANIM,COLL,RENDER>;
+        //friend class MCK::GameEngSpriteFactory<MOTION,ANIM,COLL>;
 
         //! (Default) constructor
-        Sprite( uint32_t z = MCK::DEFAULT_Z_VALUE )
-        : RENDER( z )
-        {}
+        Sprite( void )
+        {
+            this->initialized = false;
+        }
 
         //! Destructor
         virtual ~Sprite( void ) {}
 
+        void init(
+            ImageMan &image_man,
+            std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
+            MCK_IMG_ID_TYPE initial_image_id,
+            MCK_PAL_ID_TYPE initial_local_palette_id,
+            int initial_pos_x,
+            int initial_pos_y,
+            uint32_t initial_z, 
+            uint16_t width_in_pixels,
+            uint16_t height_in_pixels,
+            bool make_as_block = false
+        )
+        {
+            if( this->initialized )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    "Cannot init sprite as already init."
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            if( !image_man.is_initialized() )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    "Cannot init sprite as ImageMan not yet init."
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            this->SpritePos::pos = MCK::Point<float>(
+                initial_pos_x,
+                initial_pos_y
+            );
+
+            if( !make_as_block )
+            {
+                try
+                {
+                    this->SpritePos::set_render_instance(
+                        image_man.create_render_info(
+                            initial_image_id,
+                            initial_local_palette_id,
+                            initial_pos_x,
+                            initial_pos_y,
+                            width_in_pixels,
+                            height_in_pixels,
+                            parent_block        
+                        )
+                    );
+                }
+                catch( const std::runtime_error& e )
+                {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                    std::cout << "Sprite init failed, error = "
+                              << e.what() << std::endl;
+#endif
+                }
+            }
+            else
+            {
+                //TODO
+            }
+
+            try
+            {
+                MCK::GameEng::change_z(
+                    this->SpritePos::render_instance,
+                    parent_block,
+                    initial_z,
+                    false  // Don't use current 'z' as hint
+                );
+            }
+            catch( const std::runtime_error& e )
+            {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                std::cout << "Sprite init set 'z' failed, error = "
+                          << e.what() << std::endl;
+#endif
+            }
+
+            this->initialized = true;
+        }
+
+        /*
         //! Returns true if all sprite components that are present are initialized
         bool is_initialized( void )
         {
@@ -80,6 +174,21 @@ class Sprite : public MOTION, public ANIM, public COLL, public RENDER
                      && this->COLL::is_initialized()
                    );
         }
+        */
+
+        /*
+        // For :
+        //  MOTION == MCK::SpriteMotionBase
+        //  ANIM == MCK::SpriteAnimationBase
+        //  COLL == MCK::SpriteCollisionBase
+        template<
+            typename U = RENDER,
+            typename std::enable_if<
+                std::is_same<U,MCK::GameEngRenderInfo>::value
+                , bool
+            >::type = true
+        >
+        */
 
         //! Process sprite, at current ticks
         void process( void )
@@ -87,11 +196,7 @@ class Sprite : public MOTION, public ANIM, public COLL, public RENDER
             // Set sprite position
             try
             {
-                this->MOTION::set_pos(
-                    // Downcast by reference to avoid
-                    // a temporary copy being made
-                    static_cast<GameEngRenderBase&>( *this )
-                );
+                this->MOTION::calc_pos();
             }
             catch( std::exception &e )
             {
@@ -102,10 +207,64 @@ class Sprite : public MOTION, public ANIM, public COLL, public RENDER
             // Set sprite appearance
             try
             {
-                this->ANIM::set_appearance(
+                this->ANIM::calc_frame();
+            }
+            catch( std::exception &e )
+            {
+                std::cout << "Failed to set sprite appearance, error: "
+                          << e.what() << std::endl;
+            }
+           
+            /*
+            // Check for sprite collision
+            std::vector<MCK::CollisionEvent> collisions;
+            {
+                COLL::check_all_collisions( collisions );
+            }
+            */
+
+            /*
+                // Check for circular collisions
+                for( auto &coll_pair : COLL::circle_pairings )
+                {
+                    // Check if pairing has already been processed
+                    // by the other sprite in the pairing
+                    if( coll_pair->flags & 0x03 == 0 )
+                    {
+                        // If not, process
+                        try
+                        {
+                            MCK::check_collision(
+                                coll_pair,
+                                collisions
+                            );
+                        }
+                        catch( const std::runtime_error& e )
+                        {
+#if defined MCK_STD_OUT && defined MCK_VERBOSE
+                            std::cout << "Collision check failed, error = "
+                                      << e.what() << std::endl;
+#endif
+                        }
+                        
+                        // Mark as processed by one sprite
+                        coll_pair->flags |= 0x01;
+                    }
+                    else
+                    {
+                        // If yes, mark as processed by both sprites
+                        coll_pair->flags |= 0x03;
+                    }
+                }
+            }
+            */
+
+            /*
+                this->COLL::check_all_collisions(
                     // Downcast by reference to avoid
                     // a temporary copy being made
-                    static_cast<GameEngRenderBase&>( *this )
+                    // static_cast<GameEngRenderBase&>( *this ),
+                    collisions
                 );
             }
             catch( std::exception &e )
@@ -113,10 +272,32 @@ class Sprite : public MOTION, public ANIM, public COLL, public RENDER
                 std::cout << "Failed to set sprite appearance, error: "
                           << e.what() << std::endl;
             }
+            */
+
+            // TODO Process collisions
         }
 
+        bool is_initialized( void ) const noexcept
+        {
+            return initialized;
+        }
 
     protected:
+ 
+        bool initialized;
+
+        /*
+        // All pairings including this sprite and other circle
+        // collision sprites (processed or not)
+        std::vector<
+            std::shared_ptr<
+                MCK::CollisionPairing<
+                    COLL,
+                    SpriteCollisionCircle
+                >
+            >
+        > circle_pairings;
+        */
 
 };
 

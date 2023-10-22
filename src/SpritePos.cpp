@@ -3,14 +3,9 @@
 //  ---MUCKY VISION 3 (BASIC ENGINE) ---
 //  ------------------------------------
 //
-//  SpriteCollisionBase.h
+//  SpritePos.cpp
 //
-//  Base collision class for sprites
-//
-//  This is non-abstract, as it can be
-//  used to respresent sprites that 
-//  do not require collision detection
-//  Hence the 'NONE' type designation.
+//  Virtual base class for *all* sprites 
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -32,39 +27,10 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
-#ifndef MCK_SPRITE_COL_BASE_H
-#define MCK_SPRITE_COL_BASE_H
-
-#include "Defs.h"
-#include "CollisionEvent.h"
 #include "SpritePos.h"
 
-namespace MCK
-{
-
-class SpriteCollisionBase : virtual public SpritePos
-{
-    public:
-
-        SpriteCollisionBase( void ) : SpritePos()
-        {
-            this->type = MCK::SpriteCollisionType::NONE;
-        }
-        
-        virtual ~SpriteCollisionBase( void ) {}
-    
-        //! Check for collision
-        /*! Base version of this method does nothing */
-        virtual void check_all_collisions( 
-            std::vector<MCK::CollisionEvent> &collisions
-        ) const {}
-
-
-    protected:
-
-        MCK::SpriteCollisionType type;
-};
-
-}  // End of namespace MCK
-
-#endif
+uint32_t MCK::SpritePos::current_ticks = 0;
+uint32_t MCK::SpritePos::prev_ticks = 0;
+uint32_t MCK::SpritePos::ticks_elapsed = 0;
+const MCK::GameEng* MCK::SpritePos::game_eng = NULL;
+const MCK::ImageMan* MCK::SpritePos::image_man = NULL;

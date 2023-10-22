@@ -828,28 +828,31 @@ void MCK::ImageMan::change_render_info_tex(
     // Change render info texture, at GameEng level
     // (because only GameEng has access to the actual
     //  texture instance)
-    try
+    if( info.get() != NULL )
     {
-        this->game_eng->change_render_info_tex(
-            info,
-            TEX_ID
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
+        try
+        {
+            this->game_eng->change_render_info_tex(
+                info,
+                TEX_ID
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
 #if defined MCK_STD_OUT
-            std::string( "Cannot change image texture as GameEng " )
-            + std::string( "returned error: " )
-            + e.what()
+                std::string( "Cannot change image texture as GameEng " )
+                + std::string( "returned error: " )
+                + e.what()
 #else
-            ""
+                ""
 #endif
-        ) );
+            ) );
+        }
     }
 
     // If necessary, update size of destination rect
-    if( !keep_orig_dest_rect_size )
+    if( info.get() != NULL && !keep_orig_dest_rect_size )
     {
         info->dest_rect.set_w( META_DATA->get_pitch_in_pixels() );
         info->dest_rect.set_h( META_DATA->get_height_in_pixels() );

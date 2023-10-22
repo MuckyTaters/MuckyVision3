@@ -3,14 +3,9 @@
 //  ---MUCKY VISION 3 (BASIC ENGINE) ---
 //  ------------------------------------
 //
-//  SpriteCollisionBase.h
+//  SpriteFrame.h
 //
-//  Base collision class for sprites
-//
-//  This is non-abstract, as it can be
-//  used to respresent sprites that 
-//  do not require collision detection
-//  Hence the 'NONE' type designation.
+//  Base animation class for sprite images. 
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -32,37 +27,44 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
-#ifndef MCK_SPRITE_COL_BASE_H
-#define MCK_SPRITE_COL_BASE_H
+#ifndef MCK_SPRITE_FRAME_H
+#define MCK_SPRITE_FRAME_H
 
 #include "Defs.h"
-#include "CollisionEvent.h"
-#include "SpritePos.h"
 
 namespace MCK
 {
 
-class SpriteCollisionBase : virtual public SpritePos
+struct SpriteFrame
 {
-    public:
+    uint32_t duration_in_ticks;
+    MCK_IMG_ID_TYPE image_id;
+    MCK_PAL_ID_TYPE palette_id;
+    bool keep_orig_dest_rect_size;
 
-        SpriteCollisionBase( void ) : SpritePos()
-        {
-            this->type = MCK::SpriteCollisionType::NONE;
-        }
-        
-        virtual ~SpriteCollisionBase( void ) {}
+    // TODO: offsets?
     
-        //! Check for collision
-        /*! Base version of this method does nothing */
-        virtual void check_all_collisions( 
-            std::vector<MCK::CollisionEvent> &collisions
-        ) const {}
+    // Default constructor
+    SpriteFrame( void )
+    {
+        duration_in_ticks = 0;
+        image_id = MCK::INVALID_IMG_ID;
+        palette_id = MCK::INVALID_PAL_ID;
+        keep_orig_dest_rect_size = true;
+    }
 
-
-    protected:
-
-        MCK::SpriteCollisionType type;
+    // Constructor
+    SpriteFrame(
+        uint32_t _duration_in_ticks,
+        MCK_IMG_ID_TYPE _image_id,
+        MCK_PAL_ID_TYPE _palette_id,
+        bool _keep_orig_dest_rect_size = true
+    ) : 
+        duration_in_ticks( _duration_in_ticks ),
+        image_id( _image_id ),
+        palette_id ( _palette_id ),
+        keep_orig_dest_rect_size( _keep_orig_dest_rect_size )
+    {}
 };
 
 }  // End of namespace MCK

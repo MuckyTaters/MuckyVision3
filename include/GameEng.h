@@ -58,22 +58,25 @@
 #include "GameEngRenderBlock.h"
 #include "GameEngRenderInfo.h"
 #include "KeyEvent.h"
-#include "Sprite.h"
 #include "Version.h"
 
 namespace MCK
 {
 
+/*
 // Forward declaration for friendship
 template<class MOTION, class ANIM, class COLL, class RENDER>
 class GameEngSpriteFactory;
+*/
 
 class GameEng
 {
     public:
 
+        /*
         template<class MOTION, class ANIM, class COLL, class RENDER>
         friend class MCK::GameEngSpriteFactory;
+        */
 
         //! Constructs and initializes singleton instance of class
         static GameEng& get_singleton( void ) noexcept

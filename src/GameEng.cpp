@@ -2029,9 +2029,6 @@ void MCK::GameEng::basic_create_texture(
 }
 
 std::shared_ptr<MCK::GameEngRenderInfo> MCK::GameEng::create_blank_tex_render_info(
-#include "SpriteAnimBase.h"
-#include "SpriteMotionBase.h"
-#include "SpriteCollisionBase.h"
     uint8_t col_id,
     std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
     MCK::GameEngRenderInfo::Rect dest_rect,

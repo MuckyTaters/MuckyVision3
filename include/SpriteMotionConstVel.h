@@ -7,12 +7,6 @@
 //
 //  Constant velocity motion class for sprites
 //
-//  This is non-abstract, as it can be
-//  used to respresent sprites that 
-//  maitain a static position relative
-//  to their block. Hence the
-//  'STATIIONARY' type designation.
-//
 //  Copyright (c) Muckytaters 2023
 //
 //  This program is free software: you can
@@ -37,6 +31,7 @@
 #define MCK_SPRITE_MTN_CST_VEL_H
 
 #include "Defs.h"
+#include "Point.h"
 #include "SpriteMotionBase.h"
 
 namespace MCK
@@ -47,72 +42,55 @@ class SpriteMotionConstVel : public SpriteMotionBase
     public:
 
         //! Default constructor
-        SpriteMotionConstVel( void )
+        SpriteMotionConstVel( void ) : SpriteMotionBase()
         {
-            this->initialized = false;
-            this->x = this->y = this->dx = this->dy = 0;
             this->type = MCK::SpriteMotionType::CONST_VEL;
         }
 
-        //! Constructor
-        /*! @param _x: Starting x coord (in pixels)
-         *  @param _y: Starting y coord (in pixels)
-         *  @param _dx: Velocity in x (in pixels per tick)
-         *  @param _dy: Velocity in y (in pixels per tick)
-         */
+        //! Partial constructor
         SpriteMotionConstVel(
-            float _x,
-            float _y,
-            float _dx,
-            float _dy
-        )
-        : x( _x ), y( _y ), dx( _dx ), dy( _dy )
+            MCK::Point<float> _pos,
+            std::shared_ptr<GameEngRenderBase> _render_instance
+        ) : SpriteMotionBase( _pos, _render_instance )
         {
-            this->initialized = true;
-            this->type = MCK::SpriteMotionType::CONST_VEL;
+            SpriteMotionConstVel();
         }
 
         virtual ~SpriteMotionConstVel( void ) {}
 
-        //! Set starting position and velocity of sprite
-        virtual void initialize(
-            float _x,
-            float _y,
-            float _dx,
-            float _dy
-        ) noexcept
+        //! Get velocity of sprite
+        const MCK::Point<float>& get_vel( void ) const noexcept
         {
-            this->x = _x;
-            this->y = _y;
-            this->dx = _dx;
-            this->dy = _dy;
-            this->initialized = true;
+            return this->vel;
         }
 
-        virtual bool is_initialized( void ) const noexcept
+        //! Set velocity of sprite
+        void set_vel( MCK::Point<float> _vel ) noexcept
         {
-            return this->initialized;
+            this->vel = _vel;
         }
 
-        //! Set position of sprite
-        virtual void set_pos(
-            MCK::GameEngRenderBase &render_instance
-        ) noexcept
+        // Calculate position, based on time 
+        virtual void calc_pos( void ) noexcept
         {
-            this->x += this->dx * MCK::SpriteMotionBase::ticks_elapsed;
-            this->y += this->dy * MCK::SpriteMotionBase::ticks_elapsed;
-            render_instance.set_pos(
-                int( this->x + 0.5f ),
-                int( this->y + 0.5f )
-            ); 
+            this->pos += this->vel * float( MCK::SpritePos::ticks_elapsed );
+           
+            // Update render instance
+            if( this->SpritePos::update_render_instance )
+            {
+                this->SpritePos::render_instance->set_x(
+                    int( this->pos.get_x() + 0.5f )
+                );
+                this->SpritePos::render_instance->set_y(
+                    int( this->pos.get_y() + 0.5f )
+                );
+            }
         }
 
 
     protected:
 
-        bool initialized;
-
-        float x, y, dx, dy;
+        MCK::Point<float> vel;
 };
 
 }  // End of namespace MCK

@@ -286,11 +286,23 @@ namespace MCK
     enum class SpriteCollisionType
     {
         NONE,
+        BASE_PLUS,
         CIRCLE,
         RECTANGLE,
         PER_PIXEL
     };
 
+    // For bit packing reasons,
+    // this should have no more than 8 values
+    enum class SPRITE_COLLISION_MOTION_OUTCOME
+    {
+        NONE,
+        UNAFFECTED,
+        DELETE,
+        DISPLACE,
+        REFLECT,
+        DISPLACE_AND_REFLECT
+    };
     //! Frequency, in integer Hertz, of tuning note A4 (440Hz or 432Hz)
     const int VOICE_SYNTH_FREQ_A4 = 440;
 
@@ -332,8 +344,6 @@ namespace MCK
      *       is permissible but may reduce efficiency
      */
     const uint16_t MAX_SPRITES = 4096; 
-
-    //! 
 
 }  // End of namespace MCK
 
