@@ -150,7 +150,7 @@ build\Console.o: ..\src\Console.cpp ..\include\Console.h build\GameEng.o build\I
 	$(CC) -c ..\src\Console.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\Console.o
 
 ## BezierTestAudio ##
-build\BezierTestAudio.o: BezierTestAudio.cpp ..\include\LineSegmentBase.h ..\include\LineSegmentFixed.h ..\include\BezierCurveBase.h ..\include\BezierCurveLinear.h ..\include\BezierCurveQuad.h ..\include\BezierCurveCubic.h ..\include\Point.h build\Console.o build\GameEng.o build\ImageText.o 
+build\BezierTestAudio.o: BezierTestAudio.cpp ..\include\LineSegment.h ..\include\BezierCurveBase.h ..\include\BezierCurveLinear.h ..\include\BezierCurveQuad.h ..\include\BezierCurveCubic.h ..\include\Point.h build\Console.o build\GameEng.o build\ImageText.o 
 	$(CC) -c BezierTestAudio.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\BezierTestAudio.o
 
 

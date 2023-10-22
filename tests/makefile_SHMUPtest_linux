@@ -113,7 +113,7 @@ build/ImageText.o: ../src/ImageText.cpp ../include/ImageText.h build/GameEng.o b
 	$(CC) -c ../src/ImageText.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/ImageText.o
 
 ## SHMUPtest ##
-build/SHMUPtest.o: SHMUPtest.cpp ../include/LineSegmentBase.h ../include/LineSegment.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h build/GameEng.o build/ImageText.o 
+build/SHMUPtest.o: SHMUPtest.cpp ../include/LineSegment.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h build/GameEng.o build/ImageText.o 
 	$(CC) -c SHMUPtest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/SHMUPtest.o
 
 
