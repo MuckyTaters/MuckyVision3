@@ -268,6 +268,16 @@ class Point
             return ans;
         }
 
+        //! Non-aspect preserving scaling
+        template <typename U>
+        constexpr Point scale( U hoz_scale, U vert_scale ) const noexcept
+        {
+            Point ans( *this );
+            ans.x *= hoz_scale;
+            ans.y *= vert_scale;
+            return ans;
+        }
+
         ///////////////////////////////////////
         // Static member functions
 

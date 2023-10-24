@@ -361,6 +361,8 @@ namespace MCK
 #define MCK_COLL_TEAM_DATA_TYPE uint8_t
 #endif
 
+    const int MAX_QUAD_TREE_LEVEL = 32;
+
 }  // End of namespace MCK
 
 #endif
