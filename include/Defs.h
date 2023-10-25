@@ -346,22 +346,25 @@ namespace MCK
     const uint16_t MAX_SPRITES = 4096; 
 
     /////////////////////////////////
-    // SRITE COLLISION TEAMS
+    // SPRITE COLLISION TEAMS
 #define MCK_NUM_COLL_TEAMS 16
 
     // This is data type used by QuadTree,
     // and it is dependent on the number of collision teams
-#if MCK_NUM_VOICES == 64
+#if MCK_NUM_COLL_TEAMS == 64
 #define MCK_COLL_TEAM_DATA_TYPE uint64_t
-#elif MCK_NUM_VOICES == 32
+#elif MCK_NUM_COLL_TEAMS == 32
 #define MCK_COLL_TEAM_DATA_TYPE uint32_t
-#elif MCK_NUM_VOICES == 16
+#elif MCK_NUM_COLL_TEAMS == 16
 #define MCK_COLL_TEAM_DATA_TYPE uint16_t
-#elif MCK_NUM_VOICES == 8
+#elif MCK_NUM_COLL_TEAMS == 8
+#define MCK_COLL_TEAM_DATA_TYPE uint8_t
+#elif MCK_NUM_COLL_TEAMS == 4
+#define MCK_COLL_TEAM_DATA_TYPE uint8_t
+#elif MCK_NUM_COLL_TEAMS == 2
 #define MCK_COLL_TEAM_DATA_TYPE uint8_t
 #endif
 
-    const int MAX_QUAD_TREE_LEVEL = 32;
 
 }  // End of namespace MCK
 
