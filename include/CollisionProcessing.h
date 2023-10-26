@@ -33,7 +33,7 @@
 #include<CollisionEvent.h>
 #include<CollisionNode.h>
 #include<QuadTree.h>
-
+#include<SpriteCollisionRect.h>
 namespace MCK
 {
 
@@ -102,6 +102,38 @@ class CollisionProcessing
 #endif
         }
 
+        //! Include sprite in collision processing
+        bool add_sprite(
+            std::shared_ptr<MCK::SpriteCollisionRect> sprite
+        )
+        {
+            if( sprite.get() == NULL )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot add sprite as sprite " )
+                    + std::string( "pointer is NULL." )
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            // Get sprite bounds
+            float left, top, right, bottom;
+            sprite->get_bounds( left, top, right, bottom );
+            
+            // Start the recursion to find correct place
+            // in collision tree.
+            // Let calling program catch any exception here.
+            return this->add_sprite_recursive(
+                sprite,
+                left,
+                top,
+                right,
+                bottom
+            );
+        }
 
         //! Check for sprite collisions
         void process(
@@ -160,12 +192,10 @@ class CollisionProcessing
             return this->levels;
         }
 
-        //! Add sprite to collision tree
-        /*! @param node: For internal use only, user should keep as default (NULL)
-         *  @returns: True if added okay, false if already present
-         * Note: This method is called recursively, using 'node'.
-         *       Calling methods should set 'node' to NULL (default)         */
-        bool add_sprite(
+    protected:
+
+        //! Process recursion for 'add_sprite'
+        bool add_sprite_recursive(
             std::shared_ptr<MCK::SpriteCollisionRect> sprite,
             T left,
             T top,
@@ -247,6 +277,17 @@ class CollisionProcessing
             side_count += top_side = bottom <= MID_Y;
             side_count += bottom_side = top >= MID_Y; 
 
+            // DEBUG
+            std::cout << "side_count=" << int( side_count )
+                      << ",left=" << left
+                      << ",top=" << top
+                      << ",right=" << right
+                      << ",bottom=" << bottom
+                      << ",MID_X=" << MID_X
+                      << ",MID_Y=" << MID_Y
+                      << std::endl;
+
+
             // If bounding box includes split point,
             // ignore sub-nodes and
             // assign sprite to this node, then return
@@ -304,7 +345,7 @@ class CollisionProcessing
             bool rc;
             try
             {
-                rc = this->add_sprite(
+                rc = this->add_sprite_recursive(
                     sprite,
                     left,
                     top,
@@ -339,8 +380,6 @@ class CollisionProcessing
             return false;
         }
 
-    protected:
-
         // Process recursion for non-team sprites
         template<typename U = CONTENT, typename std::enable_if<std::is_same<U,MCK::CollisionNode>::value, bool>::type = true>
         void process_recursion(
@@ -370,25 +409,63 @@ class CollisionProcessing
             // themselves, and 'sprites_to_be_tested'
             for( auto sprite_1 : *SPRITES )
             {
+                // Get sprite 1 bounds
+                float sp1_left, sp1_top, sp1_right, sp1_bottom;
+                sprite_1->get_bounds( sp1_left, sp1_top, sp1_right, sp1_bottom );
+
                 // Test against other sprites in this node
                 for( auto sprite_2 : *SPRITES )
                 {
                     if( sprite_1 != sprite_2 )
                     {
-                        // TODO
+                        // Get sprite 2 bounds
+                        float sp2_left, sp2_top, sp2_right, sp2_bottom;
+                        sprite_2->get_bounds( sp2_left, sp2_top, sp2_right, sp2_bottom );
+                        
+                        // Test for bound overlap
+                        if( ( sp1_left >= sp2_left
+                              && sp1_left <= sp2_right
+                            ) || ( sp1_top >= sp2_top
+                              && sp1_top <= sp2_bottom
+                            )
+                        )
+                        {
+                            // TODO
+                            
+                            // DEBUG
+                            std::cout << "COLL_A" << std::endl;
+                        }
                     }
                 }
 
                 // Test against sprites from higher nodes
                 for( auto sprite_2 : sprites_to_be_tested )
                 {
-                    // TODO
+                    // Get sprite 2 bounds
+                    float sp2_left, sp2_top, sp2_right, sp2_bottom;
+                    sprite_2->get_bounds( sp2_left, sp2_top, sp2_right, sp2_bottom );
+                    
+                    // Test for bound overlap
+                    if( ( sp1_left >= sp2_left
+                          && sp1_left <= sp2_right
+                        ) || ( sp1_top >= sp2_top
+                          && sp1_top <= sp2_bottom
+                        )
+                    )
+                    {
+                        // TODO
+                        
+                        // DEBUG
+                        std::cout << "COLL_B" << std::endl;
+                    }
                 }
             }
 
             // If node is non-leaf and there are sprites present
             // in sub-nodes, process sub-nodes
-            if( node->is_non_leaf() )
+            if( node->is_non_leaf() 
+                && node->get_content()->sub_node_sprite_count > 0
+            )
             {
                 // Add node's sprites to 'sprites_to_be_tested'
                 for( auto sprite : *SPRITES )
