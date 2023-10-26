@@ -106,7 +106,7 @@ class QuadTreeLeaf
         }
 
         //! Get pointer to user content
-        CONTENT* get_content_mutable( void ) const noexcept
+        CONTENT* get_content_mutable( void ) noexcept
         {
             return &content;
         }
@@ -358,23 +358,28 @@ class QuadTree : public QuadTreeLeaf<T,CONTENT>
                 delete this->bottom_right_sub_node;
             }
         }
-           
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_top_left_sub_node( void ) const noexcept
+
+        const MCK::Point<T>& get_split_point( void ) const noexcept
+        {
+            return split_point;
+        }
+
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_left_sub_node( void ) const noexcept
         {
             return top_left_sub_node;
         }
 
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_top_right_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_right_sub_node( void ) noexcept
         {
             return top_right_sub_node;
         }
 
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_left_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_left_sub_node( void ) noexcept
         {
             return bottom_left_sub_node;
         }
 
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_right_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_right_sub_node( void ) noexcept
         {
             return bottom_right_sub_node;
         }

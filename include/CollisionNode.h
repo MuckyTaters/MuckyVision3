@@ -51,6 +51,13 @@ struct CollisionNode
     {
         this->sub_node_sprite_count = 0;
     }
+
+    //! Add sprite to node
+    /*! @returns true if sprite added ok, false if already present.*/
+    bool add_sprite( std::shared_ptr<MCK::SpriteCollisionBase> sprite )
+    {
+        return this->sprites.insert( sprite ).second;
+    }
 };
 
 }  // End of namespace MCK
