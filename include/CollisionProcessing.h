@@ -166,7 +166,7 @@ class CollisionProcessing
          * Note: This method is called recursively, using 'node'.
          *       Calling methods should set 'node' to NULL (default)         */
         bool add_sprite(
-            std::shared_ptr<MCK::SpriteCollisionBase> sprite,
+            std::shared_ptr<MCK::SpriteCollisionRect> sprite,
             T left,
             T top,
             T right,
@@ -363,7 +363,7 @@ class CollisionProcessing
             const MCK::CollisionNode* const COLL_NODE = node->get_content();
 
             // Get pointer to the node's sprites
-            const std::set<std::shared_ptr<MCK::SpriteCollisionBase>>* const SPRITES
+            const std::set<std::shared_ptr<MCK::SpriteCollisionRect>>* const SPRITES
                 = &COLL_NODE->sprites;
 
             // Test for collisions between the sprites in this node,
@@ -499,7 +499,7 @@ class CollisionProcessing
 
         uint8_t levels;
 
-        std::vector<std::shared_ptr<MCK::SpriteCollisionBase>> sprites_to_be_tested;
+        std::vector<std::shared_ptr<MCK::SpriteCollisionRect>> sprites_to_be_tested;
 
         std::shared_ptr<MCK::QuadTree<T,CONTENT>> quad_tree;
 };

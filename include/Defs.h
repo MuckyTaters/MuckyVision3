@@ -286,9 +286,8 @@ namespace MCK
     enum class SpriteCollisionType
     {
         NONE,
-        BASE_PLUS,
+        RECT,
         CIRCLE,
-        RECTANGLE,
         PER_PIXEL
     };
 

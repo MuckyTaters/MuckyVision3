@@ -69,6 +69,18 @@ class GameEngRenderInfo : public GameEngRenderBase
             //! Get height of rectangle
             int get_h( void ) const noexcept { return this->r.h; }
 
+            //! Get position of right edge
+            int get_right( void ) const noexcept
+            {
+                return this->r.x + this->r.w;
+            }
+    
+            //! Get position of bottom edge
+            int get_bottom( void ) const noexcept
+            {
+                return this->r.y + this->r.h;
+            }
+    
             //! Set left position of rectangle
             void set_x( int val ) noexcept { this->r.x = val; }
             
@@ -171,6 +183,18 @@ class GameEngRenderInfo : public GameEngRenderBase
         virtual int get_y( void ) const noexcept
         {
             return this->dest_rect.get_y();
+        }
+
+        //! Get position of bottom edge
+        virtual int get_bottom( void ) const noexcept
+        {
+            return this->dest_rect.get_bottom();
+        }
+    
+        //! Get position of right-hand edge
+        virtual int get_right( void ) const noexcept
+        {
+            return this->dest_rect.get_right();
         }
 
         //! Adjust position

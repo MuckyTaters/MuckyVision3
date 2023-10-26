@@ -113,6 +113,20 @@ class GameEngRenderBlock : public GameEngRenderBase
             return vert_offset;
         }
 
+        //! Get position of bottom edge
+        virtual int get_bottom( void ) const noexcept
+        {
+            // TODO: NOT YET IMPLEMENTED
+            return 0;
+        };
+    
+        //! Get position of right-hand edge
+        virtual int get_right( void ) const noexcept
+        {
+            // TODO: NOT YET IMPLEMENTED
+            return 0;
+        };
+        
         //! Set position
         virtual void set_pos( int x, int y ) noexcept
         {

@@ -179,7 +179,11 @@ class Sprite : public MOTION, public ANIM, public COLL
                           << e.what() << std::endl;
             }
 
-            // TODO Process collisions
+            //    // TODO Process collisions
+            if( this->COLL::type != MCK::SpriteCollisionType::NONE )
+            {
+                this->COLL::update_bounds(); 
+            }
         }
 
         bool is_initialized( void ) const noexcept

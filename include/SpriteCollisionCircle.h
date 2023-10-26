@@ -30,12 +30,12 @@
 #ifndef MCK_SPRITE_COL_CIRCLE_H
 #define MCK_SPRITE_COL_CIRCLE_H
 
-#include "SpriteCollisionBase.h"
+#include "SpriteCollisionRect.h"
 
 namespace MCK
 {
 
-class SpriteCollisionCircle : public SpriteCollisionBase
+class SpriteCollisionCircle : public SpriteCollisionRect
 {
     public:
 
@@ -55,13 +55,37 @@ class SpriteCollisionCircle : public SpriteCollisionBase
             float _center_y_offset
         ) noexcept
         {
-            this->radius = std::max( 0.0f, radius );
             this->center_x_offset = _center_x_offset;
             this->center_y_offset = _center_y_offset;
+            this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
+            this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
+            this->radius = std::max( 0.0f, _radius );
+            this->width = this->height = this->radius * 2.0f;
+            this->right_bound = this->left_bound + this->width;
+            this->bottom_bound = this->top_bound + this->height;
         }
 
         virtual ~SpriteCollisionCircle( void ) {}
   
+        virtual void update_bounds( void ) noexcept
+        {
+            this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
+            this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
+            this->right_bound = this->left_bound + this->width;
+            this->bottom_bound = this->top_bound + this->height;
+        
+            /*
+            // DEBUG
+            std::cout << "update_bounds:left=" << this->left_bound
+                      << ",top=" << this->top_bound
+                      << ",right=" << this->right_bound
+                      << ",bottom=" << this->bottom_bound
+                      << ",radius=" << this->radius
+                      << std::endl;
+            */
+        }
+
+        /*
         //! Check for collision
         virtual void check_all_collisions(
             std::vector<MCK::CollisionEvent> &collisions
@@ -69,12 +93,9 @@ class SpriteCollisionCircle : public SpriteCollisionBase
         {
             //TODO
         }
-
+        */
 
     protected:
-
-        // Make this class non-abstract
-        virtual void dummy( void ) {};
 
         float center_x_offset;
         float center_y_offset;
