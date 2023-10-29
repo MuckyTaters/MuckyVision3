@@ -70,6 +70,7 @@ class QuadTreeLeaf
             size( _size )
         {
             QuadTreeLeaf<T,CONTENT>();
+            this->bottom_right = _top_left + _size;
         }
 
         // Destructor
@@ -91,6 +92,12 @@ class QuadTreeLeaf
         const MCK::Point<T>& get_size( void ) const noexcept
         {
             return this->size;
+        }
+
+        //! Get bottom right corner of node
+        const MCK::Point<T>& get_bottom_right( void ) const noexcept
+        {
+            return this->bottom_right;
         }
 
         //! Is top node
@@ -140,6 +147,21 @@ class QuadTreeLeaf
             return NULL;
         }
 
+#if defined MCK_STD_OUT
+        std::string str( void ) const
+        {
+            return std::string( "(" )
+                   + std::to_string( this->top_left.get_x() )
+                   + std::string( "," )
+                   + std::to_string( this->top_left.get_y() )
+                   + std::string( "," )
+                   + std::to_string( this->bottom_right.get_x() )
+                   + std::string( "," )
+                   + std::to_string( this->bottom_right.get_y() )
+                   + std::string( ")" );
+        }
+#endif
+
     protected:
 
         // Parent node
@@ -150,6 +172,9 @@ class QuadTreeLeaf
 
         // Size of node
         MCK::Point<T> size;
+
+        // Bottom left coord if node
+        MCK::Point<T> bottom_right;
 
         // User content
         CONTENT content;

@@ -45,10 +45,11 @@ class SpriteCollisionRect : public SpriteCollisionBase
         SpriteCollisionRect( void )
         {
             this->type = MCK::SpriteCollisionType::RECT;
-            left_bound = 0;
-            top_bound = 0;
-            right_bound = 0;
-            bottom_bound = 0;
+            this->left_bound = 0;
+            this->top_bound = 0;
+            this->right_bound = 0;
+            this->bottom_bound = 0;
+            this->quad_tree_node = NULL;
         }
 
         virtual void update_bounds( void ) noexcept
@@ -83,6 +84,17 @@ class SpriteCollisionRect : public SpriteCollisionBase
             bottom = this->bottom_bound;
         }
 
+        //! Get void pointer to sprite's current node in collision tree
+        void* get_quad_tree_node( void ) const noexcept
+        {
+            return this->quad_tree_node;
+        }
+
+        //! Set void pointer to sprite's current node in collision tree
+        void set_quad_tree_node( void* val ) noexcept
+        {
+            this->quad_tree_node = val;
+        }
 
     protected:
 
@@ -97,12 +109,17 @@ class SpriteCollisionRect : public SpriteCollisionBase
         float right_bound;
         float bottom_bound;
 
+        // Pointer to node in quad-tree that currently
+        // contains this sprite
+        void* quad_tree_node;
 
     private:
 
-        // This made private so SpriteCollisionCircle 
-        // doesn't inherit it
-        virtual void set_bounds(
+        /*
+        // This made private as child class 
+        // versions have different signatures and it may would
+        // be confusing to have this version visible in child
+        void set_bounds(
             float _width,
             float _height
         ) noexcept
@@ -114,6 +131,7 @@ class SpriteCollisionRect : public SpriteCollisionBase
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
         }
+        */
 };
 
 }  // End of namespace MCK

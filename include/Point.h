@@ -166,6 +166,13 @@ class Point
             return this->z;
         }
 
+        //! Get x,y coords
+        constexpr void get_xy( T& _x, T& _y ) const noexcept
+        {
+            _x = this->x;
+            _y = this->y;
+        }
+
         //! Set x coord
         constexpr void set_x( T new_x ) noexcept
         {

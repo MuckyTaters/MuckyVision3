@@ -103,6 +103,7 @@ class CollisionProcessing
         }
 
         //! Include sprite in collision processing
+        /*! @returns: True is sprite added okay, false is already present.*/
         bool add_sprite(
             std::shared_ptr<MCK::SpriteCollisionRect> sprite
         )
@@ -133,6 +134,116 @@ class CollisionProcessing
                 right,
                 bottom
             );
+        }
+
+        //! Update sprite position
+        /*! IMPORTANT: The specified sprite MUST be associated
+         *             with this collision tree or undefined
+         *             behavio(u)r will occur, possibly a seg fault
+         */
+        void update_sprite_pos(
+            std::shared_ptr<MCK::SpriteCollisionRect> sprite
+        )
+        {
+            // If sprite pointer is NULL, ignore
+            if( sprite.get() == NULL )
+            {
+                return;
+            }
+
+            // Get collision tree node holding sprite
+            QuadTreeLeaf<T,CONTENT>* node = 
+                ( QuadTreeLeaf<T,CONTENT>* )
+                    ( sprite->get_quad_tree_node() );
+        
+            // If node is NULL, abort
+            if( sprite->get_quad_tree_node() == NULL )
+            {
+                return;
+            }
+
+            // Get sprite bounds
+            T sprite_left, sprite_top, sprite_right, sprite_bottom;
+            sprite->get_bounds(
+                sprite_left,
+                sprite_top,
+                sprite_right,
+                sprite_bottom
+            );
+
+            /*
+            // DEBUG
+            std::cout << "sprite bounds: " << sprite_left
+                      << "," << sprite_top << ","
+                      << sprite_right << "," << sprite_bottom
+                      << std::endl;
+            */
+
+            // Declare pointer to new node
+            QuadTreeLeaf<T,CONTENT>* sprites_new_node = NULL;
+            
+            // Call recursion to check if sprite needs moving
+            // to another node.
+            try
+            {
+                check_if_sprite_needs_moving_to_another_node( 
+                    node, 
+                    sprite,
+                    sprite_left,
+                    sprite_top,
+                    sprite_right,
+                    sprite_bottom,
+                    sprites_new_node
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Error in move sprite check: " )
+                    + e.what()
+#else
+                    ""
+#endif
+                ) );
+            }
+        
+            // Check if sprite needs moving to another node
+            if( sprites_new_node != NULL
+                && node != sprites_new_node )
+            {
+                try
+                {
+                    if( sprites_new_node->get_content_mutable()
+                            ->add_sprite( sprite ) )
+                    {
+                        node->get_content_mutable()
+                            ->remove_sprite( sprite );
+                    }
+                }
+                catch( std::exception &e )
+                {
+                    throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                        std::string( "Error in add/remove sprite: " )
+                        + e.what()
+#else
+                        ""
+#endif
+                    ) );
+                }
+
+                // Change node pointer in sprite
+                sprite->set_quad_tree_node( sprites_new_node );
+
+                // DEBUG
+                std::cout << "Sprite " << sprite.get()
+                          << " (" << sprite_left << "," << sprite_top
+                          << "," << sprite_right << "," << sprite_bottom
+                          << ")\n    moved from node " << node->str()
+                          << "\n    to node " << sprites_new_node->str()
+                          << std::endl;
+            }
         }
 
         //! Check for sprite collisions
@@ -255,10 +366,21 @@ class CollisionProcessing
                           << "," << node->get_size().str()
                           << std::endl;
 
-                // Add sprite, return true if added ok,
-                // false if already present
-                return node->get_content_mutable()
+                // Add sprite
+                bool rc = node->get_content_mutable()
                     ->add_sprite( sprite );
+                
+                // If added okay, store pointer to node in sprite
+                if( rc )
+                {
+                    sprite->set_quad_tree_node( 
+                        ( void* )( node )
+                    );
+                }
+                
+                // Return true if added ok,
+                // false if already present
+                return rc;
             }
 
             // If non-leaf node,
@@ -277,6 +399,7 @@ class CollisionProcessing
             side_count += top_side = bottom <= MID_Y;
             side_count += bottom_side = top >= MID_Y; 
 
+            /*
             // DEBUG
             std::cout << "side_count=" << int( side_count )
                       << ",left=" << left
@@ -286,7 +409,7 @@ class CollisionProcessing
                       << ",MID_X=" << MID_X
                       << ",MID_Y=" << MID_Y
                       << std::endl;
-
+            */
 
             // If bounding box includes split point,
             // ignore sub-nodes and
@@ -299,10 +422,21 @@ class CollisionProcessing
                           << "," << node->get_size().str()
                           << std::endl;
 
-                // Add sprite, return true if added ok,
-                // false if already present
-                return node->get_content_mutable()
+                // Add sprite
+                bool rc = node->get_content_mutable()
                     ->add_sprite( sprite );
+                
+                // If added okay, store pointer to node in sprite
+                if( rc )
+                {
+                    sprite->set_quad_tree_node( 
+                        ( void* )( node )
+                    );
+                }
+                
+                // Return true if added ok,
+                // false if already present
+                return rc;
             }
 
             // Determine which sub-node to add sprite to
@@ -433,7 +567,7 @@ class CollisionProcessing
                             // TODO
                             
                             // DEBUG
-                            std::cout << "COLL_A" << std::endl;
+                            // std::cout << "COLL_A" << std::endl;
                         }
                     }
                 }
@@ -571,6 +705,203 @@ class CollisionProcessing
                         sprites_to_be_tested.pop_back();
                     }
                 }
+            }
+        }
+
+        //! Recursive method for moving sprite to parent node
+        void check_if_sprite_needs_moving_to_another_node( 
+            QuadTreeLeaf<T,CONTENT>* node, 
+            std::shared_ptr<MCK::SpriteCollisionRect> sprite,
+            T sprite_left,
+            T sprite_top,
+            T sprite_right,
+            T sprite_bottom,
+            QuadTreeLeaf<T,CONTENT>* &sprites_new_node, 
+            bool called_from_parent_node = false
+        )
+        {
+            /*
+            // DEBUG
+            std::cout << "check: node=" << node
+                      << ", sprite_left=" << sprite_left
+                      << ", called from parent="
+                      << called_from_parent_node
+                      << std::endl;
+            */
+
+            // Get node bounds
+            T node_left, node_top,
+              node_right, node_bottom;
+            
+            node->get_top_left().get_xy(
+                node_left,
+                node_top
+            );
+            
+            node->get_bottom_right().get_xy(
+                node_right,
+                node_bottom
+            );
+
+            /*
+            // DEBUG
+            std::cout << "node bounds: " << node_left
+                      << "," << node_top << ","
+                      << node_right << "," << node_bottom
+                      << std::endl;
+            */
+
+            bool sprite_belongs_in_this_node = true;
+
+            // If method was NOT called from parent node
+            // then check if sprite bounds exceeds node bounds.
+            if( !called_from_parent_node
+                && ( sprite_left < node_left
+                  || sprite_top < node_top
+                  || sprite_right > node_right
+                  || sprite_bottom > node_bottom
+                )
+            )
+            {
+                // IMPORTANT: Do NOT combine the top node check
+                //            here with the outer 'if' statement,
+                //            as the child node checks in the
+                //            'else' block below will then be 
+                //            logically flawed.
+                
+                // If this is NOT top_node, check if it belongs
+                // to parent node
+                if( !node->is_top_node() )
+                {
+                    sprite_belongs_in_this_node = false;
+
+                    // Let calling method deal with any exception here
+                    this->check_if_sprite_needs_moving_to_another_node( 
+                        node->get_parent_node(),
+                        sprite,
+                        sprite_left,
+                        sprite_top,
+                        sprite_right,
+                        sprite_bottom,
+                        sprites_new_node 
+                    );
+                }
+
+                // If the node IS the top node, the sprite
+                // belongs to this node so no action required here.
+            }
+            // Otherwise, check if node is non-leaf
+            // and if so chech if sprite now fits
+            // within a sub-node
+            // Note: do this even if calling method
+            //       was a sub-node, as sprite may now fit
+            //       within a different sub-node.
+            else if( node->is_non_leaf() )
+            {
+                // Recast 'node' as non-leaf node pointer
+                MCK::QuadTree<T,CONTENT>* non_leaf_node
+                    = static_cast<MCK::QuadTree<T,CONTENT>*>( node );
+                
+                // Get split point coords
+                T split_x, split_y;
+                non_leaf_node->get_split_point().get_xy( split_x, split_y );
+
+                // Check if sprite fits within a sub-node
+                if( sprite_right <= split_x )
+                {
+                    if( sprite_bottom <= split_y )
+                    {
+                        // Move to top left sub-node
+                        sprite_belongs_in_this_node = false;
+                    
+                        // Let calling method deal with any exception here
+                        this->check_if_sprite_needs_moving_to_another_node( 
+                            non_leaf_node->get_top_left_sub_node(),
+                            sprite,
+                            sprite_left,
+                            sprite_top,
+                            sprite_right,
+                            sprite_bottom,
+                            sprites_new_node,
+                            true  // Calling from parent node
+                        );
+
+                    }
+                    else if( sprite_top >= split_y )
+                    {
+                        // Move to bottom left sub-node
+                        sprite_belongs_in_this_node = false;
+                    
+                        // Let calling method deal with any exception here
+                        this->check_if_sprite_needs_moving_to_another_node( 
+                            non_leaf_node->get_bottom_left_sub_node(),
+                            sprite,
+                            sprite_left,
+                            sprite_top,
+                            sprite_right,
+                            sprite_bottom,
+                            sprites_new_node,
+                            true  // Calling from parent node
+                        );
+                    }
+                }
+                else if( sprite_left >= split_x )
+                {
+                    if( sprite_bottom <= split_y )
+                    {
+                        // Move to top right sub-node
+                        sprite_belongs_in_this_node = false;
+                    
+                        // Let calling method deal with any exception here
+                        this->check_if_sprite_needs_moving_to_another_node( 
+                            non_leaf_node->get_top_right_sub_node(),
+                            sprite,
+                            sprite_left,
+                            sprite_top,
+                            sprite_right,
+                            sprite_bottom,
+                            sprites_new_node,
+                            true  // Calling from parent node
+                        );
+                    }
+                    else if( sprite_top >= split_y )
+                    {
+                        // Move to bottom right sub-node
+                        sprite_belongs_in_this_node = false;
+                    
+                        // Let calling method deal with any exception here
+                        this->check_if_sprite_needs_moving_to_another_node( 
+                            non_leaf_node->get_bottom_right_sub_node(),
+                            sprite,
+                            sprite_left,
+                            sprite_top,
+                            sprite_right,
+                            sprite_bottom,
+                            sprites_new_node,
+                            true  // Calling from parent node
+                        );
+                    }
+                }
+            }
+
+            /*
+            // DEBUG
+            std::cout << "sprite " << sprite.get()
+                      << ", node " << node
+                      << ", sprite_belongs_in_this_node = "
+                      << sprite_belongs_in_this_node
+                      << std::endl;
+            */
+
+            // If it belong in this node, add sprite to this node
+            if( sprite_belongs_in_this_node )
+            {
+                /*
+                // DEBUG
+                std::cout << "sprites_new_node set to " << node
+                          << std::endl;
+                */
+                sprites_new_node = node;
             }
         }
 

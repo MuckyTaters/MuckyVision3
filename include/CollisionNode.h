@@ -58,6 +58,13 @@ struct CollisionNode
     {
         return this->sprites.insert( sprite ).second;
     }
+
+    bool remove_sprite( std::shared_ptr<MCK::SpriteCollisionRect> sprite )
+    {
+        // Try to erase sprite and return true if removed,
+        // false if not removed (i.e. not found)
+        return this->sprites.erase( sprite ) > 0;
+    }
 };
 
 }  // End of namespace MCK
