@@ -69,7 +69,7 @@ class QuadTreeLeaf
             top_left( _top_left ),
             size( _size )
         {
-            QuadTreeLeaf<T,CONTENT>();
+            this->non_leaf = false;
             this->bottom_right = _top_left + _size;
         }
 
@@ -121,28 +121,28 @@ class QuadTreeLeaf
         //! Returns true if this is actually the base of a non-leaf node
         bool is_non_leaf( void ) const noexcept
         {
-            return non_leaf;
+            return this->non_leaf;
         }
 
         // These are accessors for QuadTree, defined here
         // so they may be called for a QuadTree instance
         // referenced only by a QuadTreeLeaf pointer.
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_top_left_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_left_sub_node( void ) const noexcept
         {
             return NULL;
         }
         
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_top_right_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_right_sub_node( void ) const noexcept
         {
             return NULL;
         }
 
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_left_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_left_sub_node( void ) const noexcept
         {
             return NULL;
         }
         
-        virtual const MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_right_sub_node( void ) const noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_right_sub_node( void ) const noexcept
         {
             return NULL;
         }
@@ -233,6 +233,15 @@ class QuadTree : public QuadTreeLeaf<T,CONTENT>
 
             // Calculate point at which the sub-nodes meet
             this->split_point = this->top_left + TOP_LEFT_SUB_CELL_SIZE;
+
+            /*
+            // DEBUG
+            std::cout << "New QuadTree node, top_left"
+                      << this->top_left.str()
+                      << ", size" << this->size.str()
+                      << ", level = " << int( level )
+                      << std::endl;
+            */
 
             // For levels above 1, create four non-leaf nodes
             if( level > 1 )
@@ -386,27 +395,27 @@ class QuadTree : public QuadTreeLeaf<T,CONTENT>
 
         const MCK::Point<T>& get_split_point( void ) const noexcept
         {
-            return split_point;
+            return this->split_point;
         }
 
         virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_left_sub_node( void ) const noexcept
         {
-            return top_left_sub_node;
+            return this->top_left_sub_node;
         }
 
-        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_right_sub_node( void ) noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_top_right_sub_node( void ) const noexcept
         {
-            return top_right_sub_node;
+            return this->top_right_sub_node;
         }
 
-        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_left_sub_node( void ) noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_left_sub_node( void ) const noexcept
         {
-            return bottom_left_sub_node;
+            return this->bottom_left_sub_node;
         }
 
-        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_right_sub_node( void ) noexcept
+        virtual MCK::QuadTreeLeaf<T,CONTENT>* get_bottom_right_sub_node( void ) const noexcept
         {
-            return bottom_right_sub_node;
+            return this->bottom_right_sub_node;
         }
 
 

@@ -59,6 +59,10 @@ class SpriteCollisionBase : virtual public SpritePos
             std::vector<MCK::CollisionEvent> &collisions
         ) const {}
 
+        virtual MCK::SpriteCollisionType get_type( void ) const noexcept
+        {
+            return this->type;
+        }
 
     protected:
 

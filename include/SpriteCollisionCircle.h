@@ -46,6 +46,8 @@ class SpriteCollisionCircle : public SpriteCollisionRect
             this->radius = 0.0f;
             this->center_x_offset = 0.0f;
             this->center_y_offset = 0.0f;
+            this->center_x_offset = 0.0f;
+            this->center_y_offset = 0.0f;
         }
         
         //! Setting radius and offsets
@@ -60,20 +62,26 @@ class SpriteCollisionCircle : public SpriteCollisionRect
             this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
             this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
             this->radius = std::max( 0.0f, _radius );
-            this->width = this->height = this->radius * 2.0f;
+            this->width = this->height = _radius * 2.0f;
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
+            this->center_x = this->left_bound + this->center_x_offset;
+            this->center_y = this->top_bound + this->center_y_offset;
         }
 
         virtual ~SpriteCollisionCircle( void ) {}
   
         virtual void update_bounds( void ) noexcept
         {
-            this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
-            this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
+            // this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
+            this->left_bound = this->SpritePos::pos.get_x();
+            // this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
+            this->top_bound = this->SpritePos::pos.get_y();
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
-        
+       
+            this->center_x = this->left_bound + this->center_x_offset;
+            this->center_y = this->top_bound + this->center_y_offset;
             /*
             // DEBUG
             std::cout << "update_bounds:left=" << this->left_bound
@@ -95,10 +103,35 @@ class SpriteCollisionCircle : public SpriteCollisionRect
         }
         */
 
+        float get_center_x( void ) const noexcept
+        {
+            return this->center_x; 
+        }
+
+        float get_center_y( void ) const noexcept
+        {
+            return this->center_y; 
+        }
+
+        float get_dist_sq_from_center( float x, float y ) const noexcept
+        {
+            return 
+                ( this->center_x - x ) * ( this->center_x - x )
+                + ( this->center_y - y ) * ( this->center_y - y );
+        }
+
+        float get_radius( void ) const noexcept
+        {
+            return this->radius;
+        }
+
     protected:
 
         float center_x_offset;
         float center_y_offset;
+
+        float center_x;
+        float center_y;
 
         float radius;
 };

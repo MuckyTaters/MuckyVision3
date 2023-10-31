@@ -171,14 +171,6 @@ class CollisionProcessing
                 sprite_bottom
             );
 
-            /*
-            // DEBUG
-            std::cout << "sprite bounds: " << sprite_left
-                      << "," << sprite_top << ","
-                      << sprite_right << "," << sprite_bottom
-                      << std::endl;
-            */
-
             // Declare pointer to new node
             QuadTreeLeaf<T,CONTENT>* sprites_new_node = NULL;
             
@@ -236,13 +228,6 @@ class CollisionProcessing
                 // Change node pointer in sprite
                 sprite->set_quad_tree_node( sprites_new_node );
 
-                // DEBUG
-                std::cout << "Sprite " << sprite.get()
-                          << " (" << sprite_left << "," << sprite_top
-                          << "," << sprite_right << "," << sprite_bottom
-                          << ")\n    moved from node " << node->str()
-                          << "\n    to node " << sprites_new_node->str()
-                          << std::endl;
             }
         }
 
@@ -251,6 +236,8 @@ class CollisionProcessing
             std::vector<MCK::CollisionEvent> &collisions
         )
         {
+            collisions.clear();
+
             // Throw if not yet init
             if( this->quad_tree.get() == NULL )
             {
@@ -360,12 +347,6 @@ class CollisionProcessing
             // If leaf, add sprite and return
             if( !node->is_non_leaf() )
             {
-                // DEBUG
-                std::cout << "Adding sprite to leaf node "
-                          << node->get_top_left().str()
-                          << "," << node->get_size().str()
-                          << std::endl;
-
                 // Add sprite
                 bool rc = node->get_content_mutable()
                     ->add_sprite( sprite );
@@ -399,29 +380,11 @@ class CollisionProcessing
             side_count += top_side = bottom <= MID_Y;
             side_count += bottom_side = top >= MID_Y; 
 
-            /*
-            // DEBUG
-            std::cout << "side_count=" << int( side_count )
-                      << ",left=" << left
-                      << ",top=" << top
-                      << ",right=" << right
-                      << ",bottom=" << bottom
-                      << ",MID_X=" << MID_X
-                      << ",MID_Y=" << MID_Y
-                      << std::endl;
-            */
-
             // If bounding box includes split point,
             // ignore sub-nodes and
             // assign sprite to this node, then return
             if( side_count < 2 )
             {
-                // DEBUG
-                std::cout << "Adding sprite to non-leaf node "
-                          << node->get_top_left().str()
-                          << "," << node->get_size().str()
-                          << std::endl;
-
                 // Add sprite
                 bool rc = node->get_content_mutable()
                     ->add_sprite( sprite );
@@ -445,16 +408,10 @@ class CollisionProcessing
             {
                 if( top_side )
                 {
-                    // DEBUG
-                    std::cout << "Adding sprite to top-left sub-node"
-                              << std::endl;
                     sub_node = non_leaf_node->get_top_left_sub_node();
                 }
                 else
                 {
-                    // DEBUG
-                    std::cout << "Adding sprite to bottom-left sub-node"
-                              << std::endl;
                     sub_node = non_leaf_node->get_bottom_left_sub_node();
                 }
             }
@@ -462,16 +419,10 @@ class CollisionProcessing
             {
                 if( top_side )
                 {
-                    // DEBUG
-                    std::cout << "Adding sprite to top-right sub-node"
-                              << std::endl;
                     sub_node = non_leaf_node->get_top_right_sub_node();
                 }
                 else
                 {
-                    // DEBUG
-                    std::cout << "Adding sprite to bottom-right sub-node"
-                              << std::endl;
                     sub_node = non_leaf_node->get_bottom_right_sub_node();
                 }
             }
@@ -523,13 +474,10 @@ class CollisionProcessing
         {
             if( node == NULL )
             {
+                // DEBUG
+                std::cout << "NULL node." << std::endl;
+            
                 return;
-            }
-
-            // DEBUG
-            {
-                MCK::CollisionEvent temp;
-                collisions.push_back( temp );
             }
 
             // Get pointer to node content (this cannot be NULL)
@@ -541,56 +489,67 @@ class CollisionProcessing
 
             // Test for collisions between the sprites in this node,
             // themselves, and 'sprites_to_be_tested'
-            for( auto sprite_1 : *SPRITES )
-            {
-                // Get sprite 1 bounds
-                float sp1_left, sp1_top, sp1_right, sp1_bottom;
-                sprite_1->get_bounds( sp1_left, sp1_top, sp1_right, sp1_bottom );
+            std::set<std::shared_ptr<MCK::SpriteCollisionRect>>::const_iterator it1;
 
+            // for( auto sprite_1 : *SPRITES )
+            for( it1 = SPRITES->begin();
+                 it1 != SPRITES->end();
+                 it1++
+            )
+            {
                 // Test against other sprites in this node
-                for( auto sprite_2 : *SPRITES )
+                std::set<std::shared_ptr<MCK::SpriteCollisionRect>>::const_iterator it2 = it1; 
+                it2++;
+                for( it2;
+                     it2 != SPRITES->end();
+                     it2++
+                )
                 {
-                    if( sprite_1 != sprite_2 )
+                    try
                     {
-                        // Get sprite 2 bounds
-                        float sp2_left, sp2_top, sp2_right, sp2_bottom;
-                        sprite_2->get_bounds( sp2_left, sp2_top, sp2_right, sp2_bottom );
-                        
-                        // Test for bound overlap
-                        if( ( sp1_left >= sp2_left
-                              && sp1_left <= sp2_right
-                            ) || ( sp1_top >= sp2_top
-                              && sp1_top <= sp2_bottom
-                            )
-                        )
-                        {
-                            // TODO
-                            
-                            // DEBUG
-                            // std::cout << "COLL_A" << std::endl;
-                        }
+                        // Regular version
+                        MCK::CollisionProcessing<T,CONTENT>::check_collision(
+                            collisions,
+                            *it1,
+                            *it2
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                            std::string( "Failed to check collision, error = " )
+                            + e.what()
+#else
+                            ""
+#endif
+                        ) );
                     }
                 }
 
                 // Test against sprites from higher nodes
                 for( auto sprite_2 : sprites_to_be_tested )
                 {
-                    // Get sprite 2 bounds
-                    float sp2_left, sp2_top, sp2_right, sp2_bottom;
-                    sprite_2->get_bounds( sp2_left, sp2_top, sp2_right, sp2_bottom );
-                    
-                    // Test for bound overlap
-                    if( ( sp1_left >= sp2_left
-                          && sp1_left <= sp2_right
-                        ) || ( sp1_top >= sp2_top
-                          && sp1_top <= sp2_bottom
-                        )
-                    )
+                    try
                     {
-                        // TODO
-                        
-                        // DEBUG
-                        std::cout << "COLL_B" << std::endl;
+
+                        // Regular version
+                        MCK::CollisionProcessing<T,CONTENT>::check_collision(
+                            collisions,
+                            *it1,
+                            sprite_2
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                            std::string( "(2)Failed to check collision, error = " )
+                            + e.what()
+#else
+                            ""
+#endif
+                        ) );
                     }
                 }
             }
@@ -598,7 +557,7 @@ class CollisionProcessing
             // If node is non-leaf and there are sprites present
             // in sub-nodes, process sub-nodes
             if( node->is_non_leaf() 
-                && node->get_content()->sub_node_sprite_count > 0
+                // && node->get_content()->sub_node_sprite_count > 0
             )
             {
                 // Add node's sprites to 'sprites_to_be_tested'
@@ -708,7 +667,7 @@ class CollisionProcessing
             }
         }
 
-        //! Recursive method for moving sprite to parent node
+        //! Recursive method for moving sprite to another node
         void check_if_sprite_needs_moving_to_another_node( 
             QuadTreeLeaf<T,CONTENT>* node, 
             std::shared_ptr<MCK::SpriteCollisionRect> sprite,
@@ -720,15 +679,6 @@ class CollisionProcessing
             bool called_from_parent_node = false
         )
         {
-            /*
-            // DEBUG
-            std::cout << "check: node=" << node
-                      << ", sprite_left=" << sprite_left
-                      << ", called from parent="
-                      << called_from_parent_node
-                      << std::endl;
-            */
-
             // Get node bounds
             T node_left, node_top,
               node_right, node_bottom;
@@ -742,14 +692,6 @@ class CollisionProcessing
                 node_right,
                 node_bottom
             );
-
-            /*
-            // DEBUG
-            std::cout << "node bounds: " << node_left
-                      << "," << node_top << ","
-                      << node_right << "," << node_bottom
-                      << std::endl;
-            */
 
             bool sprite_belongs_in_this_node = true;
 
@@ -884,25 +826,79 @@ class CollisionProcessing
                 }
             }
 
-            /*
-            // DEBUG
-            std::cout << "sprite " << sprite.get()
-                      << ", node " << node
-                      << ", sprite_belongs_in_this_node = "
-                      << sprite_belongs_in_this_node
-                      << std::endl;
-            */
-
             // If it belong in this node, add sprite to this node
             if( sprite_belongs_in_this_node )
             {
-                /*
-                // DEBUG
-                std::cout << "sprites_new_node set to " << node
-                          << std::endl;
-                */
                 sprites_new_node = node;
             }
+        }
+
+        //! Determine
+        static bool check_collision(
+            std::vector<MCK::CollisionEvent> &collisions,
+            std::shared_ptr<MCK::SpriteCollisionRect> sprite_1,
+            std::shared_ptr<MCK::SpriteCollisionRect> sprite_2
+        )
+        {
+            switch( sprite_1->get_type() )
+            {
+                case MCK::SpriteCollisionType::RECT:
+                    switch( sprite_2->get_type() )
+                    {
+                        case MCK::SpriteCollisionType::RECT:
+                            return false;
+                            break;
+
+                        case MCK::SpriteCollisionType::CIRCLE:
+                            return false;
+                            break;
+                    }
+                    break;
+
+                case MCK::SpriteCollisionType::CIRCLE:
+
+                    std::shared_ptr<MCK::SpriteCollisionCircle> circle_1
+                        = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_1 ); 
+
+                    switch( sprite_2->get_type() )
+                    {
+                        case MCK::SpriteCollisionType::RECT:
+                            return false;
+                            break;
+
+                        case MCK::SpriteCollisionType::CIRCLE:
+                    
+                            std::shared_ptr<MCK::SpriteCollisionCircle> circle_2
+                                = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_2 ); 
+                            
+                            const float DIST 
+                                = circle_1->get_radius()
+                                    + circle_2->get_radius();
+
+                                if( circle_1->get_dist_sq_from_center(
+                                    circle_2->get_center_x(),
+                                    circle_2->get_center_y()
+                                    ) < DIST * DIST
+                                )
+                                {
+                                    collisions.push_back(
+                                        CollisionEvent(
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                        )  
+                                    );
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            break;
+                    }
+                    break;
+            }
+                
+            return false;
         }
 
         uint8_t levels;
@@ -911,6 +907,7 @@ class CollisionProcessing
 
         std::shared_ptr<MCK::QuadTree<T,CONTENT>> quad_tree;
 };
+
 
 }  // End of namespace MCK
         

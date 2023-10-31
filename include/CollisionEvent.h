@@ -37,8 +37,8 @@ struct CollisionEvent
 {
     // Sprites involved in collision 
     // std::shared_ptr<MCK::CollisionPairing> pairing;
-    std::shared_ptr<MCK::GameEngRenderBase> sprite_A;
-    std::shared_ptr<MCK::GameEngRenderBase> sprite_B;
+    std::shared_ptr<MCK::SpritePos> sprite_A;
+    std::shared_ptr<MCK::SpritePos> sprite_B;
 
     // Angle of collision, clockwise from north,
     // with respect to sprite A, in radians
@@ -64,8 +64,8 @@ struct CollisionEvent
     //! Constructor
     CollisionEvent
     (
-        std::shared_ptr<MCK::GameEngRenderBase> _sprite_A,
-        std::shared_ptr<MCK::GameEngRenderBase> _sprite_B,
+        std::shared_ptr<MCK::SpritePos> _sprite_A,
+        std::shared_ptr<MCK::SpritePos> _sprite_B,
         float _angle,
         int _angle_lock,
         float _overlap_dist
@@ -75,6 +75,17 @@ struct CollisionEvent
         angle_lock( _angle_lock ),
         overlap_dist( _overlap_dist )
     {}
+    
+    //! Partial constructor
+    CollisionEvent
+    (
+        std::shared_ptr<MCK::SpritePos> _sprite_A,
+        std::shared_ptr<MCK::SpritePos> _sprite_B
+    ) : sprite_A( _sprite_A ),
+        sprite_B( _sprite_B )
+    {
+        MCK::CollisionEvent();
+    }
 };
 
 }  // End of namespace MCK

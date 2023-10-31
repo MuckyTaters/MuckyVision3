@@ -174,6 +174,11 @@ class SpritePos
                     - MCK::SpritePos::prev_ticks; 
         }
 
+        uint32_t get_current_ticks( void ) const noexcept
+        {
+            return this->current_ticks;
+        }
+
 
     protected:
 

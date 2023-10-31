@@ -118,6 +118,11 @@ class SpriteAnimTime : public SpriteAnimBase
             this->select_frame( this->frame_num );
         }   
 
+        void next_frame( void )
+        {
+            this->select_frame( this->frame_num + 1 );
+        }
+
         void select_frame( size_t _frame_num )
         {
             // If there are no frames, no nothing
