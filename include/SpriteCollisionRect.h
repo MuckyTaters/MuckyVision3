@@ -44,7 +44,7 @@ class SpriteCollisionRect : public SpriteCollisionBase
         //! Default constructor
         SpriteCollisionRect( void )
         {
-            this->type = MCK::SpriteCollisionType::RECT;
+            this->collision_type = MCK::SpriteCollisionType::RECT;
             this->left_bound = 0;
             this->top_bound = 0;
             this->right_bound = 0;

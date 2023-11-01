@@ -840,10 +840,10 @@ class CollisionProcessing
             std::shared_ptr<MCK::SpriteCollisionRect> sprite_2
         )
         {
-            switch( sprite_1->get_type() )
+            switch( sprite_1->get_collision_type() )
             {
                 case MCK::SpriteCollisionType::RECT:
-                    switch( sprite_2->get_type() )
+                    switch( sprite_2->get_collision_type() )
                     {
                         case MCK::SpriteCollisionType::RECT:
                             return false;
@@ -860,7 +860,7 @@ class CollisionProcessing
                     std::shared_ptr<MCK::SpriteCollisionCircle> circle_1
                         = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_1 ); 
 
-                    switch( sprite_2->get_type() )
+                    switch( sprite_2->get_collision_type() )
                     {
                         case MCK::SpriteCollisionType::RECT:
                             return false;

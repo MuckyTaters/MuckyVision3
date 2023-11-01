@@ -49,7 +49,7 @@ class SpriteMotionBase : virtual public SpritePos
         // Default constructor
         SpriteMotionBase( void ) : SpritePos()
         {
-            this->type = MCK::SpriteMotionType::STATIONARY;
+            this->motion_type = MCK::SpriteMotionType::STATIONARY;
         }
 
         //! Constructor
@@ -64,15 +64,16 @@ class SpriteMotionBase : virtual public SpritePos
         // Calculate position, based on time 
         virtual void calc_pos( void ) const noexcept {}
 
+        /*
         MCK::SpriteMotionType get_type ( void ) const noexcept
         {
             return this->type;
         }
-
-
+        */
+    
     protected:
 
-        MCK::SpriteMotionType type;
+        // MCK::SpriteMotionType type;
 };
 
 }  // End of namespace MCK

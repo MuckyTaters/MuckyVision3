@@ -42,7 +42,7 @@ class SpriteCollisionCircle : public SpriteCollisionRect
         //! Default constructor
         SpriteCollisionCircle( void )
         {
-            this->type = MCK::SpriteCollisionType::CIRCLE;
+            this->collision_type = MCK::SpriteCollisionType::CIRCLE;
             this->radius = 0.0f;
             this->center_x_offset = 0.0f;
             this->center_y_offset = 0.0f;

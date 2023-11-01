@@ -53,6 +53,9 @@ class SpritePos
         SpritePos( void )
         {
             this->update_render_instance = false;
+            this->motion_type = MCK::SpriteMotionType::STATIONARY;
+            this->anim_type = MCK::SpriteAnimType::STATIC;
+            this->collision_type = MCK::SpriteCollisionType::NONE;
         }
 
         //! Constructor
@@ -66,6 +69,24 @@ class SpritePos
         }
 
         virtual ~SpritePos( void ) {}
+
+        //! Get type of sprite's motion component
+        MCK::SpriteMotionType get_motion_type( void ) const noexcept
+        {
+            return this->motion_type;
+        }
+
+        //! Get type of sprite's animation component
+        MCK::SpriteAnimType get_anim_type( void ) const noexcept
+        {
+            return this->anim_type;
+        }
+
+        //! Get type of sprite's collision component
+        MCK::SpriteCollisionType get_collision_type( void ) const noexcept
+        {
+            return this->collision_type;
+        }
 
         //! Sets two important static pointers
         /*! Throws if either supplied pointer is NULL.*/
@@ -197,6 +218,10 @@ class SpritePos
 
         static const GameEng* game_eng;
         static const ImageMan* image_man;
+
+        MCK::SpriteMotionType motion_type;
+        MCK::SpriteAnimType anim_type;
+        MCK::SpriteCollisionType collision_type;
 };
 
 }  // End of namespace MCK

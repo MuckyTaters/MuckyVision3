@@ -43,7 +43,7 @@ class SpriteAnimTime : public SpriteAnimBase
 
         SpriteAnimTime( void ) : SpriteAnimBase()
         {
-            this->type = MCK::SpriteAnimType::TEMPORAL;
+            this->anim_type = MCK::SpriteAnimType::TEMPORAL;
         }
 
         bool has_frames( void ) const noexcept

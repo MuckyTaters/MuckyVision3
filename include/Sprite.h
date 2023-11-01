@@ -180,7 +180,9 @@ class Sprite : public MOTION, public ANIM, public COLL
             }
 
             //    // TODO Process collisions
-            if( this->COLL::type != MCK::SpriteCollisionType::NONE )
+            if( this->get_collision_type() 
+                    != MCK::SpriteCollisionType::NONE
+            )
             {
                 this->COLL::update_bounds(); 
             }

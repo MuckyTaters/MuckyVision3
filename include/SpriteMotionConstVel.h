@@ -44,7 +44,7 @@ class SpriteMotionConstVel : public SpriteMotionBase
         //! Default constructor
         SpriteMotionConstVel( void ) : SpriteMotionBase()
         {
-            this->type = MCK::SpriteMotionType::CONST_VEL;
+            this->motion_type = MCK::SpriteMotionType::CONST_VEL;
         }
 
         //! Partial constructor
