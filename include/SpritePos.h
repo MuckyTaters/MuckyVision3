@@ -65,6 +65,8 @@ class SpritePos
             SpritePos();
         }
 
+        virtual ~SpritePos( void ) {}
+
         //! Sets two important static pointers
         /*! Throws if either supplied pointer is NULL.*/
         static void set_ptrs(

@@ -557,7 +557,7 @@ class CollisionProcessing
             // If node is non-leaf and there are sprites present
             // in sub-nodes, process sub-nodes
             if( node->is_non_leaf() 
-                // && node->get_content()->sub_node_sprite_count > 0
+                && node->get_content()->sub_node_sprite_count > 0
             )
             {
                 // Add node's sprites to 'sprites_to_be_tested'
