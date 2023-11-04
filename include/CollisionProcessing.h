@@ -557,7 +557,7 @@ class CollisionProcessing
             // If node is non-leaf and there are sprites present
             // in sub-nodes, process sub-nodes
             if( node->is_non_leaf() 
-                && node->get_content()->sub_node_sprite_count > 0
+                // && node->get_content()->sub_node_sprite_count > 0
             )
             {
                 // Add node's sprites to 'sprites_to_be_tested'
@@ -870,29 +870,64 @@ class CollisionProcessing
                     
                             std::shared_ptr<MCK::SpriteCollisionCircle> circle_2
                                 = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_2 ); 
-                            
-                            const float DIST 
+
+                            const float TOTAL_RAD 
                                 = circle_1->get_radius()
                                     + circle_2->get_radius();
 
-                                if( circle_1->get_dist_sq_from_center(
+                            const float DIST_SQ
+                                = circle_1->get_dist_sq_from_center(
                                     circle_2->get_center_x(),
                                     circle_2->get_center_y()
-                                    ) < DIST * DIST
-                                )
-                                {
-                                    collisions.push_back(
-                                        CollisionEvent(
-                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
-                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
-                                        )  
-                                    );
-                                    return true;
-                                }
-                                else
-                                {
-                                    return false;
-                                }
+                                );
+
+                            if( DIST_SQ < TOTAL_RAD * TOTAL_RAD )
+                            {
+                                collisions.push_back(
+                                    CollisionEvent(
+                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                    )  
+                                );
+
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+
+                            /*
+                            // DEBUG - check bounds
+                            const bool RECT_CHECK = 
+                                circle_1->get_left_bound()
+                                    < circle_2->get_right_bound()
+                                && circle_1->get_left_bound()
+                                    > circle_2->get_left_bound()
+                                && circle_1->get_top_bound()
+                                    < circle_2->get_bottom_bound()
+                                && circle_1->get_top_bound() 
+                                    > circle_2->get_top_bound();
+                            
+                            if( RECT_CHECK )
+                            {
+                                collisions.push_back(
+                                    CollisionEvent(
+                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                    )
+                                );
+                                collisions.back().circle_collision = false;
+                                collisions.back().rect_collision = true;
+                                
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                            */
+
                             break;
                     }
                     break;

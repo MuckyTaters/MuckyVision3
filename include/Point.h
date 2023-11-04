@@ -52,6 +52,7 @@
 #include<type_traits>  // For is_signed
 
 #include "Defs.h"
+#include "Vect2D.h"
 
 #if defined MCK_STD_OUT
 #include <string>
@@ -142,9 +143,39 @@ class Point
             this->block = other.get_block();
         }
 
+        //! Copy from Vect2D
+        /*! Made explicit to prevent unintended conversion */
+        template <class U>
+        explicit constexpr Point( const MCK::Vect2D<U> &other ) noexcept
+        {
+            this->x = T( other.get_x() );
+            this->y = T( other.get_y() );
+            this->z = T( 0 );
+        }
+
         //! Assignment constructor
         constexpr Point& operator=( const Point &other ) noexcept = default;
-       
+
+        //! Assignment from Vect2D
+        template <class U>
+        constexpr MCK::Vect2D<U> as_Vect2D( void ) const noexcept
+        {
+            MCK::Vect2D<U> ans( U( this->x), U( this->y ) ); 
+            return ans;
+        }
+
+        //! Convert to Vect2D
+        template <class U>
+        constexpr Point& operator=( const MCK::Vect2D<U> &other ) noexcept
+        {
+            this->x = T( other.get_x() );
+            this->y = T( other.get_y() );
+            this->z = T( 0 );
+            return this;
+        }
+
+        
+
         //! Move constructor
         constexpr Point( Point &&other ) noexcept = default;
 

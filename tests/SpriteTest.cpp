@@ -42,6 +42,8 @@
 #include "QuadTree.h"
 #include "CollisionNode.h"
 #include "CollisionProcessing.h"
+#include "Vect2D.h"
+MCK::Vect2D<float> test_vect(0,1);
 
 /////////////////////////////////////////////
 // DEMO PARAMETERS
@@ -81,14 +83,15 @@ const int ALIEN_PIXEL_WIDTH
             * ALIEN_ASPECT_RATIO
     );
 const int ALIEN_PIXEL_HEIGHT = ALIEN_RAW_PIXEL_HEIGHT * ALIEN_SCALE;
-const int QUAD_TREE_LEVELS = 9;
+const int QUAD_TREE_LEVELS = 3;
 const int CIRCLE_RAW_PIXEL_SIZE = 16;
 const int CIRCLE_SCALE = 1;
 const int CIRCLE_PIXEL_SIZE
     = int(
         float( CIRCLE_RAW_PIXEL_SIZE * CIRCLE_SCALE )
     );
-const int NUM_CIRCLES = 480;
+const int CIRCLE_SPEED = 1;
+const int NUM_CIRCLES = 512;
 const int ALIEN_ROWS = 4;
 const int ALIEN_COLS = 6;
 const int ALIEN_V_SPACE = 4;
@@ -422,45 +425,6 @@ int main( int argc, char** argv )
     
     ///////////////////////////////////////////
     // CREATE IMAGE DATA
-
-    // Alien 1
-    const std::vector<uint8_t> IMAGE_ALIEN_1 =
-    {
-        0b10000010,
-        0b11000110,
-        0b11010110,
-        0b11010110,
-        0b11010110,
-        0b01111100,
-        0b00111000,
-        0b00010000
-    };
-
-    // Alien 2
-    const std::vector<uint8_t> IMAGE_ALIEN_2 =
-    {
-        0b01000100,
-        0b11010110,
-        0b11111110,
-        0b11111110,
-        0b11010110,
-        0b11010110,
-        0b11010110,
-        0b01000100
-    };
-
-    // Alien 3
-    const std::vector<uint8_t> IMAGE_ALIEN_3 =
-    {
-        0b01111100,
-        0b11111110,
-        0b10111010,
-        0b11010110,
-        0b01111100,
-        0b01010100,
-        0b01010100,
-        0b01010100
-    };
    
     // Starfield 1
     std::vector<uint8_t> starfield_1(
@@ -548,63 +512,6 @@ int main( int argc, char** argv )
             std::string( "Failed to create starfield 2 image, error: ")
             + e.what() ) );
     }
-    
-    MCK_IMG_ID_TYPE alien_1_image_id;
-    try
-    {
-        alien_1_image_id = image_man.create_custom_image(
-            std::make_shared<const std::vector<uint8_t>>(
-                IMAGE_ALIEN_1
-            ),
-            1,  // bits_per_pixel,
-            ALIEN_RAW_PIXEL_WIDTH,
-            ALIEN_RAW_PIXEL_HEIGHT
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create alien 1 image, error: ")
-            + e.what() ) );
-    }
-    
-    MCK_IMG_ID_TYPE alien_2_image_id;
-    try
-    {
-        alien_2_image_id = image_man.create_custom_image(
-            std::make_shared<const std::vector<uint8_t>>(
-                IMAGE_ALIEN_2
-            ),
-            1,  // bits_per_pixel,
-            ALIEN_RAW_PIXEL_WIDTH,
-            ALIEN_RAW_PIXEL_HEIGHT
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create alien 2 image, error: ")
-            + e.what() ) );
-    }
-
-    MCK_IMG_ID_TYPE alien_3_image_id;
-    try
-    {
-        alien_3_image_id = image_man.create_custom_image(
-            std::make_shared<const std::vector<uint8_t>>(
-                IMAGE_ALIEN_3
-            ),
-            1,  // bits_per_pixel,
-            ALIEN_RAW_PIXEL_WIDTH,
-            ALIEN_RAW_PIXEL_HEIGHT
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create alien 3 image, error: ")
-            + e.what() ) );
-    }
 
     MCK_IMG_ID_TYPE circle_image_id;
     try
@@ -646,7 +553,6 @@ int main( int argc, char** argv )
     std::shared_ptr<MCK::GameEngRenderBlock> starfield_1_block;
     std::shared_ptr<MCK::GameEngRenderBlock> starfield_2_block;
     std::shared_ptr<MCK::GameEngRenderBlock> sprite_block;
-    std::shared_ptr<MCK::GameEngRenderBlock> alien_formation_block;
     try
     {
         starfield_1_block = game_eng.create_empty_render_block(
@@ -661,10 +567,6 @@ int main( int argc, char** argv )
             game_eng.get_prime_render_block(),
             MCK::DEFAULT_Z_VALUE
         );
-        alien_formation_block = game_eng.create_empty_render_block(
-            sprite_block,
-            MCK::DEFAULT_Z_VALUE - 1
-        );
     }
     catch( std::exception &e )
     {
@@ -672,126 +574,7 @@ int main( int argc, char** argv )
             std::string( "Failed to create render block(s), error: ")
             + e.what() ) );
     }
-    // Set starting offset for alien formation
-    alien_formation_block->hoz_offset = BORDER_X; 
-    alien_formation_block->vert_offset = BORDER_Y; 
 
-
-    /////////////////////////////////////////////
-    // CREATE SPRITE PATHS
-
-    // Declare vector of entry paths for aliens
-    // Note: each entry is a "starting segment"
-    //       that connects to further segments in turn
-    const size_t NUM_PATHS = PATH_DATA.size();
-    std::vector<
-        std::shared_ptr<
-            MCK::LineSegment<
-                MCK::BezierCurveCubic,
-                MCK::Point<float>
-            >
-        >
-    > start_segs( NUM_PATHS );
-
-    // Construct each path, segment by segment
-    for( size_t n = 0; n < NUM_PATHS; n++ )
-    {
-        std::shared_ptr<
-            MCK::LineSegment<
-                MCK::BezierCurveCubic,
-                MCK::Point<float>
-            >
-        > prev_seg;
-        {
-            const size_t NUM_SEGS = ( PATH_DATA[n].size() - 2  ) / 6;
-
-            for( size_t i = 0; i < NUM_SEGS; i++ )
-            {
-                // Calculate starting position of the control point
-                // coords within PATH_DATA
-                const size_t BASE = i * 6;
-
-                // Construct a shared pointer to a line segment,
-                // based on a cubic Bezier curve using the
-                // control point coords stored in PATH_DATA
-                std::shared_ptr<
-                    MCK::LineSegment<
-                        MCK::BezierCurveCubic,
-                        MCK::Point<float>
-                    >
-                > new_seg = std::make_shared<
-                    MCK::LineSegment<
-                        MCK::BezierCurveCubic,
-                        MCK::Point<float>
-                    >
-                >( MCK::BezierCurveCubic<MCK::Point<float>>(
-                        MCK::Point<float>(  // p0
-                            PATH_DATA[n][ BASE + 0 ] * PATH_SCALE,
-                            PATH_DATA[n][ BASE + 1 ] * PATH_SCALE,
-                            sprite_block
-                        ),
-                        MCK::Point<float>(  // p1
-                            PATH_DATA[n][ BASE + 2 ] * PATH_SCALE,
-                            PATH_DATA[n][ BASE + 3 ] * PATH_SCALE,
-                            sprite_block
-                        ),
-                        MCK::Point<float>(  // p2
-                            PATH_DATA[n][ BASE + 4 ] * PATH_SCALE,
-                            PATH_DATA[n][ BASE + 5 ] * PATH_SCALE,
-                            sprite_block
-                        ),
-                        MCK::Point<float>(  // p3
-                            PATH_DATA[n][ BASE + 6 ] * PATH_SCALE,
-                            PATH_DATA[n][ BASE + 7 ] * PATH_SCALE,
-                            sprite_block
-                        )
-                    )
-                );
-
-                // Initialise this line segment
-                try
-                {
-                    new_seg->init(
-                        LINE_SEG_DISTANCE_STEP,
-                        true,  // xy only
-                        i  // Use 'i' as segment id
-                    );
-                }
-                catch( std::exception &e )
-                {
-                    throw( std::runtime_error(
-                        std::string( "Failed to init line segment " )
-                        + std::to_string( i )
-                        + std::string( ", error: " )
-                        + e.what() ) );
-                }
-
-                // Store pointer to first segment only
-                if( i == 0 )
-                {
-                    start_segs[n] = new_seg;
-                }
-                // Otherwise, connect segment to previous segment
-                else {
-                    try
-                    {
-                        prev_seg->connect_single_segment( new_seg );
-                    }
-                    catch( std::exception &e )
-                    {
-                        throw( std::runtime_error(
-                            std::string( "Failed to connect line segment " )
-                            + std::to_string( i )
-                            + std::string( ", error: " )
-                            + e.what() ) );
-                    }
-                }
-
-                // Store current segment as previous segment
-                prev_seg = new_seg;            
-            }
-        }
-    }
 
     /////////////////////////////////////////////
     // CREATE COLLISION PROCESSING
@@ -804,150 +587,11 @@ int main( int argc, char** argv )
             WINDOW_WIDTH_IN_PIXELS,
             WINDOW_HEIGHT_IN_PIXELS
         )
-        // MCK::Point<float>( 640, 480 )
     );
 
     // Declare collision vector
     std::vector<MCK::CollisionEvent> collisions;
     collisions.reserve( NUM_CIRCLES * NUM_CIRCLES );
-
-
-    /////////////////////////////////////////////
-    // CREATE SPRITES
-
-    // Ad-hoc POD struct to hold sprite info
-    struct BasicSprite
-    {
-        MCK_IMG_ID_TYPE image_id;
-        MCK_PAL_ID_TYPE palette_id;
-
-        std::shared_ptr<MCK::GameEngRenderInfo> render_info;
-       
-        // Line segment currently being traversed
-        std::shared_ptr<
-            const MCK::LineSegment<
-                MCK::BezierCurveCubic,
-                MCK::Point<float>
-            >
-        > current_seg;
-
-        float dist;  // Distance along current line segment
-        float current_speed;  // Current speed, pixels per tick
-        float target_speed;  // Target speed, pixels per tick
-        float acc;  // Acceleration, pixels per tick per tick
-    };
-
-    // Specialised sprite struct to hold alien sprite info
-    struct AlienSprite : public BasicSprite
-    {
-        // Coordinates of alien within alien_formation_block
-        MCK::Point<float> formation_pos;
-
-        bool in_formation;
-
-        int id;
-
-        // Used only when docking with formation
-        MCK::Point<float> temp_control_point;
-
-        // Sprite remains hidden until this time
-        uint32_t appearance_ticks;
-
-        // Default constructor
-        AlienSprite( void )
-        {
-            in_formation = true;
-            id = -1;
-            appearance_ticks = 0;
-        }
-    };
-
-    // Create alien sprites
-    std::vector<AlienSprite> aliens;
-    aliens.resize( ALIEN_ROWS * ALIEN_COLS );
-    for( int j = 0; j < ALIEN_ROWS; j++ )
-    {
-        MCK_PAL_ID_TYPE palette_id;
-        MCK_IMG_ID_TYPE image_id;
-        if( j > 1 )
-        {
-            palette_id = alien_1_palette_id; 
-            image_id = alien_1_image_id;
-        }
-        else if( j > 0 )
-        {
-            palette_id = alien_2_palette_id; 
-            image_id = alien_2_image_id;
-        }
-        else
-        {
-            palette_id = alien_3_palette_id; 
-            image_id = alien_3_image_id;
-        }
-
-        for( int i = 0; i < ALIEN_COLS; i++ )
-        {
-            const int COUNT = j * ALIEN_COLS + i;
-
-            // Get pointer to sprite
-            AlienSprite* const ALIEN
-                = &aliens[ COUNT ];
-
-            ALIEN->id = COUNT;
-
-            ALIEN->image_id = image_id;
-            ALIEN->palette_id = palette_id;
-
-            ALIEN->in_formation = false;
-
-            // Set intial path location
-            switch( j )
-            {
-                case ALIEN_ROWS - 1:
-                    ALIEN->current_seg = start_segs[0];
-                    ALIEN->appearance_ticks = 1000 + i * 200;
-                    break;
-
-                case ALIEN_ROWS - 2:
-                    ALIEN->current_seg = start_segs[1];
-                    ALIEN->appearance_ticks
-                        = 3000 + ( ALIEN_COLS - i ) * 200;
-                    break;
-                
-                case ALIEN_ROWS - 3:
-                    ALIEN->current_seg = start_segs[0];
-                    ALIEN->appearance_ticks = 5000 + i * 200;
-                    break;
-
-                case ALIEN_ROWS - 4:
-                    ALIEN->current_seg = start_segs[1];
-                    ALIEN->appearance_ticks
-                        = 7000 + ( ALIEN_COLS - i ) * 200;
-                    break;
-
-                default:
-                    ALIEN->current_seg.reset();
-                    ALIEN->appearance_ticks = 0;
-            }
-
-
-            // Set speed and acceleration
-            ALIEN->current_speed = 640.0f / 1000.0f;
-            ALIEN->target_speed = 128.0f / 1000.0f;
-            ALIEN->acc = -0.25f / 1000.0f;
-
-            // Set distance along starting segment
-            ALIEN->dist = 0.0f;
-            
-            // Set (evantual) position within formation
-            ALIEN->formation_pos.set_x(
-                i * ( ALIEN_PIXEL_WIDTH + ALIEN_H_SPACE )
-            );
-            ALIEN->formation_pos.set_y(
-                j * ( ALIEN_PIXEL_HEIGHT + ALIEN_V_SPACE )
-            );
-        }
-    }
 
     
     /////////////////////////////////////////////
@@ -1019,7 +663,7 @@ int main( int argc, char** argv )
     MCK::ImageText title_text;
     {
         std::string copyright( 1, uint8_t( 255  ));
-        std::string s = "MUCKYVADERS " + copyright + " 2023";
+        std::string s = "MUCKYVISION " + copyright + " 2023";
 
         try
         {
@@ -1126,7 +770,6 @@ int main( int argc, char** argv )
     }
 
 
-
     /////////////////////////////////////////////
     // CREATE CIRCLES WITH COLLISION DETECTION
 
@@ -1147,6 +790,8 @@ int main( int argc, char** argv )
 
     for( int i = 0; i < NUM_CIRCLES; i++ )
     {
+        const int DIAM = CIRCLE_PIXEL_SIZE * ( ( rand() % 2 ) + 1 ); 
+
         test_sprites.push_back(
             std::make_shared<
                 MCK::Sprite<
@@ -1161,16 +806,16 @@ int main( int argc, char** argv )
         {
             test_sprites.back()->init(
                 image_man,
-                game_eng.get_prime_render_block(),
+                sprite_block,
                 circle_image_id,
                 alien_1_palette_id,
-                CIRCLE_PIXEL_SIZE * 2.5f  // x coord
-                    + rand() % ( WINDOW_WIDTH_IN_PIXELS - 5 * CIRCLE_PIXEL_SIZE ),
-                CIRCLE_PIXEL_SIZE * 2.5f  // y coord
-                    + rand() % ( WINDOW_HEIGHT_IN_PIXELS - 5 * CIRCLE_PIXEL_SIZE ),
+                DIAM * 2.5f  // x coord
+                    + rand() % ( WINDOW_WIDTH_IN_PIXELS - 5 * DIAM ),
+                DIAM * 2.5f  // y coord
+                    + rand() % ( WINDOW_HEIGHT_IN_PIXELS - 5 * DIAM ),
                 MCK::MAX_Z_VALUE,
-                CIRCLE_PIXEL_SIZE,  // width_in_pixels,
-                CIRCLE_PIXEL_SIZE  // height_in_pixels,
+                DIAM,  // width_in_pixels,
+                DIAM  // height_in_pixels,
             );
         }
         catch( std::exception &e )
@@ -1183,16 +828,16 @@ int main( int argc, char** argv )
         // Initialize motion for const velocity test sprite 
         test_sprites.back()->MCK::SpriteMotionConstVel::set_vel(
             MCK::Point<float>(
-                ( ( rand() % 10 ) - 5 ) * 0.03f,
-                ( ( rand() % 10 ) - 5 ) * 0.03f
+                ( ( rand() % 10 ) - 5 ) * 0.01f * CIRCLE_SPEED,
+                ( ( rand() % 10 ) - 5 ) * 0.01f * CIRCLE_SPEED
             )
         );
 
         // Initialize circular collision by setting radius 
         test_sprites.back()->MCK::SpriteCollisionCircle::set_vals(
-            CIRCLE_PIXEL_SIZE / 2.0f,  // Radius
-            CIRCLE_PIXEL_SIZE / 2.0f,  // x-offset
-            CIRCLE_PIXEL_SIZE / 2.0f  // y-offset
+            DIAM / 2.0f,  // Radius
+            DIAM / 2.0f,  // x-offset
+            DIAM / 2.0f  // y-offset
         );
 
         // Add test_sprite to collision processing
@@ -1229,149 +874,6 @@ int main( int argc, char** argv )
             }
         );
     }
-
-    /*
-    // Test sprite 1
-    auto test_sprite = std::make_shared<
-        MCK::Sprite<
-            MCK::SpriteMotionConstVel,
-            MCK::SpriteAnimBase,
-            MCK::SpriteCollisionCircle
-        >
-    >();
-
-    try
-    {
-        test_sprite->init(
-            image_man,
-            game_eng.get_prime_render_block(),
-            circle_image_id,
-            alien_1_palette_id,
-            100,  // x
-            200,  // y
-            MCK::MAX_Z_VALUE,
-            CIRCLE_PIXEL_SIZE,  // width_in_pixels,
-            CIRCLE_PIXEL_SIZE  // height_in_pixels,
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create simple sprite, error :" )
-            + e.what() ) );
-    }
-
-    // Initialize motion for const velocity test sprite 
-    test_sprite->MCK::SpriteMotionConstVel::set_vel(
-        MCK::Point<float>( 0.01f * 3, -0.02f * 3 )
-    );
-
-    // Initialize circular collision by setting radius 
-    test_sprite->MCK::SpriteCollisionCircle::set_vals(
-        CIRCLE_PIXEL_SIZE / 2.0f,  // Radius
-        CIRCLE_PIXEL_SIZE / 2.0f,  // x-offset
-        CIRCLE_PIXEL_SIZE / 2.0f  // y-offset
-        // 0.0f,  // x-offset
-        // 0.0f   // y-offset
-    );
-
-    // TEST CODE
-    // Add test_sprite to collision processing
-    try
-    {
-        MCK::Point<float> pos 
-            = test_sprite->MCK::SpritePos::get_pos();
-        bool rc = coll_proc.add_sprite(
-            std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( test_sprite )
-        );
-        std::cout << "rc = " << rc << std::endl;
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to add test_sprite to coll_proc, error :" )
-            + e.what() ) );
-    }
-
-    // END OF TEST CODE
-
-    // Test sprite 2
-    auto test_sprite2 = std::make_shared<
-        MCK::Sprite<
-            MCK::SpriteMotionConstVel,
-            MCK::SpriteAnimTime,
-            MCK::SpriteCollisionCircle
-        >
-    >();
-    try
-    {
-        test_sprite2->init(
-            image_man,
-            game_eng.get_prime_render_block(),
-            circle_image_id,
-            alien_2_palette_id,
-            100,  // x
-            200,  // y
-            MCK::MAX_Z_VALUE,
-            CIRCLE_PIXEL_SIZE,  // width_in_pixels,
-            CIRCLE_PIXEL_SIZE  // height_in_pixels,
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create simple sprite2, error :" )
-            + e.what() ) );
-    }
-
-    // Initialize circular collision by setting radius 
-    test_sprite2->MCK::SpriteCollisionCircle::set_vals(
-        CIRCLE_PIXEL_SIZE / 2.0f,  // Radius
-        CIRCLE_PIXEL_SIZE / 2.0f,  // x-offset
-        CIRCLE_PIXEL_SIZE / 2.0f  // y-offset
-        // 0.0f,  // x-offset
-        // 0.0f   // y-offset
-    );
-    // Initialize animation for test sprite 2 
-    test_sprite2->MCK::SpriteAnimTime::set_frames(
-        {
-            MCK::SpriteFrame(
-                5000,
-                circle_image_id,
-                alien_2_palette_id
-            ),
-            MCK::SpriteFrame(
-                5000,
-                circle_image_id,
-                alien_3_palette_id
-            )
-        }
-    );
-
-    // Initialize motion for const velocity test sprite 2 
-    test_sprite2->MCK::SpriteMotionConstVel::set_vel(
-        MCK::Point<float>( 0.02f * 4, -0.01f * 4 )
-    );
-
-    // TEST CODE
-    // Add test_sprite2 to collision processing
-    try
-    {
-        MCK::Point<float> pos 
-            = test_sprite2->MCK::SpritePos::get_pos();
-        bool rc = coll_proc.add_sprite(
-            std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( test_sprite2 )
-        );
-        std::cout << "rc = " << rc << std::endl;
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to add test_sprite_2 to coll_proc, error :" )
-            + e.what() ) );
-    }
-    // END OF TEST CODE
-    */
 
 
     /////////////////////////////////////////////
@@ -1468,31 +970,59 @@ int main( int argc, char** argv )
         // Action collisions
         {
             int count = 0;
-            for( MCK::CollisionEvent coll :  collisions )
+            for( MCK::CollisionEvent coll : collisions )
             {
-                if( ( frame_num + count++ ) % 4 != 0 )
+                // Ignore NULL pointers
+                if( coll.sprite_A.get() == NULL
+                    || coll.sprite_B.get() == NULL
+                )
                 {
                     continue;
                 }
 
-                // Sprite A
-                if( coll.sprite_A.get() != 0 
-                    && std::dynamic_pointer_cast<MCK::SpriteAnimBase>( coll.sprite_A )->get_type() 
-                        == MCK::SpriteAnimType::TEMPORAL
+                // Get sprite positions
+                const MCK::Point<float> &POS_A
+                    = coll.sprite_A->get_pos();
+                const MCK::Point<float> &POS_B
+                    = coll.sprite_B->get_pos();
+
+                // Get sprite collision types
+                const MCK::SpriteCollisionType COLL_TYPE_A
+                    = coll.sprite_A->get_collision_type(); 
+                const MCK::SpriteCollisionType COLL_TYPE_B
+                    = coll.sprite_B->get_collision_type(); 
+
+                // Check if A and B are circles
+                if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
+                    && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
                 )
                 {
-                    std::dynamic_pointer_cast<MCK::SpriteAnimTime>( coll.sprite_A )
-                        ->next_frame();
-                }
-                
-                // Sprite B
-                if( coll.sprite_B.get() != 0 
-                    && std::dynamic_pointer_cast<MCK::SpriteAnimBase>( coll.sprite_B )->get_type() 
-                        == MCK::SpriteAnimType::TEMPORAL
-                )
-                {
-                    std::dynamic_pointer_cast<MCK::SpriteAnimTime>( coll.sprite_B )
-                        ->next_frame();
+                    std::shared_ptr<MCK::SpriteCollisionCircle> COLL_CIRC_A
+                        = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( coll.sprite_A );
+
+                    std::shared_ptr<MCK::SpriteCollisionCircle> COLL_CIRC_B
+                        = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( coll.sprite_B );
+
+                    const MCK::Vect2D<float> CENTER_A(
+                            COLL_CIRC_A->get_center_x(),
+                            COLL_CIRC_A->get_center_y()
+                        );
+
+                    const MCK::Vect2D<float> CENTER_B(
+                            COLL_CIRC_B->get_center_x(),
+                            COLL_CIRC_B->get_center_y()
+                        );
+
+                    MCK::SpriteMotionConstVel::elastic_collision(
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
+                        COLL_CIRC_A->get_radius() * 1.0f,  // mass A
+                        COLL_CIRC_B->get_radius() * 1.0f,  // mass B
+                        COLL_CIRC_A->get_radius(),
+                        COLL_CIRC_B->get_radius(),
+                        &CENTER_A,
+                        &CENTER_B
+                    );
                 }
             }
         }
@@ -1599,365 +1129,6 @@ int main( int argc, char** argv )
                 starfield_2_block->vert_offset
                     = RAW_Y_POS % WINDOW_HEIGHT_IN_PIXELS; 
             }
-
-            /////////////////////////
-            // Move alien formation
-            {
-                // Get total pixels moved by formation since
-                // start.
-                const uint32_t RAW_X_POS 
-                    = uint32_t( 
-                        float( CURRENT_TICKS - START_TICKS )
-                            * ALIEN_FORMATION_SPEED
-                    );
-
-                // Determine if formation is now moving left (true)
-                // or right (false)
-                const bool LEFT
-                    = ( RAW_X_POS / ALIEN_FORMATION_X_SPAN ) % 2;
-
-                // Calculate pixel displacement (from left or right)
-                const uint32_t X_DISP 
-                    = RAW_X_POS % ALIEN_FORMATION_X_SPAN;
-
-                // Calculate actual screen position
-                alien_formation_block->hoz_offset
-                    = LEFT ?
-                        X_DISP + BORDER_X
-                        : ALIEN_FORMATION_X_SPAN - X_DISP + BORDER_X;
-            }
-        }
-        
-
-        // Process all alien sprites
-        bool all_in_formation = true;
-        for( AlienSprite &aln : aliens )
-        {
-            // For purpose of making info text active
-            if( !aln.in_formation )
-            {
-                all_in_formation = false;
-            }
-
-            // Create render info for newly appearing aliens
-            if( aln.render_info.get() == NULL 
-                && aln.appearance_ticks < CURRENT_TICKS
-            )
-            {
-                // Play sound effect on appearance
-                try
-                {
-                    MCK::GameEngAudio::voice_command(
-                        FX_1_VOICES.at( fx_1_voice_index ),
-                        MCK::VoiceSynth::construct_command(
-                            0x10, // Pitch ID
-                            2  // Duration ID
-                        )
-                    );
-                }
-                catch( std::exception &e )
-                {
-                    std::cout << "(2)Failed to issue voice "
-                              << "command, error = "
-                              << e.what();
-                }
-
-                // Update FX 1 index
-                fx_1_voice_index =
-                    ( fx_1_voice_index + 1 )
-                        % FX_1_VOICES.size(); 
-
-                // If alien is in formation, use formation pos,
-                // otherwise if starting line segment is defined,
-                // place alien 'dist' pixels along line segment.
-                const MCK::Point<float> POS
-                    = aln.in_formation ?
-                        aln.formation_pos :
-                        aln.current_seg.get() == NULL ?
-                            MCK::Point<float>( 0.0f, 0.0f ) :
-                            aln.current_seg->get_point_by_arc_len(
-                                aln.dist
-                            );
-
-                try
-                {
-                    aln.render_info = image_man.create_render_info(
-                        aln.image_id,
-                        aln.palette_id,
-                        POS.get_x(),
-                        POS.get_y(),
-                        ALIEN_PIXEL_WIDTH,
-                        ALIEN_PIXEL_HEIGHT,
-                        aln.in_formation ?
-                            alien_formation_block :
-                            sprite_block
-                    );
-                }
-                catch( std::exception &e )
-                {
-                    std::cout << "Failed to create render info, error: "
-                      << e.what() << std::endl;
-                }
-            }
-
-            // Continue to process only aliens NOT in formation
-            // with render info present
-            if( aln.in_formation
-                || aln.render_info.get() == NULL
-            )
-            {
-                continue;
-            }
-
-            // Update alien's speed
-            if( aln.acc > 0 )
-            {
-                aln.current_speed = std::min(
-                    aln.target_speed,
-                    aln.current_speed 
-                        + aln.acc * TICKS_SINCE_LAST_ANIM
-                );
-            }
-            else
-            {
-                aln.current_speed = std::max(
-                    aln.target_speed,
-                    aln.current_speed 
-                        + aln.acc * TICKS_SINCE_LAST_ANIM
-                );
-            }
-
-            // If no line segment assigned, assume
-            // alien is docking with formation
-            if( aln.current_seg.get() == NULL )
-            {
-                // Estimate distance travelled (in pixels)
-                // since last animation update
-                const float DIST
-                    = aln.current_speed * TICKS_SINCE_LAST_ANIM;
-
-                // Create a cubic Bezier curve plotting a route
-                // from aliens current position to it's (current)
-                // formation position.........
-
-                // Set first control point, P0, as current position
-                const MCK::Point<float> P0(
-                    aln.render_info->dest_rect.get_x(),
-                    aln.render_info->dest_rect.get_y()
-                );
-
-                // Set last control point, P3, as alien's formation
-                // position (within formation block),
-                // tranformed into sprite block's coord
-                // system.
-                const MCK::Point<float> P3
-                    = aln.formation_pos
-                        + MCK::Point<float>(
-                            alien_formation_block->hoz_offset,  
-                            alien_formation_block->vert_offset
-                        );
-                
-                // Set third control point, P2, a fixed hoz distance
-                // from P3, in direction of P0.
-                const MCK::Point<float> P2(
-                    P3.get_x() 
-                        - MCK::Point<float>::comp_x( P0, P3 )
-                            * std::min(
-                                fabs( 
-                                    P0.get_x() - P3.get_x()
-                                ),
-                                100.0f
-                            ),
-                    P3.get_y()
-                );
-                
-                // Second control point, P1, is simply the 
-                // alien's 'temp_control_point'
-                const MCK::Point<float> &P1 = aln.temp_control_point;
-
-                // Create cubic Bezier curve
-                const MCK::BezierCurveCubic<MCK::Point<float>> bez(
-                    P0,
-                    P1,
-                    P2,
-                    P3
-                );
-
-                // Estimate 't' value on Bezier curve by assuming
-                // that, for small 't' values, direction is in
-                // a straight line from P0 towards P1, with 't'
-                // being the proportion of distance P0->P1.
-                // For safety, the 't' value is capped at 1.0f.
-                const double EST_T
-                    = std::min(
-                        1.0f,
-                        DIST / sqrt( 
-                            MCK::Point<float>::dist_sq( P0, P1 ) 
-                        )
-                    );
-
-                // Calculate new position for alien, using
-                // the Bezier curve and the estimated 't' value
-                const MCK::Point<float> NEW_POS
-                    = bez.get_point( EST_T );
-
-                // Calculate (square of) distance from 
-                // the alien's formation point
-                const float DIST_SQ = MCK::Point<float>::dist_sq( NEW_POS, P3 );
-
-                // If we've (tolerably) reached the formation point,
-                // move the alien to the formation block and declare
-                // it to be in formation
-                if( DIST_SQ < 1.0f )  // 1.0f = to nearest pixel
-                {
-                    // Move alien to formation block
-                    try
-                    {
-                        MCK::GameEng::move_render_instance(
-                            aln.render_info,
-                            sprite_block,
-                            alien_formation_block
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-                        throw( std::runtime_error(
-                            std::string( "Failed to move alien to formation block, error: ")
-                            + e.what() ) );
-                    }
-                    
-                    // Set formation position
-                    aln.render_info->dest_rect.set_x(
-                        aln.formation_pos.get_x()
-                    ); 
-                    aln.render_info->dest_rect.set_y(
-                        aln.formation_pos.get_y()
-                    ); 
-                   
-                    aln.in_formation = true;
-
-                    // Play FX when joins formation
-                    try
-                    {
-                        MCK::GameEngAudio::voice_command(
-                            FX_0_VOICES.at( fx_0_voice_index ),
-                            MCK::VoiceSynth::construct_command(
-                                0x1F, // Pitch ID
-                                1  // Duration ID
-                            )
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-                        std::cout << "Failed to issue voice "
-                                  << "command, error = "
-                                  << e.what();
-                    }
-
-                    // Update FX 0 index
-                    fx_0_voice_index =
-                        ( fx_0_voice_index + 1 )
-                            % FX_0_VOICES.size(); 
-                }
-                else
-                {
-                    // If not yet in formation,
-                    // set alien position
-                    aln.render_info->dest_rect.set_x(
-                        NEW_POS.get_x()
-                    ); 
-                    aln.render_info->dest_rect.set_y(
-                        NEW_POS.get_y()
-                    ); 
-                   
-                    // We need to calculate a new temporary control
-                    // point, for use in the next animation step.
-                    // To do this we split the Bezier curve at 'EST_T',
-                    // and take the second control point of the resulting
-                    // sub-curve.
-                    aln.temp_control_point
-                        = bez.split_hi( EST_T ).get_control_point( 1 );
-                }
-
-                // Skip to next alien
-                continue;
-            }
-
-            aln.dist += aln.current_speed * TICKS_SINCE_LAST_ANIM;
-            bool skip = false;
-            while( aln.dist > aln.current_seg->get_length() )
-            {
-                aln.dist -= aln.current_seg->get_length();
-                
-                if( aln.current_seg->has_single_connection() )
-                {
-                    // Move alien to next segment on path
-                    try
-                    {
-                        aln.current_seg = aln.current_seg->get_single_connection();
-                    }
-                    catch( std::exception &e )
-                    {
-                        throw( std::runtime_error(
-                            std::string( "Failed to get next segment, error: ")
-                            + e.what() ) );
-                    }
-                }
-                else
-                {
-                    // Get third and fourth contol points for
-                    // existing segment
-                    const MCK::BezierCurveCubic<MCK::Point<float>> CURVE
-                        = aln.current_seg->get_curve();
-                    const MCK::Point<float> P2 = CURVE.get_control_point( 2 );
-                    const MCK::Point<float> P3 = CURVE.get_control_point( 3 );
-                    
-                    // Set temporary control point by adding
-                    // vector P2->P3 to P3
-                    aln.temp_control_point = P3 * 2 - P2;
-
-                    // Set current location of alien as P3
-                    // plus a vector of magnitude 'dist' in 
-                    // direction P2->P3
-                    const MCK::Point<float> NEW_POS
-                        = P3 + ( P3 - P2 )
-                            / sqrt(
-                                MCK::Point<float>::dist_sq( P2, P3 ) 
-                            ) * aln.dist;
-                    aln.render_info->dest_rect.set_x( NEW_POS.get_x() );
-                    aln.render_info->dest_rect.set_y( NEW_POS.get_y() );
-
-                    // Clear current segment but do NOT set
-                    // 'in_formation' flag; this indicates
-                    // alien is docking
-                    aln.current_seg.reset();
-
-                    skip = true;
-                    break;
-                }
-            }
-
-            if( skip )
-            {
-                continue;
-            }
-
-            // Calculate position of alien, within sprite block
-            const MCK::Point<float> POS
-                = aln.current_seg->get_point_by_arc_len( aln.dist );
-
-            aln.render_info->dest_rect.set_x( POS.get_x() );
-            aln.render_info->dest_rect.set_y( POS.get_y() );
-        }
-
-        if( all_in_formation
-            && ( !info_text_1.is_active()
-                 || !info_text_2.is_active()
-            )
-        )
-        {
-            info_text_1.make_active();
-            info_text_2.make_active();
         }
 
         // Clear, render and present

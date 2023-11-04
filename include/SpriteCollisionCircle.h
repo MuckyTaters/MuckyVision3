@@ -125,6 +125,16 @@ class SpriteCollisionCircle : public SpriteCollisionRect
             return this->radius;
         }
 
+        float get_center_x_offset( void ) const noexcept
+        {
+            return center_x_offset;
+        }
+
+        float get_center_y_offset( void ) const noexcept
+        {
+            return center_y_offset;
+        }
+
     protected:
 
         float center_x_offset;

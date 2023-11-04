@@ -216,6 +216,12 @@ class Vect2D
             return ans;
         }
 
+        //! Magnitude squared
+        constexpr T mag_sq( void ) const noexcept
+        {
+            return this->x * this->x + this->y * this->y;
+        }
+
         ///////////////////////////////////////
         // Static member functions
 

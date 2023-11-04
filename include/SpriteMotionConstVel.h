@@ -87,6 +87,64 @@ class SpriteMotionConstVel : public SpriteMotionBase
             }
         }
 
+        static void elastic_collision(
+            std::shared_ptr<MCK::SpriteMotionConstVel> sprite_A,
+            std::shared_ptr<MCK::SpriteMotionConstVel> sprite_B,
+            float mass_A = 1.0f,
+            float mass_B = 1.0f,
+            float radius_A = 0.0f,
+            float radius_B = 0.0f,
+            const MCK::Vect2D<float>* alt_center_A = NULL,
+            const MCK::Vect2D<float>* alt_center_B = NULL
+        )
+        {
+            // Ignore if either pointer NULL.
+            if( sprite_A.get() == 0 || sprite_B.get() == 0 )
+            {
+                return;
+            }
+
+            const MCK::Vect2D<float> V1 = sprite_A->vel.as_Vect2D<float>();
+            const MCK::Vect2D<float> V2 = sprite_B->get_vel().as_Vect2D<float>();
+            const MCK::Vect2D<float> X1
+                    = alt_center_A == NULL ?
+                        sprite_A->pos.as_Vect2D<float>() :
+                        *alt_center_A;
+
+            const MCK::Vect2D<float> X2
+                    = alt_center_B == NULL ?
+                        sprite_B->pos.as_Vect2D<float>() :
+                        *alt_center_B;
+            
+            const float MASS_SUM = mass_A + mass_B;
+            const float POS_DIFF_SQ = ( X1 - X2 ).mag_sq();
+            const float RAD_TOTAL = radius_A + radius_B; 
+
+            sprite_A->vel -= MCK::Point<float>( 
+                            ( X1 - X2 )
+                            * 2 * mass_B
+                                / MASS_SUM
+                            * MCK::Vect2D<float>::dot_prod( V1 - V2, X1 - X2 )
+                            / POS_DIFF_SQ
+                        );
+
+            sprite_B->vel -= MCK::Point<float>( 
+                            ( X2 - X1 )
+                            * 2 * mass_A
+                                / MASS_SUM
+                            * MCK::Vect2D<float>::dot_prod( V2 - V1, X2 - X1 )
+                            / POS_DIFF_SQ
+                        );
+            
+            // Check for overlap
+            if( POS_DIFF_SQ < RAD_TOTAL * RAD_TOTAL )
+            {
+                const MCK::Point<float> DIFF( ( X1 - X2 ) / 100.0f );
+                sprite_A->adjust_pos( DIFF );
+                sprite_B->adjust_pos( DIFF * -1.0f );
+            }
+        }
+
 
     protected:
 

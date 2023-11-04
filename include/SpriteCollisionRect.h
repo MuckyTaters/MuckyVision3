@@ -96,6 +96,51 @@ class SpriteCollisionRect : public SpriteCollisionBase
             this->quad_tree_node = val;
         }
 
+        /*
+        //! Check for overlap between rectangles
+        static bool overlap(
+            std::shared_ptr<MCK::SpriteCollisionRect> rect_A,
+            std::shared_ptr<MCK::SpriteCollisionRect> rect_B
+        )
+        {
+            // Ignore when both/either pointer is NULL
+            if( rect_A.get() == NULL || rect_B.get() == NULL )
+            {
+                return false;
+            }
+
+            return rect_A.left_bound < rect_B.right_bound
+                   && rect_A.left_bound > rect_B.left_bound
+                   && rect_A.top_bound < rect_B.bottom_bound
+                   && rect_A.top_bound > rect_B.top_bound;
+        }
+        */
+
+        //! Get left bound
+        float get_left_bound( void ) const noexcept
+        {
+            return left_bound;
+        }
+
+        //! Get top bound
+        float get_top_bound( void ) const noexcept
+        {
+            return top_bound;
+        }
+
+        //! Get right bound
+        float get_right_bound( void ) const noexcept
+        {
+            return right_bound;
+        }
+
+        //! Get bottom bound
+        float get_bottom_bound( void ) const noexcept
+        {
+            return bottom_bound;
+        }
+
+
     protected:
 
         // Make this class non-abstract

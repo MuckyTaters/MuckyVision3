@@ -84,7 +84,9 @@ struct CollisionEvent
     ) : sprite_A( _sprite_A ),
         sprite_B( _sprite_B )
     {
-        MCK::CollisionEvent();
+        this->angle = 0.0f;
+        this->angle_lock = 4; // North, South, East and West
+        this->overlap_dist = 0.0f;
     }
 };
 

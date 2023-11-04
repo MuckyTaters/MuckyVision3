@@ -140,6 +140,12 @@ class SpritePos
             this->pos = _pos;
         }
 
+        //! Adjust position of sprite, relative to current position
+        void adjust_pos( MCK::Point<float> diff ) noexcept
+        {
+            this->pos += diff;
+        }
+
         //! Set render info or render block associated with sprite
         /* Note: Supplying a NULL pointer is acceptable, but means
          *       the sprite will not be rendered at present.
