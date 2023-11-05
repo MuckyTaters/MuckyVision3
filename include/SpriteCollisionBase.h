@@ -58,17 +58,6 @@ class SpriteCollisionBase : virtual public SpritePos
         virtual void check_all_collisions( 
             std::vector<MCK::CollisionEvent> &collisions
         ) const {}
-
-        /*
-        virtual MCK::SpriteCollisionType get_type( void ) const noexcept
-        {
-            return this->type;
-        }
-        */
-
-    protected:
-
-        // MCK::SpriteCollisionType type;
 };
 
 }  // End of namespace MCK

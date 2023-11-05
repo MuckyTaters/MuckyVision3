@@ -58,15 +58,6 @@ class SpriteCollisionRect : public SpriteCollisionBase
             this->top_bound = this->SpritePos::pos.get_y();
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
-       
-            /*
-            // DEBUG
-            std::cout << "update_bounds:left=" << this->left_bound
-                      << ",top=" << this->top_bound
-                      << ",right=" << this->right_bound
-                      << ",bottom=" << this->bottom_bound
-                      << std::endl;
-            */
         }
         
 
@@ -95,26 +86,6 @@ class SpriteCollisionRect : public SpriteCollisionBase
         {
             this->quad_tree_node = val;
         }
-
-        /*
-        //! Check for overlap between rectangles
-        static bool overlap(
-            std::shared_ptr<MCK::SpriteCollisionRect> rect_A,
-            std::shared_ptr<MCK::SpriteCollisionRect> rect_B
-        )
-        {
-            // Ignore when both/either pointer is NULL
-            if( rect_A.get() == NULL || rect_B.get() == NULL )
-            {
-                return false;
-            }
-
-            return rect_A.left_bound < rect_B.right_bound
-                   && rect_A.left_bound > rect_B.left_bound
-                   && rect_A.top_bound < rect_B.bottom_bound
-                   && rect_A.top_bound > rect_B.top_bound;
-        }
-        */
 
         //! Get left bound
         float get_left_bound( void ) const noexcept
@@ -157,26 +128,6 @@ class SpriteCollisionRect : public SpriteCollisionBase
         // Pointer to node in quad-tree that currently
         // contains this sprite
         void* quad_tree_node;
-
-    private:
-
-        /*
-        // This made private as child class 
-        // versions have different signatures and it may would
-        // be confusing to have this version visible in child
-        void set_bounds(
-            float _width,
-            float _height
-        ) noexcept
-        {
-            this->left_bound = this->SpritePos::pos.get_x();
-            this->top_bound = this->SpritePos::pos.get_y();
-            this->width = _width;
-            this->height = _height;
-            this->right_bound = this->left_bound + this->width;
-            this->bottom_bound = this->top_bound + this->height;
-        }
-        */
 };
 
 }  // End of namespace MCK

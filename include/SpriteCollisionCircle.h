@@ -73,35 +73,14 @@ class SpriteCollisionCircle : public SpriteCollisionRect
   
         virtual void update_bounds( void ) noexcept
         {
-            // this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
             this->left_bound = this->SpritePos::pos.get_x();
-            // this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
             this->top_bound = this->SpritePos::pos.get_y();
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
        
             this->center_x = this->left_bound + this->center_x_offset;
             this->center_y = this->top_bound + this->center_y_offset;
-            /*
-            // DEBUG
-            std::cout << "update_bounds:left=" << this->left_bound
-                      << ",top=" << this->top_bound
-                      << ",right=" << this->right_bound
-                      << ",bottom=" << this->bottom_bound
-                      << ",radius=" << this->radius
-                      << std::endl;
-            */
         }
-
-        /*
-        //! Check for collision
-        virtual void check_all_collisions(
-            std::vector<MCK::CollisionEvent> &collisions
-        ) const
-        {
-            //TODO
-        }
-        */
 
         float get_center_x( void ) const noexcept
         {

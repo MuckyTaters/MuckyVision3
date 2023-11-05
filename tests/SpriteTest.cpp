@@ -50,8 +50,8 @@
 // (global for convenience, as only a short program)
 
 // Define window size (these can be changed to any sensible value)
-const int WINDOW_WIDTH_IN_PIXELS = 1280;  // 640;
-const int WINDOW_HEIGHT_IN_PIXELS = 720;  // 360;
+const int WINDOW_WIDTH_IN_PIXELS = 1280;
+const int WINDOW_HEIGHT_IN_PIXELS = 720;
 
 // Demo specific parameters
 const int CHAR_WIDTH = 16;
@@ -481,9 +481,9 @@ int main( int argc, char** argv )
     MCK_PAL_ID_TYPE title_palette_id;
     MCK_PAL_ID_TYPE starfield_1_palette_id;
     MCK_PAL_ID_TYPE starfield_2_palette_id;
-    MCK_PAL_ID_TYPE alien_1_palette_id;
-    MCK_PAL_ID_TYPE alien_2_palette_id;
-    MCK_PAL_ID_TYPE alien_3_palette_id;
+    MCK_PAL_ID_TYPE ball_1_palette_id;
+    MCK_PAL_ID_TYPE ball_2_palette_id;
+    MCK_PAL_ID_TYPE ball_3_palette_id;
     try
     {
         title_palette_id = image_man.create_local_palette(
@@ -510,7 +510,7 @@ int main( int argc, char** argv )
                 }
             )
         );
-        alien_1_palette_id = image_man.create_local_palette(
+        ball_1_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_TRANSPARENT,
@@ -518,7 +518,7 @@ int main( int argc, char** argv )
                 }
             )
         );
-        alien_2_palette_id = image_man.create_local_palette(
+        ball_2_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_TRANSPARENT,
@@ -526,7 +526,7 @@ int main( int argc, char** argv )
                 }
             )
         );
-        alien_3_palette_id = image_man.create_local_palette(
+        ball_3_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_TRANSPARENT,
@@ -1675,7 +1675,7 @@ int main( int argc, char** argv )
                 image_man,
                 sprite_block,
                 ball_0_image_id,
-                alien_1_palette_id,
+                ball_1_palette_id,
                 DIAM * 2.5f  // x coord
                     + rand() % ( WINDOW_WIDTH_IN_PIXELS - 5 * DIAM ),
                 DIAM * 2.5f  // y coord
@@ -1729,17 +1729,17 @@ int main( int argc, char** argv )
         switch( rand() % 3 )
         {
             case 0:
-                pal_id = alien_1_palette_id;
+                pal_id = ball_1_palette_id;
                 frame_ticks = 66 / BALL_SPIN_SPEED;
                 break;
 
             case 1:
-                pal_id = alien_2_palette_id;
+                pal_id = ball_2_palette_id;
                 frame_ticks = 66 / BALL_SPIN_SPEED;
                 break;
 
             case 2:
-                pal_id = alien_3_palette_id;
+                pal_id = ball_3_palette_id;
                 frame_ticks = 66 / BALL_SPIN_SPEED;
                 break;
         }

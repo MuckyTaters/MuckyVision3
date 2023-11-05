@@ -290,6 +290,7 @@ class CollisionProcessing
             return this->levels;
         }
 
+
     protected:
 
         //! Process recursion for 'add_sprite'
@@ -896,38 +897,6 @@ class CollisionProcessing
                             {
                                 return false;
                             }
-
-                            /*
-                            // DEBUG - check bounds
-                            const bool RECT_CHECK = 
-                                circle_1->get_left_bound()
-                                    < circle_2->get_right_bound()
-                                && circle_1->get_left_bound()
-                                    > circle_2->get_left_bound()
-                                && circle_1->get_top_bound()
-                                    < circle_2->get_bottom_bound()
-                                && circle_1->get_top_bound() 
-                                    > circle_2->get_top_bound();
-                            
-                            if( RECT_CHECK )
-                            {
-                                collisions.push_back(
-                                    CollisionEvent(
-                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
-                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
-                                    )
-                                );
-                                collisions.back().circle_collision = false;
-                                collisions.back().rect_collision = true;
-                                
-                                return true;
-                            }
-                            else
-                            {
-                                return false;
-                            }
-                            */
-
                             break;
                     }
                     break;
