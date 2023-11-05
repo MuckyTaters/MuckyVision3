@@ -5,8 +5,8 @@
 ##
 ##  makefile_SpriteTest_linux
 ##
-##  Makefile to build test sprite
-##  animation and collision
+##  Makefile to build sprite
+##  animation and collision test
 ##  on Linux using g++.
 ##
 ##  IMPORTANT:
