@@ -87,14 +87,17 @@ Sprites are now provided by the 'Sprite.h' class template, which is
 comprised of three sub-templates: motion, animation and collision.
 
 Sprite motion options are currently:
+
     * SpriteMotionBase.h : No motion
     * SpriteMotionConstVel.h : Velocity can be set arbitrarily, but constant otherwise 
 
 Sprite animation options are currently:
+
     * SpriteAnimBase.h : No animation
     * SpriteAnimTime.h : Each frame displayed for a set number of ticks
 
 Sprite collision options are currently:
+
     * SpriteCollisionBase.h : No collision
     * SpriteCollisionRect.h : Rectangular collision boundary
     * SpriteCollisionCircle.h : Circular collision boundary
