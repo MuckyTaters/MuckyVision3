@@ -58,10 +58,11 @@ languages.
 
 MuckyVision's source code is organised in layers. The current commit 
 comprises the lowest layer: "GameEng", the layer above "ImageMan",
-and the utility classes "ImageText", "Console" and "VoiceSynth"
-(a synthesiser that works with the new audio manager). A number of
-geometric class templates have been added to the 'include' folder
-such as 'Point', 'LineSegment' and various Bezier curves (see below).
+a new sprite/collision layer, and the utility classes "ImageText",
+"Console" and "VoiceSynth" (a synthesiser that works with the new 
+audio manager). A number of geometric class templates have been added 
+to the 'include' folder such as 'Point', 'LineSegment' and various 
+Bezier curves (see below).
 
 GameEng acts as a wrapper for SDL, so that higher layers have no need
 to use SDL commands. This will make it easy to swap out SDL for another
@@ -81,6 +82,34 @@ but users can also supply their own partial or complete ASCII character
 sets. For partial character sets, any undefined characters default to their
 in-built character image. Up to 255 custom ASCII character sets can be used
 simultaneously, plus the in-built set.
+
+Sprites are now provided by the 'Sprite.h' class template, which is
+comprised of three sub-templates: motion, animation and collision.
+
+Sprite motion options are currently:
+    * SpriteMotionBase.h : No motion
+    * SpriteMotionConstVel.h : Velocity can be set arbitrarily, but constant otherwise 
+
+Sprite animation options are currently:
+    * SpriteAnimBase.h : No animation
+    * SpriteAnimTime.h : Each frame displayed for a set number of ticks
+
+Sprite collision options are currently:
+    * SpriteCollisionBase.h : No collision
+    * SpriteCollisionRect.h : Rectangular collision boundary
+    * SpriteCollisionCircle.h : Circular collision boundary
+
+These will be extended to provide more motion, animation and collision detection options,
+including Bezier curve motion, distance-based (i.e. walking) anmiation and per-pixel
+collision detection. 
+
+New supporting classes/structs are SpriteFrame.h (providing animation frames)
+and SpritePos.h (providing basic position info inherited by motion, animation
+and collision sub-templates).
+
+The template class CollisionProcessing.h provides sprite collision processing,
+supported by a quad tree (QuadTree.h) that contains sprite collision info,
+currently provided by CollisionNode.h.
 
 ImageText converts C++ strings into ASCII images, with option for text
 spacing and left/right/center justification. Text can be updated
@@ -108,9 +137,10 @@ are fixed when the voice is initialised, but you are free to vary settings betwe
 VoiceSynth instances. For example, you could have a high-pitched sine wave instance,
 a low-pitched square wave instance and a white noise instance all playing simultaneously.
 
-In preparation for developing sprites, the following class templates have been added
+In preparation for Bezier sprite motion, the following class templates have been added
 to provide a suite of geometry tools. These will eventually be used to control sprite paths.
     
+    * Vect2D.h simplified 2D verion of Point.h
     * Point.h describes a point in 3D space, although can be used solely in 2D space.
     * BezierCurveBase.h provides a common base for Bezier curve classes.
     * BezierCurveLinear.h describes a straight line between two Point instances.
@@ -177,13 +207,14 @@ Classes/structs included in this commit:
 
     VoiceSynth: Simple SID chip style sound synthesiser.
 
-    Also see geometry class templates described above (these have no associated .cpp file)
+    Also see sprite, collision and  geometry class templates described above (these have no associated .cpp file)
 
 
 3. Future Plans
 
-Next on the TODO list for graphics is sprites and collision detection.
-The development of geometry classes has been a step towards this.
+Next on the TODO list for graphics is to continue work on sprites
+and collision detection. The development of geometry classes has
+been a step towards this.
 
 The next step for audio is to implement a self-playing VoiceSynth class.
 At present, the main program holds the song data and sends commands to the
