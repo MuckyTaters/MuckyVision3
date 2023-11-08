@@ -89,7 +89,7 @@ const int BALL_SPIN_SPEED = 1;
 
 const int RECT_SPEED = 3;
 const int RECT_RAW_PIXEL_SIZE = 64;
-const int NUM_RECTS = 8;
+const int NUM_RECTS = 64;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -1863,34 +1863,24 @@ int main( int argc, char** argv )
 
     for( int i = 0; i < NUM_RECTS; i++ )
     {
-        int size_w = 1;
-        /*
+        int size_w;
         {
             int temp = rand() % 100;
             if( temp <= 50 ) { size_w = 1; }
             else if( temp <= 75 ) { size_w = 2; }
-            else if( temp <= 87 ) { size_w = 3; }
-            else if( temp <= 94 ) { size_w = 4; }
-            else if( temp <= 97 ) { size_w = 5; }
-            else { size_w = 6; }
+            else { size_w = 3; }
         }
-        */
 
         const int WIDTH = float( RECT_RAW_PIXEL_SIZE ) 
                             / float(size_w ); 
 
-        int size_h = 1;
-        /*
+        int size_h;
         {
             int temp = rand() % 100;
             if( temp <= 50 ) { size_h = 1; }
             else if( temp <= 75 ) { size_h = 2; }
-            else if( temp <= 87 ) { size_h = 3; }
-            else if( temp <= 94 ) { size_h = 4; }
-            else if( temp <= 97 ) { size_h = 5; }
-            else { size_h = 6; }
+            else { size_h = 3; }
         }
-        */
 
         const int HEIGHT = float( RECT_RAW_PIXEL_SIZE ) 
                             / float(size_h ); 

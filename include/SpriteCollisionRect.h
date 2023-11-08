@@ -136,6 +136,7 @@ class SpriteCollisionRect : public SpriteCollisionBase
         }
         */
 
+
     protected:
 
         // Make this class non-abstract

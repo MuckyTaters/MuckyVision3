@@ -76,6 +76,7 @@ class SpriteMotionConstVel : public SpriteMotionBase
         // Calculate position, based on time 
         virtual void calc_pos( void ) noexcept
         {
+            this->prev_pos = this->pos;
             this->pos += this->vel * float( MCK::SpritePos::ticks_elapsed );
            
             // Update render instance
@@ -163,13 +164,116 @@ class SpriteMotionConstVel : public SpriteMotionBase
             float height_B = 0.0f
         )
         {
-            // TODO, pending correct algorithm
+            // Ignore if either pointer NULL.
+            if( sprite_A.get() == 0 || sprite_B.get() == 0 )
+            {
+                return;
+            }
+
+            // Get centre offset
+            const MCK::Vect2D<float> CENTER_OFFSET_A(
+                width_A / 2.0f,
+                height_A / 2.0f
+            );
+            const MCK::Vect2D<float> CENTER_OFFSET_B(
+                width_B / 2.0f,
+                height_B / 2.0f
+            );
+
+            // Get current centre of rectangles
+            const MCK::Vect2D<float> CENTER_A
+                = sprite_A->get_pos().as_Vect2D<float>()
+                    + CENTER_OFFSET_A; 
+            const MCK::Vect2D<float> CENTER_B
+                = sprite_B->get_pos().as_Vect2D<float>()
+                    + CENTER_OFFSET_B; 
+
+            // Get previous centre of rectangles
+            const MCK::Vect2D<float> PREV_CENTER_A
+                = sprite_A->get_prev_pos().as_Vect2D<float>() 
+                    + CENTER_OFFSET_A; 
+            const MCK::Vect2D<float> PREV_CENTER_B
+                = sprite_B->get_prev_pos().as_Vect2D<float>() 
+                    + CENTER_OFFSET_B; 
+
+            // Calculate max centre-to-centre non-overlapping dist
+            const float MAX_OVERLAP_X = ( width_A + width_B ) / 2.0f;;
+            const float MAX_OVERLAP_Y = ( height_A + height_B ) / 2.0f;
+
+            // Calculate previous overlap (if any)
+            bool PREV_OVERLAP_X =  
+                fabs( PREV_CENTER_A.get_x() - PREV_CENTER_B.get_x() )
+                    - MAX_OVERLAP_X
+                        < 0.0f;
+            bool PREV_OVERLAP_Y = 
+                fabs( PREV_CENTER_A.get_y() - PREV_CENTER_B.get_y() )
+                    - MAX_OVERLAP_Y
+                        < 0.0f;
+
+            // Calculate current overlap (if any)
+            bool OVERLAP_X = 
+                fabs( CENTER_A.get_x() - CENTER_B.get_x() )
+                    - MAX_OVERLAP_X
+                        < 0.0f;
+            bool OVERLAP_Y = 
+                fabs( CENTER_A.get_y() - CENTER_B.get_y() )
+                    - MAX_OVERLAP_Y
+                        < 0.0f;
+
+            // If new X overlap, change x velocities
+            if( OVERLAP_X && !PREV_OVERLAP_X )
+            {
+                const float OLD_VEL_A = sprite_A->vel.get_x(); 
+                const float OLD_VEL_B = sprite_B->vel.get_x();
+
+                sprite_A->vel.set_x(
+                    (
+                        ( mass_A - mass_B ) * OLD_VEL_A
+                        + 2 * mass_B * OLD_VEL_B
+                    ) / ( mass_A + mass_B )
+                );
+
+                sprite_B->vel.set_x(
+                    (
+                        ( mass_B - mass_A ) * OLD_VEL_B
+                        + 2 * mass_A * OLD_VEL_A
+                    ) / ( mass_A + mass_B )
+                );
+            }
+
+            // If new Y overlap, change y velocities
+            if( OVERLAP_Y && !PREV_OVERLAP_Y )
+            {
+                const float OLD_VEL_A = sprite_A->vel.get_y(); 
+                const float OLD_VEL_B = sprite_B->vel.get_y();
+
+                sprite_A->vel.set_y(
+                    (
+                        ( mass_A - mass_B ) * OLD_VEL_A
+                        + 2 * mass_B * OLD_VEL_B
+                    ) / ( mass_A + mass_B )
+                );
+
+                sprite_B->vel.set_y(
+                    (
+                        ( mass_B - mass_A ) * OLD_VEL_B
+                        + 2 * mass_A * OLD_VEL_A
+                    ) / ( mass_A + mass_B )
+                );
+            }
         }
          
+        const Point<float>& get_prev_pos( void ) const noexcept
+        {
+            return this->prev_pos;
+        }
+
 
     protected:
 
         MCK::Point<float> vel;
+
+        MCK::Point<float> prev_pos;
 };
 
 }  // End of namespace MCK
