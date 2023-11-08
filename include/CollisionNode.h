@@ -36,13 +36,13 @@ namespace MCK
 {
 
 // Forward declaration
-class SpriteCollisionRect;
+class SpriteCollisionBase;
 
 struct CollisionNode
 {
     //! Sprites present in node
     // Note: referenced here by sprite collision base
-    std::set<std::shared_ptr<MCK::SpriteCollisionRect>> sprites;
+    std::set<std::shared_ptr<MCK::SpriteCollisionBase>> sprites;
 
     //! Count of sprites in all subnodes, used to prune tree searches
     uint16_t sub_node_sprite_count;
@@ -54,12 +54,12 @@ struct CollisionNode
 
     //! Add sprite to node
     /*! @returns true if sprite added ok, false if already present.*/
-    bool add_sprite( std::shared_ptr<MCK::SpriteCollisionRect> sprite )
+    bool add_sprite( std::shared_ptr<MCK::SpriteCollisionBase> sprite )
     {
         return this->sprites.insert( sprite ).second;
     }
 
-    bool remove_sprite( std::shared_ptr<MCK::SpriteCollisionRect> sprite )
+    bool remove_sprite( std::shared_ptr<MCK::SpriteCollisionBase> sprite )
     {
         // Try to erase sprite and return true if removed,
         // false if not removed (i.e. not found)

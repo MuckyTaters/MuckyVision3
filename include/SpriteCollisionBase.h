@@ -58,6 +58,29 @@ class SpriteCollisionBase : virtual public SpritePos
         virtual void check_all_collisions( 
             std::vector<MCK::CollisionEvent> &collisions
         ) const {}
+
+        //! Get rectangular bounds
+        /*! Base version of this method returns zeros */
+        virtual void get_bounds(
+            float& left,
+            float& top,
+            float& right,
+            float& bottom
+        ) const noexcept
+        {
+            left = top = right = bottom = 0.0f;
+        }
+
+        //! Get node in collision quad tree containing this sprite
+        /*! In base version, this always returns NULL */
+        virtual void* get_quad_tree_node( void ) const noexcept
+        {
+            return NULL;
+        }
+        
+        //! Set void pointer to sprite's current node in collision tree
+        /*! In base version, this does nothing */
+        virtual void set_quad_tree_node( void* val ) noexcept {}
 };
 
 }  // End of namespace MCK

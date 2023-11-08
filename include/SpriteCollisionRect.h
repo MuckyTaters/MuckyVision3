@@ -85,7 +85,7 @@ class SpriteCollisionRect : public SpriteCollisionBase
         }
 
         //! Get rectangular bounds
-        void get_bounds(
+        virtual void get_bounds(
             float& left,
             float& top,
             float& right,
@@ -99,17 +99,18 @@ class SpriteCollisionRect : public SpriteCollisionBase
         }
 
         //! Get void pointer to sprite's current node in collision tree
-        void* get_quad_tree_node( void ) const noexcept
+        virtual void* get_quad_tree_node( void ) const noexcept
         {
             return this->quad_tree_node;
         }
 
         //! Set void pointer to sprite's current node in collision tree
-        void set_quad_tree_node( void* val ) noexcept
+        virtual void set_quad_tree_node( void* val ) noexcept
         {
             this->quad_tree_node = val;
         }
 
+        /*
         //! Get left bound
         float get_left_bound( void ) const noexcept
         {
@@ -133,7 +134,7 @@ class SpriteCollisionRect : public SpriteCollisionBase
         {
             return bottom_bound;
         }
-
+        */
 
     protected:
 

@@ -30,12 +30,12 @@
 #ifndef MCK_SPRITE_COL_CIRCLE_H
 #define MCK_SPRITE_COL_CIRCLE_H
 
-#include "SpriteCollisionRect.h"
+#include "SpriteCollisionBase.h"
 
 namespace MCK
 {
 
-class SpriteCollisionCircle : public SpriteCollisionRect
+class SpriteCollisionCircle : public SpriteCollisionBase
 {
     public:
 
@@ -59,34 +59,40 @@ class SpriteCollisionCircle : public SpriteCollisionRect
         {
             this->center_x_offset = _center_x_offset;
             this->center_y_offset = _center_y_offset;
+            this->radius = std::max( 0.0f, _radius );
+            this->update_bounds();
+            /*
             this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
             this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
-            this->radius = std::max( 0.0f, _radius );
             this->width = this->height = _radius * 2.0f;
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
-            this->center_x = this->left_bound + this->center_x_offset;
-            this->center_y = this->top_bound + this->center_y_offset;
+            */
         }
 
         virtual ~SpriteCollisionCircle( void ) {}
   
+        /*
         //! For circle this method does nothing
         virtual void set_width_and_height(
             float _width,
             float _height
         )
         {}
+        */
 
         virtual void update_bounds( void ) noexcept
         {
+            /*
             this->left_bound = this->SpritePos::pos.get_x();
             this->top_bound = this->SpritePos::pos.get_y();
             this->right_bound = this->left_bound + this->width;
             this->bottom_bound = this->top_bound + this->height;
-       
-            this->center_x = this->left_bound + this->center_x_offset;
-            this->center_y = this->top_bound + this->center_y_offset;
+            */
+            this->center_x = this->SpritePos::pos.get_x() 
+                                + this->center_x_offset;
+            this->center_y = this->SpritePos::pos.get_y()
+                                + this->center_y_offset;
         }
 
         float get_center_x( void ) const noexcept
@@ -121,6 +127,33 @@ class SpriteCollisionCircle : public SpriteCollisionRect
             return center_y_offset;
         }
 
+        //! Get rectangular bounds
+        virtual void get_bounds(
+            float& left,
+            float& top,
+            float& right,
+            float& bottom
+        ) const noexcept
+        {
+            left = this->center_x - this->center_x_offset;
+            top = this->center_y - this->center_y_offset;
+            right = this->center_x + this->center_x_offset;
+            bottom = this->center_y + this->center_y_offset;
+        }
+        
+        //! Get void pointer to sprite's current node in collision tree
+        virtual void* get_quad_tree_node( void ) const noexcept
+        {
+            return this->quad_tree_node;
+        }
+
+        //! Set void pointer to sprite's current node in collision tree
+        virtual void set_quad_tree_node( void* val ) noexcept
+        {
+            this->quad_tree_node = val;
+        }
+
+
     protected:
 
         float center_x_offset;
@@ -130,6 +163,10 @@ class SpriteCollisionCircle : public SpriteCollisionRect
         float center_y;
 
         float radius;
+        
+        // Pointer to node in quad-tree that currently
+        // contains this sprite
+        void* quad_tree_node;
 };
 
 }  // End of namespace MCK

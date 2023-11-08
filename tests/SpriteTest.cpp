@@ -37,7 +37,8 @@
 #include "GameEngAudio.h"
 #include "SpriteAnimTime.h"
 #include "SpriteMotionConstVel.h"
-#include "SpriteCollisionBase.h"
+#include "SpriteCollisionCircle.h"
+#include "SpriteCollisionRect.h"
 #include "Sprite.h"
 #include "QuadTree.h"
 #include "CollisionNode.h"
@@ -86,9 +87,9 @@ const int BALL_SPEED = 2;
 const int NUM_BALLS = 192;
 const int BALL_SPIN_SPEED = 1;
 
-const int RECT_SPEED = 1;
+const int RECT_SPEED = 3;
 const int RECT_RAW_PIXEL_SIZE = 64;
-const int NUM_RECTS = 64;
+const int NUM_RECTS = 8;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -1772,7 +1773,7 @@ int main( int argc, char** argv )
             MCK::Point<float> pos 
                 = ball_sprites.back()->MCK::SpritePos::get_pos();
             bool rc = coll_proc.add_sprite(
-                std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( ball_sprites.back() )
+                std::dynamic_pointer_cast<MCK::SpriteCollisionBase>( ball_sprites.back() )
             );
             std::cout << "rc = " << rc << std::endl;
         }

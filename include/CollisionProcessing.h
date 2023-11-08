@@ -33,7 +33,7 @@
 #include<CollisionEvent.h>
 #include<CollisionNode.h>
 #include<QuadTree.h>
-#include<SpriteCollisionRect.h>
+#include<SpriteCollisionBase.h>
 namespace MCK
 {
 
@@ -105,7 +105,7 @@ class CollisionProcessing
         //! Include sprite in collision processing
         /*! @returns: True is sprite added okay, false is already present.*/
         bool add_sprite(
-            std::shared_ptr<MCK::SpriteCollisionRect> sprite
+            std::shared_ptr<MCK::SpriteCollisionBase> sprite
         )
         {
             if( sprite.get() == NULL )
@@ -114,6 +114,20 @@ class CollisionProcessing
 #if defined MCK_STD_OUT
                     std::string( "Cannot add sprite as sprite " )
                     + std::string( "pointer is NULL." )
+#else
+                    ""
+#endif
+                ) );
+            }
+
+            if( sprite->get_collision_type()
+                    == MCK::SpriteCollisionType::NONE
+            )
+            {
+                throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                    std::string( "Cannot add sprite as sprite " )
+                    + std::string( "is of none-collision type." )
 #else
                     ""
 #endif
@@ -142,7 +156,7 @@ class CollisionProcessing
          *             behavio(u)r will occur, possibly a seg fault
          */
         void update_sprite_pos(
-            std::shared_ptr<MCK::SpriteCollisionRect> sprite
+            std::shared_ptr<MCK::SpriteCollisionBase> sprite
         )
         {
             // If sprite pointer is NULL, ignore
@@ -295,7 +309,7 @@ class CollisionProcessing
 
         //! Process recursion for 'add_sprite'
         bool add_sprite_recursive(
-            std::shared_ptr<MCK::SpriteCollisionRect> sprite,
+            std::shared_ptr<MCK::SpriteCollisionBase> sprite,
             T left,
             T top,
             T right,
@@ -485,12 +499,12 @@ class CollisionProcessing
             const MCK::CollisionNode* const COLL_NODE = node->get_content();
 
             // Get pointer to the node's sprites
-            const std::set<std::shared_ptr<MCK::SpriteCollisionRect>>* const SPRITES
+            const std::set<std::shared_ptr<MCK::SpriteCollisionBase>>* const SPRITES
                 = &COLL_NODE->sprites;
 
             // Test for collisions between the sprites in this node,
             // themselves, and 'sprites_to_be_tested'
-            std::set<std::shared_ptr<MCK::SpriteCollisionRect>>::const_iterator it1;
+            std::set<std::shared_ptr<MCK::SpriteCollisionBase>>::const_iterator it1;
 
             // for( auto sprite_1 : *SPRITES )
             for( it1 = SPRITES->begin();
@@ -499,7 +513,7 @@ class CollisionProcessing
             )
             {
                 // Test against other sprites in this node
-                std::set<std::shared_ptr<MCK::SpriteCollisionRect>>::const_iterator it2 = it1; 
+                std::set<std::shared_ptr<MCK::SpriteCollisionBase>>::const_iterator it2 = it1; 
                 it2++;
                 for( it2;
                      it2 != SPRITES->end();
@@ -671,7 +685,7 @@ class CollisionProcessing
         //! Recursive method for moving sprite to another node
         void check_if_sprite_needs_moving_to_another_node( 
             QuadTreeLeaf<T,CONTENT>* node, 
-            std::shared_ptr<MCK::SpriteCollisionRect> sprite,
+            std::shared_ptr<MCK::SpriteCollisionBase> sprite,
             T sprite_left,
             T sprite_top,
             T sprite_right,
@@ -837,8 +851,8 @@ class CollisionProcessing
         //! Determine
         static bool check_collision(
             std::vector<MCK::CollisionEvent> &collisions,
-            std::shared_ptr<MCK::SpriteCollisionRect> sprite_1,
-            std::shared_ptr<MCK::SpriteCollisionRect> sprite_2
+            std::shared_ptr<MCK::SpriteCollisionBase> sprite_1,
+            std::shared_ptr<MCK::SpriteCollisionBase> sprite_2
         )
         {
             switch( sprite_1->get_collision_type() )
@@ -948,7 +962,7 @@ class CollisionProcessing
 
         uint8_t levels;
 
-        std::vector<std::shared_ptr<MCK::SpriteCollisionRect>> sprites_to_be_tested;
+        std::vector<std::shared_ptr<MCK::SpriteCollisionBase>> sprites_to_be_tested;
 
         std::shared_ptr<MCK::QuadTree<T,CONTENT>> quad_tree;
 };
