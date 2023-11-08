@@ -83,8 +83,12 @@ const int BALL_PIXEL_SIZE
             / float( BALL_SCALE_DENOM )
     );
 const int BALL_SPEED = 2;
-const int NUM_BALLS = 256;
+const int NUM_BALLS = 192;
 const int BALL_SPIN_SPEED = 1;
+
+const int RECT_SPEED = 1;
+const int RECT_RAW_PIXEL_SIZE = 64;
+const int NUM_RECTS = 64;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -1131,6 +1135,76 @@ int main( int argc, char** argv )
         0b0000000000000000000000000011111111111100000000000000000000000000,  // 63
     };
 
+    // Checker rectangle 0
+    const MCK_IMG_ID_TYPE RECT_IMAGE_ID = 2;
+    const std::vector<uint64_t> RECT_IMAGE_64bit =
+    {
+        0b1111111111111111111111111111111111111111111111111111111111111111,  // 0
+        0b1111111111111111111111111111111111111111111111111111111111111111,  // 1
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 2
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 3
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 4
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 5
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 6
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 7
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 8
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 9
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 10
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 00
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 12
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 13
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 14
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 15
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 16
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 17
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 18
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 19
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 20
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 21
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 22
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 23
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 24
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 25
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 26
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 27
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 28
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 29
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 30
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 31
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 32
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 33
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 34
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 35
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 36
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 37
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 38
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 39
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 40
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 41
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 42
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 43
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 44
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 45
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 46
+        0b1100000000000000111111111111111100000000000000001111111111111111,  // 47
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 48
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 49
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 50
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 51
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 52
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 53
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 54
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 55
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 56
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 57
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 58
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 59
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 60
+        0b1111111111111111000000000000000011111111111111110000000000000011,  // 61
+        0b1111111111111111111111111111111111111111111111111111111111111111,  // 62
+        0b1111111111111111111111111111111111111111111111111111111111111111,  // 63
+    };
+    
     // Split 64 bit image data into 8 bit image data
     std::vector<uint8_t> ball_0_image;
     split_image_data(
@@ -1178,6 +1252,12 @@ int main( int argc, char** argv )
     split_image_data(
         BALL_3A_IMAGE_64bit,
         ball_3a_image
+    );
+
+    std::vector<uint8_t> rect_image;
+    split_image_data(
+        RECT_IMAGE_64bit,
+        rect_image
     );
 
 
@@ -1358,6 +1438,23 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
 
+    MCK_IMG_ID_TYPE rect_image_id;
+    try
+    {
+        rect_image_id = image_man.create_custom_image(
+            &rect_image,
+            1,  // bits_per_pixel,
+            RECT_RAW_PIXEL_SIZE,
+            RECT_RAW_PIXEL_SIZE
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create rect image, error: ")
+            + e.what() ) );
+    }
+
 
     ////////////////////////////////////////////
     // SET CLEARING COLO(U)R
@@ -1501,7 +1598,6 @@ int main( int argc, char** argv )
                     - s.length() * CHAR_WIDTH // * 1.25f
                         - ( s.length() - 1 ) * CHAR_SPACING
                 ) / 2,
-                //( WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT ) / 3 * 1,
                 CHAR_HEIGHT,
                 s.length(),
                 CHAR_WIDTH, // * 1.25f,
@@ -1520,43 +1616,6 @@ int main( int argc, char** argv )
                 + e.what() ) );
         }
     }
-   
-    /*
-    MCK::ImageText title_text_2;
-    {
-        std::string s = "DEMO";
-
-        try
-        {
-            title_text_2.init(
-                game_eng,
-                image_man,
-                game_eng.get_prime_render_block(),
-                title_palette_id,
-                ( WINDOW_WIDTH_IN_PIXELS
-                    - s.length() * CHAR_WIDTH * 1.5f
-                        - ( s.length() - 1 ) * CHAR_SPACING
-                ) / 2,
-                ( WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT ) / 3 
-                    + CHAR_HEIGHT * 3,
-                s.length(),
-                CHAR_WIDTH * 1.5f,
-                CHAR_HEIGHT * 1.5f,
-                s,
-                MCK::ImageText::CENTER,
-                CHAR_SPACING,
-                0,  // basic ascii set
-                MCK::MAX_Z_VALUE
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create title text, error :" )
-                + e.what() ) );
-        }
-    }
-    */
 
     MCK::ImageText copyright_text;
     {
@@ -1622,15 +1681,18 @@ int main( int argc, char** argv )
             std::string( "Failed to create FPS text, error: ")
             + e.what() ) );
     }
-    
+
 
     /////////////////////////////////////////////////////
-    // CREATE BALLS WITH CIRCULAR COLLISION DETECTION
-
+    // PREPARE FOR SPRITES
+    
     // Store game engine and image manager pointers
     // statically in MCK::SpritePos
     MCK::SpritePos::set_ptrs( &game_eng, &image_man );
 
+
+    /////////////////////////////////////////////////////
+    // CREATE BALLS WITH CIRCULAR COLLISION DETECTION
     std::vector<
         std::shared_ptr<
             MCK::Sprite<
@@ -1639,12 +1701,11 @@ int main( int argc, char** argv )
                 MCK::SpriteCollisionCircle
             >
         >
-    > test_sprites;
-    test_sprites.reserve( NUM_BALLS );
+    > ball_sprites;
+    ball_sprites.reserve( NUM_BALLS );
 
     for( int i = 0; i < NUM_BALLS; i++ )
     {
-
         int size;
         {
             int temp = rand() % 100;
@@ -1656,10 +1717,9 @@ int main( int argc, char** argv )
             else { size = 6; }
         }
 
-
         const int DIAM = BALL_PIXEL_SIZE * size; 
 
-        test_sprites.push_back(
+        ball_sprites.push_back(
             std::make_shared<
                 MCK::Sprite<
                     MCK::SpriteMotionConstVel,
@@ -1671,8 +1731,7 @@ int main( int argc, char** argv )
         );
         try
         {
-            test_sprites.back()->init(
-                image_man,
+            ball_sprites.back()->init(
                 sprite_block,
                 ball_0_image_id,
                 ball_1_palette_id,
@@ -1693,7 +1752,7 @@ int main( int argc, char** argv )
         }
 
         // Initialize motion for const velocity test sprite 
-        test_sprites.back()->MCK::SpriteMotionConstVel::set_vel(
+        ball_sprites.back()->MCK::SpriteMotionConstVel::set_vel(
             MCK::Point<float>(
                 ( ( rand() % 10 ) - 5 ) * 0.01f * BALL_SPEED,
                 ( ( rand() % 10 ) - 5 ) * 0.01f * BALL_SPEED
@@ -1701,7 +1760,7 @@ int main( int argc, char** argv )
         );
 
         // Initialize circular collision by setting radius 
-        test_sprites.back()->MCK::SpriteCollisionCircle::set_vals(
+        ball_sprites.back()->MCK::SpriteCollisionCircle::set_vals(
             DIAM / 2.0f,  // Radius
             DIAM / 2.0f,  // x-offset
             DIAM / 2.0f  // y-offset
@@ -1711,9 +1770,9 @@ int main( int argc, char** argv )
         try
         {
             MCK::Point<float> pos 
-                = test_sprites.back()->MCK::SpritePos::get_pos();
+                = ball_sprites.back()->MCK::SpritePos::get_pos();
             bool rc = coll_proc.add_sprite(
-                std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( test_sprites.back() )
+                std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( ball_sprites.back() )
             );
             std::cout << "rc = " << rc << std::endl;
         }
@@ -1726,26 +1785,21 @@ int main( int argc, char** argv )
 
         MCK_PAL_ID_TYPE pal_id;
         int frame_ticks;
-        switch( rand() % 3 )
+        switch( rand() % 2 )
         {
             case 0:
-                pal_id = ball_1_palette_id;
-                frame_ticks = 66 / BALL_SPIN_SPEED;
-                break;
-
-            case 1:
                 pal_id = ball_2_palette_id;
                 frame_ticks = 66 / BALL_SPIN_SPEED;
                 break;
 
-            case 2:
+            case 1:
                 pal_id = ball_3_palette_id;
                 frame_ticks = 66 / BALL_SPIN_SPEED;
                 break;
         }
 
         // Initialize animation for test sprite
-        std::dynamic_pointer_cast<MCK::SpriteAnimTime>( test_sprites.back() )
+        std::dynamic_pointer_cast<MCK::SpriteAnimTime>( ball_sprites.back() )
             ->set_frames(
             {
                 MCK::SpriteFrame(
@@ -1790,6 +1844,119 @@ int main( int argc, char** argv )
                 )
             }
         );
+    }
+
+
+    /////////////////////////////////////////////////////
+    // CREATE RECTANGLES WITH COLLISION DETECTION
+    std::vector<
+        std::shared_ptr<
+            MCK::Sprite<
+                MCK::SpriteMotionConstVel,
+                MCK::SpriteAnimBase,
+                MCK::SpriteCollisionRect
+            >
+        >
+    > rect_sprites;
+    rect_sprites.reserve( NUM_RECTS );
+
+    for( int i = 0; i < NUM_RECTS; i++ )
+    {
+        int size_w = 1;
+        /*
+        {
+            int temp = rand() % 100;
+            if( temp <= 50 ) { size_w = 1; }
+            else if( temp <= 75 ) { size_w = 2; }
+            else if( temp <= 87 ) { size_w = 3; }
+            else if( temp <= 94 ) { size_w = 4; }
+            else if( temp <= 97 ) { size_w = 5; }
+            else { size_w = 6; }
+        }
+        */
+
+        const int WIDTH = float( RECT_RAW_PIXEL_SIZE ) 
+                            / float(size_w ); 
+
+        int size_h = 1;
+        /*
+        {
+            int temp = rand() % 100;
+            if( temp <= 50 ) { size_h = 1; }
+            else if( temp <= 75 ) { size_h = 2; }
+            else if( temp <= 87 ) { size_h = 3; }
+            else if( temp <= 94 ) { size_h = 4; }
+            else if( temp <= 97 ) { size_h = 5; }
+            else { size_h = 6; }
+        }
+        */
+
+        const int HEIGHT = float( RECT_RAW_PIXEL_SIZE ) 
+                            / float(size_h ); 
+
+        rect_sprites.push_back(
+            std::make_shared<
+                MCK::Sprite<
+                    MCK::SpriteMotionConstVel,
+                    MCK::SpriteAnimBase,
+                    MCK::SpriteCollisionRect
+                >
+            >(
+            )
+        );
+
+        try
+        {
+            rect_sprites.back()->init(
+                sprite_block,
+                rect_image_id,
+                ball_1_palette_id,
+                WIDTH * 2.5f  // x coord
+                    + rand() % ( WINDOW_WIDTH_IN_PIXELS - 5 * WIDTH ),
+                HEIGHT * 2.5f  // y coord
+                    + rand() % ( WINDOW_HEIGHT_IN_PIXELS - 5 * HEIGHT ),
+                MCK::MAX_Z_VALUE,
+                WIDTH,  // width_in_pixels,
+                HEIGHT  // height_in_pixels,
+            );
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to create rectangle sprite, error :" )
+                + e.what() ) );
+        }
+
+        // Initialize motion for const velocity test sprite 
+        rect_sprites.back()->MCK::SpriteMotionConstVel::set_vel(
+            MCK::Point<float>(
+                ( ( rand() % 10 ) - 5 ) * 0.01f * RECT_SPEED,
+                ( ( rand() % 10 ) - 5 ) * 0.01f * RECT_SPEED
+            )
+        );
+
+        // Initialize rectangular collision by setting width and height 
+        rect_sprites.back()->MCK::SpriteCollisionRect::set_width_and_height(
+            WIDTH,
+            HEIGHT
+        );
+
+        // Add test_sprite to collision processing
+        try
+        {
+            MCK::Point<float> pos 
+                = rect_sprites.back()->MCK::SpritePos::get_pos();
+            bool rc = coll_proc.add_sprite(
+                rect_sprites.back()
+            );
+            // std::cout << "rc = " << rc << std::endl;
+        }
+        catch( std::exception &e )
+        {
+            throw( std::runtime_error(
+                std::string( "Failed to add rect test_sprite to coll_proc, error :" )
+                + e.what() ) );
+        }
     }
 
 
@@ -1967,8 +2134,7 @@ int main( int argc, char** argv )
 
         ////////////////////////////////////////
         // Process sprites
-        
-        for( auto &sprite : test_sprites )
+        for( auto &sprite : ball_sprites )
         {
             // Process sprite (move, animate etc.)
             try
@@ -2002,6 +2168,43 @@ int main( int argc, char** argv )
                     std::string( "Failed to update sprite pos, error :" )
                     + e.what() ) );
             }
+        }
+
+        for( auto &sprite : rect_sprites )
+        {
+            // Process sprite (move, animate etc.)
+            try
+            {
+                sprite->process();
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to process sprite, error :" )
+                    + e.what() ) );
+            }
+
+            // For demo purposes, bounce sprite off edge
+            // of window
+            window_edge_bounce(
+                std::dynamic_pointer_cast<
+                    MCK::SpriteMotionConstVel
+                >( sprite )
+            );
+
+            // Update sprite's position in collision detection
+            // system
+            try
+            {
+                coll_proc.update_sprite_pos( sprite );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to update sprite pos, error :" )
+                    + e.what() ) );
+            }
+
         }
         
 
@@ -2042,8 +2245,40 @@ int main( int argc, char** argv )
                 const MCK::SpriteCollisionType COLL_TYPE_B
                     = coll.sprite_B->get_collision_type(); 
 
+                // Check if A and B are rectangles
+                if( COLL_TYPE_A == MCK::SpriteCollisionType::RECT
+                    && COLL_TYPE_B == MCK::SpriteCollisionType::RECT
+                )
+                {
+                    std::shared_ptr<MCK::SpriteCollisionRect> COLL_RECT_A
+                        = std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( coll.sprite_A );
+
+                    std::shared_ptr<MCK::SpriteCollisionRect> COLL_RECT_B
+                        = std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( coll.sprite_B );
+
+                    // Safety check
+                    if( COLL_RECT_A.get() == NULL
+                        || COLL_RECT_B.get() == NULL
+                    )
+                    {
+                        std::cout << "Failed to cast collision sprites "
+                                  << "as rectangles." << std::endl; 
+                        continue;
+                    }
+
+                    MCK::SpriteMotionConstVel::elastic_collision_rect(
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
+                        COLL_RECT_A->get_width() * COLL_RECT_A->get_height(),  // mass A
+                        COLL_RECT_B->get_width() * COLL_RECT_B->get_height(),  // mass B
+                        COLL_RECT_A->get_width(),
+                        COLL_RECT_A->get_height(),
+                        COLL_RECT_B->get_width(),
+                        COLL_RECT_B->get_height() 
+                    );
+                }
                 // Check if A and B are circles
-                if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
+                else if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
                     && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
                 )
                 {
@@ -2052,6 +2287,15 @@ int main( int argc, char** argv )
 
                     std::shared_ptr<MCK::SpriteCollisionCircle> COLL_CIRC_B
                         = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( coll.sprite_B );
+
+                    // Safety check
+                    if( COLL_CIRC_A.get() == NULL
+                        || COLL_CIRC_B.get() == NULL
+                    )
+                    {
+                        std::cout << "Failed to cast collision sprites "
+                                  << "as rectangles." << std::endl; 
+                    }
 
                     const MCK::Vect2D<float> CENTER_A(
                             COLL_CIRC_A->get_center_x(),
@@ -2063,7 +2307,7 @@ int main( int argc, char** argv )
                             COLL_CIRC_B->get_center_y()
                         );
 
-                    MCK::SpriteMotionConstVel::elastic_collision(
+                    MCK::SpriteMotionConstVel::elastic_collision_circ(
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
                         pow( COLL_CIRC_A->get_radius(), 2 ),  // mass A

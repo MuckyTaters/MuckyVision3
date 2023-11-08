@@ -84,7 +84,7 @@ in-built character image. Up to 255 custom ASCII character sets can be used
 simultaneously, plus the in-built set.
 
 Sprites are now provided by the 'Sprite.h' class template, which is
-comprised of three sub-templates: motion, animation and collision.
+comprised of three sub-classes: motion, animation and collision.
 
 Sprite motion options are currently:
     * SpriteMotionBase.h : No motion
@@ -105,7 +105,7 @@ collision detection.
 
 New supporting classes/structs are SpriteFrame.h (providing animation frames)
 and SpritePos.h (providing basic position info inherited by motion, animation
-and collision sub-templates).
+and collision sub-classes).
 
 The template class CollisionProcessing.h provides sprite collision processing,
 supported by a quad tree (QuadTree.h) that contains sprite collision info,

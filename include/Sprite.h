@@ -66,7 +66,7 @@ class Sprite : public MOTION, public ANIM, public COLL
         virtual ~Sprite( void ) {}
 
         void init(
-            ImageMan &image_man,
+            // ImageMan &image_man,
             std::shared_ptr<MCK::GameEngRenderBlock> parent_block,
             MCK_IMG_ID_TYPE initial_image_id,
             MCK_PAL_ID_TYPE initial_local_palette_id,
@@ -89,7 +89,9 @@ class Sprite : public MOTION, public ANIM, public COLL
                 ) );
             }
 
-            if( !image_man.is_initialized() )
+            if( this->MCK::SpritePos::image_man == NULL
+                || !this->MCK::SpritePos::image_man->is_initialized()
+            )
             {
                 throw( std::runtime_error(
 #if defined MCK_STD_OUT
@@ -110,7 +112,7 @@ class Sprite : public MOTION, public ANIM, public COLL
                 try
                 {
                     this->SpritePos::set_render_instance(
-                        image_man.create_render_info(
+                        this->MCK::SpritePos::image_man->create_render_info(
                             initial_image_id,
                             initial_local_palette_id,
                             initial_pos_x,

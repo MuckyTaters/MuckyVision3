@@ -49,6 +49,8 @@ class SpriteCollisionRect : public SpriteCollisionBase
             this->top_bound = 0;
             this->right_bound = 0;
             this->bottom_bound = 0;
+            this->width = 0;
+            this->height = 0;
             this->quad_tree_node = NULL;
         }
 
@@ -60,6 +62,27 @@ class SpriteCollisionRect : public SpriteCollisionBase
             this->bottom_bound = this->top_bound + this->height;
         }
         
+        //! Setting width and height
+        virtual void set_width_and_height(
+            float _width,
+            float _height
+        )
+        {
+            this->width = _width;
+            this->height = _height;
+        }
+
+        //! Get width
+        float get_width( void ) const noexcept
+        {
+            return this->width;
+        }
+
+        //! Get height
+        float get_height( void ) const noexcept
+        {
+            return this->height;
+        }
 
         //! Get rectangular bounds
         void get_bounds(

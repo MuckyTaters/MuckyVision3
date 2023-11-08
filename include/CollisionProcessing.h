@@ -844,10 +844,51 @@ class CollisionProcessing
             switch( sprite_1->get_collision_type() )
             {
                 case MCK::SpriteCollisionType::RECT:
+
                     switch( sprite_2->get_collision_type() )
                     {
                         case MCK::SpriteCollisionType::RECT:
-                            return false;
+                            {
+                                // Get bounds for sprite 1
+                                float left_1, top_1, right_1, bottom_1;
+                                sprite_1->get_bounds(
+                                    left_1,
+                                    top_1,
+                                    right_1,
+                                    bottom_1
+                                );
+
+                                // Get bounds for sprite 2
+                                float left_2, top_2, right_2, bottom_2;
+                                sprite_2->get_bounds(
+                                    left_2,
+                                    top_2,
+                                    right_2,
+                                    bottom_2
+                                );
+
+                                if( !( right_1 < left_2
+                                       || left_1 > right_2
+                                       || bottom_1 < top_2
+                                       || top_1 > bottom_2
+                                    )
+                                )
+                                {
+                                    collisions.push_back(
+                                        CollisionEvent(
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                        )  
+                                    );
+
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+
                             break;
 
                         case MCK::SpriteCollisionType::CIRCLE:

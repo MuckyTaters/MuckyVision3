@@ -32,6 +32,7 @@
 #ifndef MCK_DEFS_H
 #define MCK_DEFS_H
 
+#include<cmath>  // For fabs
 #include<cstdint>  // For uint32_t et al.
 #include "stddef.h" // For 'size_t' guaranteed in global namespace
 
@@ -365,6 +366,21 @@ namespace MCK
 #endif
 
     const uint8_t MAX_QUAD_TREE_LEVELS = 9;
+
+    /*
+    //! Returns true if b/a < tolerance ratio, or a and b both tolerably close to zero
+    inline bool equals( float a, float b, float tolerance_ratio )
+    {
+        if( fabs( a ) < 0.001f )
+        {
+            // If both a and b tolerably equal to zero,
+            // return true, otherwise return false
+            return fabs( b ) < 0.001f;
+        }
+
+        return fabs( fabs( b / a ) - 1.0f ) < tolerance_ratio; 
+    }
+    */
 
 }  // End of namespace MCK
 

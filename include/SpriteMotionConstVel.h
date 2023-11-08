@@ -30,6 +30,9 @@
 #ifndef MCK_SPRITE_MTN_CST_VEL_H
 #define MCK_SPRITE_MTN_CST_VEL_H
 
+// DEBUG
+#include <cassert>
+
 #include "Defs.h"
 #include "Point.h"
 #include "SpriteMotionBase.h"
@@ -87,7 +90,7 @@ class SpriteMotionConstVel : public SpriteMotionBase
             }
         }
 
-        static void elastic_collision(
+        static void elastic_collision_circ(
             std::shared_ptr<MCK::SpriteMotionConstVel> sprite_A,
             std::shared_ptr<MCK::SpriteMotionConstVel> sprite_B,
             float mass_A = 1.0f,
@@ -116,8 +119,12 @@ class SpriteMotionConstVel : public SpriteMotionBase
                         sprite_B->pos.as_Vect2D<float>() :
                         *alt_center_B;
             
-            const float MASS_SUM = mass_A + mass_B;
-            const float POS_DIFF_SQ = ( X1 - X2 ).mag_sq();
+            // Floor MASS_SUM and POS_DIFF_SQ
+            // at safe value for a denominator 
+            const float MASS_SUM
+                = std::max( 0.00000001f, mass_A + mass_B );
+            const float POS_DIFF_SQ
+                = std::max( 0.00000001f, ( X1 - X2 ).mag_sq() );
             const float RAD_TOTAL = radius_A + radius_B; 
 
             sprite_A->vel -= MCK::Point<float>( 
@@ -145,6 +152,94 @@ class SpriteMotionConstVel : public SpriteMotionBase
             }
         }
 
+        static void elastic_collision_rect(
+            std::shared_ptr<MCK::SpriteMotionConstVel> sprite_A,
+            std::shared_ptr<MCK::SpriteMotionConstVel> sprite_B,
+            float mass_A = 1.0f,
+            float mass_B = 1.0f,
+            float width_A = 0.0f,
+            float height_A = 0.0f,
+            float width_B = 0.0f,
+            float height_B = 0.0f
+        )
+        {
+            // Ignore if either pointer NULL.
+            if( sprite_A.get() == 0 || sprite_B.get() == 0 )
+            {
+                return;
+            }
+            
+            const MCK::Vect2D<float> POS_A
+                = sprite_A->pos.as_Vect2D<float>()
+                    + MCK::Vect2D<float>( width_A, height_A ) / 2.0f;
+
+            const MCK::Vect2D<float> POS_B
+                = sprite_B->pos.as_Vect2D<float>()
+                    + MCK::Vect2D<float>( width_B, height_B ) / 2.0f;
+
+            // Floor MASS_SUM and POS_DIFF_SQ
+            // at safe value for a denominator 
+            const float MASS_SUM
+                = std::max( 0.00000001f, mass_A + mass_B );
+            
+            // Calculate overlap
+            const float X_OVERLAP = std::max(
+                0.0f,
+                width_A + width_B
+                    - fabs( POS_A.get_x() - POS_B.get_x() )
+            );
+            const float Y_OVERLAP = std::max(
+                0.0f,
+                height_A + height_B
+                    - fabs( POS_A.get_y() - POS_B.get_y() )
+            );
+            
+            // Check for hoz collision
+            if( X_OVERLAP < Y_OVERLAP )
+            {
+                const float VEL_A_X = sprite_A->vel.get_x();
+                const float VEL_B_X = sprite_B->vel.get_x();
+                
+                sprite_A->vel.set_x(
+                    ( 
+                        ( mass_A - mass_B ) * VEL_A_X
+                        + mass_B * 2 * VEL_B_X
+                    ) / MASS_SUM
+                );
+
+                sprite_B->vel.set_x(
+                    ( 
+                        ( mass_B - mass_A ) * VEL_B_X
+                        + mass_A * 2 * VEL_A_X
+                    ) / MASS_SUM
+                );
+            }
+            else 
+            {
+                const float VEL_A_Y = sprite_A->vel.get_y();
+                const float VEL_B_Y = sprite_B->vel.get_y();
+                
+                sprite_A->vel.set_y(
+                    ( 
+                        ( mass_A - mass_B ) * VEL_A_Y
+                        + mass_B * 2 * VEL_B_Y
+                    ) / MASS_SUM
+                );
+
+                sprite_B->vel.set_y(
+                    ( 
+                        ( mass_B - mass_A ) * VEL_B_Y
+                        + mass_A * 2 * VEL_A_Y
+                    ) / MASS_SUM
+                );
+            }
+
+            // In addition to change in velocity, make slight
+            // diplacement to reduce overlap
+            sprite_A->adjust_pos( MCK::Point<float>( POS_A - POS_B ) * 0.01f );
+            sprite_B->adjust_pos( MCK::Point<float>( POS_B - POS_A ) * 0.01f );
+        }
+        
 
     protected:
 

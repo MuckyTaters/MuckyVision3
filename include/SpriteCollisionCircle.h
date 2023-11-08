@@ -71,6 +71,13 @@ class SpriteCollisionCircle : public SpriteCollisionRect
 
         virtual ~SpriteCollisionCircle( void ) {}
   
+        //! For circle this method does nothing
+        virtual void set_width_and_height(
+            float _width,
+            float _height
+        )
+        {}
+
         virtual void update_bounds( void ) noexcept
         {
             this->left_bound = this->SpritePos::pos.get_x();
