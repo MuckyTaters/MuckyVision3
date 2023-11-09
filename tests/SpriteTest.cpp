@@ -74,7 +74,7 @@ const float Y_MID = Y_MIN + Y_SPAN / 2.0f;
 const float XY_MIN_SCALE = 1.0f; 
 const float XY_SCALE_PER_Z = ( 1.0f - XY_MIN_SCALE ) / float( Z_SPAN );
 
-const int QUAD_TREE_LEVELS = 4;
+const int QUAD_TREE_LEVELS = 1;
 const int BALL_RAW_PIXEL_SIZE = 64;
 const int BALL_SCALE = 1;
 const int BALL_SCALE_DENOM = 6;
@@ -84,12 +84,12 @@ const int BALL_PIXEL_SIZE
             / float( BALL_SCALE_DENOM )
     );
 const int BALL_SPEED = 2;
-const int NUM_BALLS = 192;
+const int NUM_BALLS = 64;  // 192;
 const int BALL_SPIN_SPEED = 1;
 
 const int RECT_SPEED = 3;
 const int RECT_RAW_PIXEL_SIZE = 64;
-const int NUM_RECTS = 64;
+const int NUM_RECTS = 32;  // 64;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -2236,36 +2236,35 @@ int main( int argc, char** argv )
                 const MCK::SpriteCollisionType COLL_TYPE_B
                     = coll.sprite_B->get_collision_type(); 
 
+                // Get collision base pointers
+                std::shared_ptr<MCK::SpriteCollisionBase> COLL_BASE_A
+                    = std::dynamic_pointer_cast<MCK::SpriteCollisionBase>( coll.sprite_A );
+                std::shared_ptr<MCK::SpriteCollisionBase> COLL_BASE_B
+                    = std::dynamic_pointer_cast<MCK::SpriteCollisionBase>( coll.sprite_B );
+
+                // Safety check (although this should be 
+                // logically impossible)
+                if( COLL_BASE_A.get() == NULL
+                    || COLL_BASE_B.get() == NULL
+                )
+                {
+                    continue;
+                }
+
                 // Check if A and B are rectangles
                 if( COLL_TYPE_A == MCK::SpriteCollisionType::RECT
                     && COLL_TYPE_B == MCK::SpriteCollisionType::RECT
                 )
                 {
-                    std::shared_ptr<MCK::SpriteCollisionRect> COLL_RECT_A
-                        = std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( coll.sprite_A );
-
-                    std::shared_ptr<MCK::SpriteCollisionRect> COLL_RECT_B
-                        = std::dynamic_pointer_cast<MCK::SpriteCollisionRect>( coll.sprite_B );
-
-                    // Safety check
-                    if( COLL_RECT_A.get() == NULL
-                        || COLL_RECT_B.get() == NULL
-                    )
-                    {
-                        std::cout << "Failed to cast collision sprites "
-                                  << "as rectangles." << std::endl; 
-                        continue;
-                    }
-
                     MCK::SpriteMotionConstVel::elastic_collision_rect(
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
-                        COLL_RECT_A->get_width() * COLL_RECT_A->get_height(),  // mass A
-                        COLL_RECT_B->get_width() * COLL_RECT_B->get_height(),  // mass B
-                        COLL_RECT_A->get_width(),
-                        COLL_RECT_A->get_height(),
-                        COLL_RECT_B->get_width(),
-                        COLL_RECT_B->get_height() 
+                        COLL_BASE_A->get_width() * COLL_BASE_A->get_height(),  // mass A
+                        COLL_BASE_B->get_width() * COLL_BASE_B->get_height(),  // mass B
+                        COLL_BASE_A->get_width(),
+                        COLL_BASE_A->get_height(),
+                        COLL_BASE_B->get_width(),
+                        COLL_BASE_B->get_height() 
                     );
                 }
                 // Check if A and B are circles
@@ -2273,41 +2272,60 @@ int main( int argc, char** argv )
                     && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
                 )
                 {
-                    std::shared_ptr<MCK::SpriteCollisionCircle> COLL_CIRC_A
-                        = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( coll.sprite_A );
-
-                    std::shared_ptr<MCK::SpriteCollisionCircle> COLL_CIRC_B
-                        = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( coll.sprite_B );
-
-                    // Safety check
-                    if( COLL_CIRC_A.get() == NULL
-                        || COLL_CIRC_B.get() == NULL
-                    )
-                    {
-                        std::cout << "Failed to cast collision sprites "
-                                  << "as rectangles." << std::endl; 
-                    }
-
                     const MCK::Vect2D<float> CENTER_A(
-                            COLL_CIRC_A->get_center_x(),
-                            COLL_CIRC_A->get_center_y()
+                            COLL_BASE_A->get_center_x(),
+                            COLL_BASE_A->get_center_y()
                         );
 
                     const MCK::Vect2D<float> CENTER_B(
-                            COLL_CIRC_B->get_center_x(),
-                            COLL_CIRC_B->get_center_y()
+                            COLL_BASE_B->get_center_x(),
+                            COLL_BASE_B->get_center_y()
                         );
 
                     MCK::SpriteMotionConstVel::elastic_collision_circ(
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
-                        pow( COLL_CIRC_A->get_radius(), 2 ),  // mass A
-                        pow( COLL_CIRC_B->get_radius(), 2 ),  // mass B
-                        COLL_CIRC_A->get_radius(),
-                        COLL_CIRC_B->get_radius(),
+                        pow( COLL_BASE_A->get_half_width(), 2 ) * MCK_PI,  // mass A
+                        pow( COLL_BASE_B->get_half_width(), 2 ) * MCK_PI,  // mass B
+                        COLL_BASE_A->get_half_width(),
+                        COLL_BASE_B->get_half_width(),
                         &CENTER_A,
                         &CENTER_B
                     );
+                }
+                // Check if A is a circle and B is a rectangle
+                if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
+                    && COLL_TYPE_B == MCK::SpriteCollisionType::RECT
+                )
+                {
+                    MCK::SpriteMotionConstVel::elastic_collision_circ_rect(
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
+                        pow( COLL_BASE_A->get_half_width(), 2 ) * MCK_PI,
+                        COLL_BASE_B->get_width() * COLL_BASE_B->get_height(),
+                        COLL_BASE_A->get_half_width(),
+                        COLL_BASE_B->get_width(),
+                        COLL_BASE_B->get_height() 
+                    );
+                }
+                // Check if A is a rectangle and B is a circle
+                else if( COLL_TYPE_A == MCK::SpriteCollisionType::RECT
+                    && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
+                )
+                {
+                    MCK::SpriteMotionConstVel::elastic_collision_circ_rect(
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
+                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
+                        pow( COLL_BASE_B->get_half_width(), 2 ) * MCK_PI,
+                        COLL_BASE_A->get_width() * COLL_BASE_A->get_height(),
+                        COLL_BASE_B->get_half_width(),
+                        COLL_BASE_A->get_width(),
+                        COLL_BASE_A->get_height() 
+                    );
+                }
+                else
+                {
+                    // TODO Error
                 }
             }
         }

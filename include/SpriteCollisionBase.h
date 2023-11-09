@@ -71,6 +71,48 @@ class SpriteCollisionBase : virtual public SpritePos
             left = top = right = bottom = 0.0f;
         }
 
+        //! Get width
+        /*! Base version of this method returns zero*/
+        virtual float get_width( void ) const noexcept
+        {
+            return 0.0f;
+        }
+
+        //! Get height
+        /*! Base version of this method returns zero*/
+        virtual float get_height( void ) const noexcept
+        {
+            return 0.0f;
+        }
+
+        //! Get half-width
+        /*! Base version of this method returns zero*/
+        virtual float get_half_width( void ) const noexcept
+        {
+            return 0.0f;
+        }
+
+        //! Get half-height
+        /*! Base version of this method returns zero*/
+        virtual float get_half_height( void ) const noexcept
+        {
+            return 0.0f;
+        }
+
+        //! Get center x coord
+        /*! Base version of this method returns zero */
+        virtual float get_center_x( void ) const noexcept
+        {
+            return 0.0f;
+        }
+
+        //! Get center y coord
+        /*! Base version of this method returns zero */
+        virtual float get_center_y( void ) const noexcept
+        {
+            return 0.0f;
+        }
+
         //! Get node in collision quad tree containing this sprite
         /*! In base version, this always returns NULL */
         virtual void* get_quad_tree_node( void ) const noexcept

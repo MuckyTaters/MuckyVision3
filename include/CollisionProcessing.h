@@ -906,7 +906,107 @@ class CollisionProcessing
                             break;
 
                         case MCK::SpriteCollisionType::CIRCLE:
-                            return false;
+                            {
+                                // Get bounds for sprite 1
+                                float left_1, top_1, right_1, bottom_1;
+                                sprite_1->get_bounds(
+                                    left_1,
+                                    top_1,
+                                    right_1,
+                                    bottom_1
+                                );
+
+                                // Get bounds for sprite 2
+                                float left_2, top_2, right_2, bottom_2;
+                                sprite_2->get_bounds(
+                                    left_2,
+                                    top_2,
+                                    right_2,
+                                    bottom_2
+                                );
+
+                                // Check if bounds overlap
+                                if( !( right_1 < left_2
+                                       || left_1 > right_2
+                                       || bottom_1 < top_2
+                                       || top_1 > bottom_2
+                                    )
+                                )
+                                {
+                                    // Get circle centre and radius
+                                    const float X 
+                                        = sprite_2->get_center_x();
+
+                                    const float Y 
+                                        = sprite_2->get_center_y();
+
+                                    const float RADIUS_SQ
+                                        = sprite_2->get_half_width()
+                                            * sprite_2->get_half_width();
+                                    
+                                    // Exclude corner cases where
+                                    // bounds overlap but circle
+                                    // is just outside of the
+                                    // rectangle.
+                                    if( 
+                                        // Top left corner case
+                                        (
+                                            X < left_1
+                                            && Y < top_1
+                                            && ( left_1 - X )
+                                                * ( left_1 - X ) 
+                                                  + ( top_1 - Y )
+                                                    * ( top_1 - Y ) 
+                                                > RADIUS_SQ 
+                                        // Top right corner case
+                                        ) || (
+                                            X > right_1
+                                            && Y < top_1
+                                            && ( X - right_1 )
+                                                * ( X - right_1 ) 
+                                                  + ( top_1 - Y )
+                                                    * ( top_1 - Y ) 
+                                                > RADIUS_SQ 
+                                        // Left bottom corner case
+                                        ) || (
+                                            X < left_1
+                                            && Y > bottom_1
+                                            && ( left_1 - X )
+                                                * ( left_1 - X ) 
+                                                  + ( Y - bottom_1 )
+                                                    * ( Y - bottom_1 ) 
+                                                > RADIUS_SQ 
+                                        // Right bottom corner case
+                                        ) || (
+                                            X > right_1
+                                            && Y > bottom_1
+                                            && ( X - right_1 )
+                                                * ( X - right_1 ) 
+                                                  + ( Y - bottom_1 )
+                                                    * ( Y - bottom_1 ) 
+                                                > RADIUS_SQ 
+                                        )
+                                    )
+                                    {
+                                        return false;
+                                    }
+
+                                    // Otherwise, log collision
+                                    collisions.push_back(
+                                        CollisionEvent(
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                        )  
+                                    );
+                                    
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+                            
                             break;
                     }
                     break;
@@ -919,38 +1019,137 @@ class CollisionProcessing
                     switch( sprite_2->get_collision_type() )
                     {
                         case MCK::SpriteCollisionType::RECT:
-                            return false;
+                            {
+                                // Get bounds for sprite 1
+                                float left_1, top_1, right_1, bottom_1;
+                                sprite_1->get_bounds(
+                                    left_1,
+                                    top_1,
+                                    right_1,
+                                    bottom_1
+                                );
+
+                                // Get bounds for sprite 2
+                                float left_2, top_2, right_2, bottom_2;
+                                sprite_2->get_bounds(
+                                    left_2,
+                                    top_2,
+                                    right_2,
+                                    bottom_2
+                                );
+
+                                // Check if bounds overlap
+                                if( !( right_1 < left_2
+                                       || left_1 > right_2
+                                       || bottom_1 < top_2
+                                       || top_1 > bottom_2
+                                    )
+                                )
+                                {
+                                    // Get circle centre and radius
+                                    const float X 
+                                        = sprite_1->get_center_x();
+
+                                    const float Y 
+                                        = sprite_1->get_center_y();
+
+                                    const float RADIUS_SQ
+                                        = sprite_1->get_half_width()
+                                            * sprite_1->get_half_width();
+                                    
+                                    // Exclude corner cases where
+                                    // bounds overlap but circle
+                                    // is just outside of the
+                                    // rectangle.
+                                    if( 
+                                        // Top left corner case
+                                        (
+                                            X < left_2
+                                            && Y < top_2
+                                            && ( left_2 - X )
+                                                * ( left_2 - X ) 
+                                                  + ( top_2 - Y )
+                                                    * ( top_2 - Y ) 
+                                                > RADIUS_SQ 
+                                        // Top right corner case
+                                        ) || (
+                                            X > right_2
+                                            && Y < top_2
+                                            && ( X - right_2 )
+                                                * ( X - right_2 ) 
+                                                  + ( top_2 - Y )
+                                                    * ( top_2 - Y ) 
+                                                > RADIUS_SQ 
+                                        // Left bottom corner case
+                                        ) || (
+                                            X < left_2
+                                            && Y > bottom_2
+                                            && ( left_2 - X )
+                                                * ( left_2 - X ) 
+                                                  + ( Y - bottom_2 )
+                                                    * ( Y - bottom_2 ) 
+                                                > RADIUS_SQ 
+                                        // Right bottom corner case
+                                        ) || (
+                                            X > right_2
+                                            && Y > bottom_2
+                                            && ( X - right_2 )
+                                                * ( X - right_2 ) 
+                                                  + ( Y - bottom_2 )
+                                                    * ( Y - bottom_2 ) 
+                                                > RADIUS_SQ 
+                                        )
+                                    )
+                                    {
+                                        return false;
+                                    }
+
+                                    // Otherwise, log collision
+                                    collisions.push_back(
+                                        CollisionEvent(
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                        )  
+                                    );
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
                             break;
 
                         case MCK::SpriteCollisionType::CIRCLE:
-                    
-                            std::shared_ptr<MCK::SpriteCollisionCircle> circle_2
-                                = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_2 ); 
+                            { 
+                                std::shared_ptr<MCK::SpriteCollisionCircle> circle_2
+                                    = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_2 ); 
 
-                            const float TOTAL_RAD 
-                                = circle_1->get_radius()
-                                    + circle_2->get_radius();
+                                const float TOTAL_RAD 
+                                    = circle_1->get_radius()
+                                        + circle_2->get_radius();
 
-                            const float DIST_SQ
-                                = circle_1->get_dist_sq_from_center(
-                                    circle_2->get_center_x(),
-                                    circle_2->get_center_y()
-                                );
+                                const float DIST_SQ
+                                    = circle_1->get_dist_sq_from_center(
+                                        circle_2->get_center_x(),
+                                        circle_2->get_center_y()
+                                    );
 
-                            if( DIST_SQ < TOTAL_RAD * TOTAL_RAD )
-                            {
-                                collisions.push_back(
-                                    CollisionEvent(
-                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
-                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
-                                    )  
-                                );
+                                if( DIST_SQ < TOTAL_RAD * TOTAL_RAD )
+                                {
+                                    collisions.push_back(
+                                        CollisionEvent(
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                        )  
+                                    );
 
-                                return true;
-                            }
-                            else
-                            {
-                                return false;
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
                             }
                             break;
                     }

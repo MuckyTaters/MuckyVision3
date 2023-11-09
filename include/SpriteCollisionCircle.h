@@ -95,16 +95,6 @@ class SpriteCollisionCircle : public SpriteCollisionBase
                                 + this->center_y_offset;
         }
 
-        float get_center_x( void ) const noexcept
-        {
-            return this->center_x; 
-        }
-
-        float get_center_y( void ) const noexcept
-        {
-            return this->center_y; 
-        }
-
         float get_dist_sq_from_center( float x, float y ) const noexcept
         {
             return 
@@ -141,6 +131,20 @@ class SpriteCollisionCircle : public SpriteCollisionBase
             bottom = this->center_y + this->center_y_offset;
         }
         
+        //! Get center x coord
+        /*! Base version of this method returns zeros */
+        virtual float get_center_x( void ) const noexcept
+        {
+            return this->center_x;
+        }
+
+        //! Get center y coord
+        /*! Base version of this method returns zeros */
+        virtual float get_center_y( void ) const noexcept
+        {
+            return this->center_y;
+        }
+
         //! Get void pointer to sprite's current node in collision tree
         virtual void* get_quad_tree_node( void ) const noexcept
         {
@@ -151,6 +155,30 @@ class SpriteCollisionCircle : public SpriteCollisionBase
         virtual void set_quad_tree_node( void* val ) noexcept
         {
             this->quad_tree_node = val;
+        }
+
+        //! Get width
+        virtual float get_width( void ) const noexcept
+        {
+            return this->radius * 2.0f;
+        }
+
+        //! Get height
+        virtual float get_height( void ) const noexcept
+        {
+            return this->radius * 2.0f;
+        }
+
+        //! Get half width
+        virtual float get_half_width( void ) const noexcept
+        {
+            return this->radius;
+        }
+
+        //! Get half height
+        virtual float get_half_height( void ) const noexcept
+        {
+            return this->radius;
         }
 
 

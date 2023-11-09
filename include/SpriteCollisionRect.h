@@ -73,15 +73,27 @@ class SpriteCollisionRect : public SpriteCollisionBase
         }
 
         //! Get width
-        float get_width( void ) const noexcept
+        virtual float get_width( void ) const noexcept
         {
             return this->width;
         }
 
         //! Get height
-        float get_height( void ) const noexcept
+        virtual float get_height( void ) const noexcept
         {
             return this->height;
+        }
+
+        //! Get half width
+        virtual float get_half_width( void ) const noexcept
+        {
+            return this->width / 2.0f;
+        }
+
+        //! Get half height
+        virtual float get_half_height( void ) const noexcept
+        {
+            return this->height / 2.0f;
         }
 
         //! Get rectangular bounds
@@ -96,6 +108,20 @@ class SpriteCollisionRect : public SpriteCollisionBase
             top = this->top_bound;
             right = this->right_bound;
             bottom = this->bottom_bound;
+        }
+
+        //! Get center x coord
+        /*! Base version of this method returns zeros */
+        virtual float get_center_x( void ) const noexcept
+        {
+            return this->left_bound + this->width / 2.0f;
+        }
+
+        //! Get center y coord
+        /*! Base version of this method returns zeros */
+        virtual float get_center_y( void ) const noexcept
+        {
+            return this->top_bound + this->height / 2.0f;
         }
 
         //! Get void pointer to sprite's current node in collision tree
