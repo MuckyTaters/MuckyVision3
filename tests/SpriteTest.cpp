@@ -84,12 +84,12 @@ const int BALL_PIXEL_SIZE
             / float( BALL_SCALE_DENOM )
     );
 const int BALL_SPEED = 2;
-const int NUM_BALLS = 64;  // 192;
+const int NUM_BALLS = 256;
 const int BALL_SPIN_SPEED = 1;
 
 const int RECT_SPEED = 3;
 const int RECT_RAW_PIXEL_SIZE = 64;
-const int NUM_RECTS = 32;  // 64;
+const int NUM_RECTS = 0;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -300,6 +300,112 @@ const std::vector<uint32_t> SONG_DATA
 
 const std::vector<std::string> NOTES { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
+
+// Method to process circle-vs-rectangle collisions
+void process_circ_to_rect_collision(
+    std::shared_ptr<MCK::SpriteCollisionBase> circle,
+    std::shared_ptr<MCK::SpriteCollisionBase> rect,
+    std::shared_ptr<MCK::SpriteMotionConstVel> circle_motion,
+    std::shared_ptr<MCK::SpriteMotionConstVel> rect_motion
+)
+{
+    // Get center of circle
+    const float CENTER_A_X
+        = circle->get_center_x();
+    const float CENTER_A_Y
+        = circle->get_center_y();
+    
+    // Get rectangle bounds
+    float left_bound_B, top_bound_B, 
+          right_bound_B, bottom_bound_B;
+    rect->get_bounds(
+        left_bound_B,
+        top_bound_B,
+        right_bound_B,
+        bottom_bound_B
+    );
+    
+    // Check for side-on collision
+    if( ( 
+            CENTER_A_X >= left_bound_B
+            && CENTER_A_X <= right_bound_B
+        ) || (
+            CENTER_A_Y >= top_bound_B
+            && CENTER_A_Y <= bottom_bound_B
+        )
+    )
+    {
+        // Treat as rectangle-on-rectangle
+        // collision
+        MCK::SpriteMotionConstVel::elastic_collision_rect(
+            circle_motion,
+            rect_motion,
+            pow( circle->get_half_width(), 2 ) * MCK_PI,  // mass A
+            rect->get_width() * rect->get_height(),  // mass B
+            circle->get_width(),
+            circle->get_height(),
+            rect->get_width(),
+            rect->get_height() 
+        );
+    }
+    else
+    {
+        // Test corner cases
+
+        // This must be set to corner of rectangle that
+        // the circle is colliding with
+        MCK::Vect2D<float> alt_center;
+    
+        // Top-left corner case
+        if( CENTER_A_X <= left_bound_B
+             && CENTER_A_Y <= top_bound_B
+        )
+        {
+            alt_center.set_x( left_bound_B );
+            alt_center.set_y( top_bound_B );
+        }
+        // Top-right corner case
+        else if( CENTER_A_X >= right_bound_B
+             && CENTER_A_Y <= top_bound_B
+        )
+        {
+            alt_center.set_x( right_bound_B );
+            alt_center.set_y( top_bound_B );
+        }
+        // Bottom-left corner case
+        else if( CENTER_A_X <= left_bound_B
+             && CENTER_A_Y >= bottom_bound_B
+        )
+        {
+            alt_center.set_x( left_bound_B );
+            alt_center.set_y( bottom_bound_B );
+        }
+        // Bottom-right corner case
+        else if( CENTER_A_X >= right_bound_B
+             && CENTER_A_Y >= bottom_bound_B
+        )
+        {
+            alt_center.set_x( right_bound_B );
+            alt_center.set_y( bottom_bound_B );
+        }
+        else
+        {
+            // TODO Error
+        }
+
+        // Treat as circle-on-circle collision
+        MCK::SpriteMotionConstVel::elastic_collision_circ(
+            circle_motion,
+            rect_motion,
+            pow( circle->get_half_width(), 2 ) * MCK_PI,  // mass A
+            rect->get_width() * rect->get_height(),  // mass B
+            circle->get_half_width(),
+            0.001f,   // Near zero radius
+            NULL,
+            &alt_center
+        );
+    }
+}
 
 
 // Method to reverse sprite motion when touch edge of window
@@ -2224,6 +2330,28 @@ int main( int argc, char** argv )
                     continue;
                 }
 
+                /*
+                // DEBUG - SHAKE SPRITES TO IDENTIFY COLLISIONS
+                if( frame_num % 2 == 0 )
+                {
+                    coll.sprite_A->adjust_pos(
+                        MCK::Point<float>( 4.0f, 0.0f )
+                    );
+                    coll.sprite_B->adjust_pos(
+                        MCK::Point<float>( -4.0f, 0.0f )
+                    );
+                }
+                else
+                {
+                    coll.sprite_A->adjust_pos(
+                        MCK::Point<float>( -4.0f, 0.0f )
+                    );
+                    coll.sprite_B->adjust_pos(
+                        MCK::Point<float>( 4.0f, 0.0f )
+                    );
+                }
+                */
+
                 // Get sprite positions
                 const MCK::Point<float> &POS_A
                     = coll.sprite_A->get_pos();
@@ -2294,34 +2422,48 @@ int main( int argc, char** argv )
                     );
                 }
                 // Check if A is a circle and B is a rectangle
-                if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
+                else if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
                     && COLL_TYPE_B == MCK::SpriteCollisionType::RECT
                 )
                 {
-                    MCK::SpriteMotionConstVel::elastic_collision_circ_rect(
-                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
-                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
-                        pow( COLL_BASE_A->get_half_width(), 2 ) * MCK_PI,
-                        COLL_BASE_B->get_width() * COLL_BASE_B->get_height(),
-                        COLL_BASE_A->get_half_width(),
-                        COLL_BASE_B->get_width(),
-                        COLL_BASE_B->get_height() 
-                    );
+                    try
+                    {
+                        process_circ_to_rect_collision(
+                            COLL_BASE_A,
+                            COLL_BASE_B,
+                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
+                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B )
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+                            std::string( "Failed to process circ-rect collision, error :" )
+                            + e.what() ) );
+                    }
+                    
                 }
                 // Check if A is a rectangle and B is a circle
                 else if( COLL_TYPE_A == MCK::SpriteCollisionType::RECT
                     && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
                 )
                 {
-                    MCK::SpriteMotionConstVel::elastic_collision_circ_rect(
-                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
-                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
-                        pow( COLL_BASE_B->get_half_width(), 2 ) * MCK_PI,
-                        COLL_BASE_A->get_width() * COLL_BASE_A->get_height(),
-                        COLL_BASE_B->get_half_width(),
-                        COLL_BASE_A->get_width(),
-                        COLL_BASE_A->get_height() 
-                    );
+                    try
+                    {
+                        process_circ_to_rect_collision(
+                            COLL_BASE_B,
+                            COLL_BASE_A,
+                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
+                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A )
+                        );
+                    }
+                    catch( std::exception &e )
+                    {
+                        throw( std::runtime_error(
+                            std::string( "Failed to process circ-rect collision (2), error :" )
+                            + e.what() ) );
+                    }
+
                 }
                 else
                 {

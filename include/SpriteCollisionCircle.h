@@ -102,6 +102,13 @@ class SpriteCollisionCircle : public SpriteCollisionBase
                 + ( this->center_y - y ) * ( this->center_y - y );
         }
 
+        //! Returns true if specified point lies within circle
+        bool contains( float x, float y ) const noexcept
+        {
+            return this->get_dist_sq_from_center( x, y )
+                            < ( this->radius * this->radius );
+        }
+
         float get_radius( void ) const noexcept
         {
             return this->radius;

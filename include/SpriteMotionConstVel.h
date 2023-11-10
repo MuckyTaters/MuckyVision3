@@ -147,9 +147,11 @@ class SpriteMotionConstVel : public SpriteMotionBase
             // Check for overlap
             if( POS_DIFF_SQ < RAD_TOTAL * RAD_TOTAL )
             {
-                const MCK::Point<float> DIFF( ( X1 - X2 ) / 100.0f );
-                sprite_A->adjust_pos( DIFF );
-                sprite_B->adjust_pos( DIFF * -1.0f );
+                MCK::Point<float> diff( ( X1 - X2 ) );
+                diff *= ( RAD_TOTAL - sqrt( POS_DIFF_SQ ) )
+                            / sqrt( POS_DIFF_SQ ) / 2.0f;
+                sprite_A->adjust_pos( diff );
+                sprite_B->adjust_pos( diff * -1.0f );
             }
         }
 
@@ -260,150 +262,6 @@ class SpriteMotionConstVel : public SpriteMotionBase
                         + 2 * mass_A * OLD_VEL_A
                     ) / ( mass_A + mass_B )
                 );
-            }
-        }
-         
-        static void elastic_collision_circ_rect(
-            std::shared_ptr<MCK::SpriteMotionConstVel> sprite_circle,
-            std::shared_ptr<MCK::SpriteMotionConstVel> sprite_rect,
-            float mass_circle = 1.0f,
-            float mass_rect = 1.0f,
-            float circle_radius = 0.0f,
-            float rect_width = 0.0f,
-            float rect_height = 0.0f
-        )
-        {
-            // Ignore if either pointer NULL.
-            if( sprite_circle.get() == NULL || sprite_rect.get() == NULL )
-            {
-                return;
-            }
-
-            // Get centre offsets
-            const MCK::Vect2D<float> CENTER_OFFSET_CIRCLE(
-                circle_radius,
-                circle_radius
-            );
-            const MCK::Vect2D<float> CENTER_OFFSET_RECT(
-                rect_width / 2.0f,
-                rect_height / 2.0f
-            );
-
-            // Get current centre of circle
-            const MCK::Vect2D<float> CENTER_CIRCLE
-                = sprite_circle->get_pos().as_Vect2D<float>()
-                    + CENTER_OFFSET_CIRCLE; 
-
-            // Get current centre of rectangle
-            const MCK::Vect2D<float> TOP_LEFT_RECT
-                = sprite_rect->get_pos().as_Vect2D<float>();
-            const MCK::Vect2D<float> CENTER_RECT
-                = TOP_LEFT_RECT + CENTER_OFFSET_RECT; 
-
-            // Get previous centre of circle
-            const MCK::Vect2D<float> PREV_CENTER_CIRCLE
-                = sprite_circle->get_prev_pos().as_Vect2D<float>() 
-                    + CENTER_OFFSET_CIRCLE;
-
-            // Get previous centre of rectangle
-            const MCK::Vect2D<float> PREV_CENTER_RECT
-                = sprite_rect->get_prev_pos().as_Vect2D<float>() 
-                    + CENTER_OFFSET_RECT; 
-
-            // For non-corner cases, check overlap
-            if( CENTER_CIRCLE.get_y() >= TOP_LEFT_RECT.get_y()
-                && CENTER_CIRCLE.get_y() 
-                    <= TOP_LEFT_RECT.get_y() + rect_height
-            )
-            {
-                // Calculate max centre-to-centre non-overlapping dist
-                const float MAX_OVERLAP_X
-                    = circle_radius + rect_width / 2.0f;
-
-                // Calculate previous overlap (if any)
-                bool PREV_OVERLAP_X =  
-                    fabs( PREV_CENTER_CIRCLE.get_x() - PREV_CENTER_RECT.get_x() )
-                    - MAX_OVERLAP_X
-                        < 0.0f;
-            
-                // Calculate current overlap (if any)
-                bool OVERLAP_X = 
-                    fabs( CENTER_CIRCLE.get_x() - CENTER_RECT.get_x() )
-                        - MAX_OVERLAP_X
-                            < 0.0f;
-
-                // If new X overlap, change x velocities
-                if( OVERLAP_X && !PREV_OVERLAP_X )
-                {
-                    const float OLD_VEL_CIRCLE
-                        = sprite_circle->vel.get_x(); 
-                    const float OLD_VEL_RECT
-                        = sprite_rect->vel.get_x();
-
-                    sprite_circle->vel.set_x(
-                        (
-                            ( mass_circle - mass_rect ) * OLD_VEL_CIRCLE
-                            + 2 * mass_rect * OLD_VEL_RECT
-                        ) / ( mass_circle + mass_rect )
-                    );
-
-                    sprite_rect->vel.set_x(
-                        (
-                            ( mass_rect - mass_circle ) * OLD_VEL_RECT
-                            + 2 * mass_circle * OLD_VEL_CIRCLE
-                        ) / ( mass_circle + mass_rect )
-                    );
-
-                    // End here to prevent vert change
-                    return;
-                }
-
-            }
-
-            // For non-corner cases, check overlap
-            if( CENTER_CIRCLE.get_x() >= TOP_LEFT_RECT.get_x()
-                && CENTER_CIRCLE.get_x() 
-                    <= TOP_LEFT_RECT.get_x() + rect_width
-            )
-            {
-                // Calculate max centre-to-centre non-overlapping dist
-                const float MAX_OVERLAP_Y
-                    = circle_radius + rect_height / 2.0f;
-
-                // Calculate previous overlap (if any)
-                bool PREV_OVERLAP_Y =  
-                    fabs( PREV_CENTER_CIRCLE.get_y() - PREV_CENTER_RECT.get_y() )
-                    - MAX_OVERLAP_Y
-                        < 0.0f;
-            
-                // Calculate current overlap (if any)
-                bool OVERLAP_Y = 
-                    fabs( CENTER_CIRCLE.get_y() - CENTER_RECT.get_y() )
-                        - MAX_OVERLAP_Y
-                            < 0.0f;
-            
-                // If new X overlap, change x velocities
-                if( OVERLAP_Y && !PREV_OVERLAP_Y )
-                {
-                    const float OLD_VEL_CIRCLE
-                        = sprite_circle->vel.get_y(); 
-                    const float OLD_VEL_RECT
-                        = sprite_rect->vel.get_y();
-
-                    sprite_circle->vel.set_y(
-                        (
-                            ( mass_circle - mass_rect ) * OLD_VEL_CIRCLE
-                            + 2 * mass_rect * OLD_VEL_RECT
-                        ) / ( mass_circle + mass_rect )
-                    );
-
-                    sprite_rect->vel.set_y(
-                        (
-                            ( mass_rect - mass_circle ) * OLD_VEL_RECT
-                            + 2 * mass_circle * OLD_VEL_CIRCLE
-                        ) / ( mass_circle + mass_rect )
-                    );
-                }
             }
         }
          
