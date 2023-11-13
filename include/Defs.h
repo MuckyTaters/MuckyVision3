@@ -45,8 +45,8 @@
 #define MCK_LINE_SEG_ID_TYPE uint32_t
 
 // Math constants
-#define MCK_PI 3.14127f
-#define MCK_TWO_PI 6.28254f
+#define MCK_PI 3.1415927f
+#define MCK_TWO_PI 6.28318531f
 #define MCK_ONE_OVER_ROOT_TWO 0.707106f
 
 // Data type of sprite path junction code 

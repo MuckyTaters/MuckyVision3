@@ -30,10 +30,10 @@
 #ifndef MCK_COLL_PROC_H
 #define MCK_COLL_PROC_H
 
-#include<CollisionEvent.h>
-#include<CollisionNode.h>
-#include<QuadTree.h>
-#include<SpriteCollisionBase.h>
+#include"CollisionEvent.h"
+#include"CollisionNode.h"
+#include"QuadTree.h"
+#include"SpriteCollisionBase.h"
 namespace MCK
 {
 
