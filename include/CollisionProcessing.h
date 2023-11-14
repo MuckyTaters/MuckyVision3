@@ -257,7 +257,7 @@ class CollisionProcessing
         )
         {
             collisions.clear();
-            
+           
             // DEBUG - DON'T USE QUAD TREE WHILE DEBUGGING
             const size_t NUM_SPRITES = this->all_sprites.size();
             for( size_t i = 0; i < NUM_SPRITES; i++ )
@@ -889,43 +889,32 @@ class CollisionProcessing
             }
         }
 
-        //! Determine
+        //! Determine collision
         static bool check_collision(
             std::vector<MCK::CollisionEvent> &collisions,
             std::shared_ptr<MCK::SpriteCollisionBase> sprite_1,
             std::shared_ptr<MCK::SpriteCollisionBase> sprite_2
         )
         {
-            switch( sprite_1->get_collision_type() )
+            // Convert to regular pointers for faster casting
+            // (significant performance improvement)
+            MCK::SpriteCollisionBase* spr_1 = &*sprite_1;
+            MCK::SpriteCollisionBase* spr_2 = &*sprite_2;
+
+            switch( spr_1->get_collision_type() )
             {
                 case MCK::SpriteCollisionType::RECT:
-
-                    switch( sprite_2->get_collision_type() )
                     {
-                        case MCK::SpriteCollisionType::RECT:
-                            {
-                                // Get bounds for sprite 1
-                                float left_1, top_1, right_1, bottom_1;
-                                sprite_1->get_bounds(
-                                    left_1,
-                                    top_1,
-                                    right_1,
-                                    bottom_1
-                                );
+                        MCK::SpriteCollisionRect* rect_1
+                            = static_cast<MCK::SpriteCollisionRect*>( spr_1 ); 
 
-                                // Get bounds for sprite 2
-                                float left_2, top_2, right_2, bottom_2;
-                                sprite_2->get_bounds(
-                                    left_2,
-                                    top_2,
-                                    right_2,
-                                    bottom_2
-                                );
-
-                                if( !( right_1 < left_2
-                                       || left_1 > right_2
-                                       || bottom_1 < top_2
-                                       || top_1 > bottom_2
+                        switch( spr_2->get_collision_type() )
+                        {
+                            case MCK::SpriteCollisionType::RECT:
+                                if( rect_1->overlaps( 
+                                        *dynamic_cast<
+                                            GEO::Rectangle<float>*
+                                        >( spr_2 )
                                     )
                                 )
                                 {
@@ -942,37 +931,39 @@ class CollisionProcessing
                                 {
                                     return false;
                                 }
-                            }
 
-                            break;
+                                break;
 
-                        case MCK::SpriteCollisionType::CIRCLE:
+                            case MCK::SpriteCollisionType::CIRCLE:
 
-                            return check_circ_to_rect(
-                                collisions,
-                                std::dynamic_pointer_cast<
-                                    MCK::SpriteCollisionCircle
-                                >( sprite_2 ),  // sic
-                                std::dynamic_pointer_cast<
-                                    MCK::SpriteCollisionRect
-                                >( sprite_1 )   // sic
-                            );
-                            break;
+                                return check_circ_to_rect(
+                                    collisions,
+                                    std::dynamic_pointer_cast<
+                                        MCK::SpriteCollisionCircle
+                                    >( sprite_2 ),
+                                    std::dynamic_pointer_cast<
+                                        MCK::SpriteCollisionRect
+                                    >( sprite_1 )
+                                );
+                                break;
+                        }
                     }
                     break;
 
                 case MCK::SpriteCollisionType::CIRCLE:
 
-                    std::shared_ptr<MCK::SpriteCollisionCircle> circle_1
-                        = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_1 ); 
+                    MCK::SpriteCollisionCircle* circle_1
+                        = static_cast<MCK::SpriteCollisionCircle*>( spr_1 ); 
 
-                    switch( sprite_2->get_collision_type() )
+                    switch( spr_2->get_collision_type() )
                     {
                         case MCK::SpriteCollisionType::RECT:
 
                             return check_circ_to_rect(
                                 collisions,
-                                circle_1,
+                                std::dynamic_pointer_cast<
+                                    MCK::SpriteCollisionCircle
+                                >( sprite_1 ), 
                                 std::dynamic_pointer_cast<
                                     MCK::SpriteCollisionRect
                                 >( sprite_2 ) 
@@ -980,36 +971,28 @@ class CollisionProcessing
                             break;
 
                         case MCK::SpriteCollisionType::CIRCLE:
-                            { 
-                                std::shared_ptr<MCK::SpriteCollisionCircle> circle_2
-                                    = std::dynamic_pointer_cast<MCK::SpriteCollisionCircle>( sprite_2 ); 
+                   
+                            if( circle_1->overlaps( 
+                                    *dynamic_cast<
+                                        MCK::GEO::Circle<float>*
+                                    >( spr_2 )
+                                )
+                            )
+                            {
+                                collisions.push_back(
+                                    CollisionEvent(
+                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
+                                        std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
+                                    )  
+                                );
 
-                                const float TOTAL_RAD 
-                                    = circle_1->get_radius()
-                                        + circle_2->get_radius();
-
-                                const float DIST_SQ
-                                    = circle_1->get_dist_sq_from_center(
-                                        circle_2->get_center_x(),
-                                        circle_2->get_center_y()
-                                    );
-
-                                if( DIST_SQ < TOTAL_RAD * TOTAL_RAD )
-                                {
-                                    collisions.push_back(
-                                        CollisionEvent(
-                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_1 ),
-                                            std::dynamic_pointer_cast<MCK::SpritePos>( sprite_2 )
-                                        )  
-                                    );
-
-                                    return true;
-                                }
-                                else
-                                {
-                                    return false;
-                                }
+                                return true;
                             }
+                            else
+                            {
+                                return false;
+                            }
+                           
                             break;
                     }
                     break;
@@ -1026,6 +1009,10 @@ class CollisionProcessing
             std::shared_ptr<MCK::SpriteCollisionRect> rect
         )
         {
+            // DEBUG
+            return false;
+
+
             if( circle.get() == NULL || rect.get() == NULL )
             {
                 throw( std::runtime_error(

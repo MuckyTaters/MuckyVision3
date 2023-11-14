@@ -367,6 +367,13 @@ namespace MCK
 
     const uint8_t MAX_QUAD_TREE_LEVELS = 9;
 
+    //! Raise value to power 2
+    template<typename T>
+    constexpr T pow2( T v )
+    {
+        return v * v;
+    }
+
     /*
     //! Returns true if b/a < tolerance ratio, or a and b both tolerably close to zero
     inline bool equals( float a, float b, float tolerance_ratio )

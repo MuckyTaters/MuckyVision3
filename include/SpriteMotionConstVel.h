@@ -35,6 +35,7 @@
 
 #include "Defs.h"
 #include "Point.h"
+#include "GeoNamespace.h"
 #include "SpriteMotionBase.h"
 
 namespace MCK
@@ -158,72 +159,47 @@ class SpriteMotionConstVel : public SpriteMotionBase
         static void elastic_collision_rect(
             std::shared_ptr<MCK::SpriteMotionConstVel> sprite_A,
             std::shared_ptr<MCK::SpriteMotionConstVel> sprite_B,
+            std::shared_ptr<MCK::GEO::Rectangle<float>> rect_A,
+            std::shared_ptr<MCK::GEO::Rectangle<float>> rect_B,
             float mass_A = 1.0f,
-            float mass_B = 1.0f,
-            float width_A = 0.0f,
-            float height_A = 0.0f,
-            float width_B = 0.0f,
-            float height_B = 0.0f
+            float mass_B = 1.0f
         )
         {
             // Ignore if either pointer NULL.
-            if( sprite_A.get() == NULL || sprite_B.get() == NULL )
+            if( sprite_A.get() == NULL 
+                || sprite_B.get() == NULL
+                || rect_A.get() == NULL
+                || rect_B.get() == NULL
+            )
             {
                 return;
             }
 
-            // Get centre offset
-            const MCK::Vect2D<float> CENTER_OFFSET_A(
-                width_A / 2.0f,
-                height_A / 2.0f
-            );
-            const MCK::Vect2D<float> CENTER_OFFSET_B(
-                width_B / 2.0f,
-                height_B / 2.0f
-            );
+            // Check for previous overlap
+            const MCK::Vect2D<float> PREV_TOP_LEFT_A =
+                sprite_A->prev_pos.as_Vect2D()
+                    + rect_A->get_center_offset();
+            
+            const MCK::Vect2D<float> PREV_TOP_LEFT_B =
+                sprite_B->prev_pos.as_Vect2D()
+                    + rect_B->get_center_offset();
+            
+            const bool PREV_OVERLAP_X
+                = !( PREV_TOP_LEFT_A.get_x() + rect_A->get_width()
+                        < PREV_TOP_LEFT_B.get_x()
+                    || PREV_TOP_LEFT_A.get_x()
+                        > PREV_TOP_LEFT_B.get_x() + rect_B->get_width()
+                  );
 
-            // Get current centre of rectangles
-            const MCK::Vect2D<float> CENTER_A
-                = sprite_A->get_pos().as_Vect2D<float>()
-                    + CENTER_OFFSET_A; 
-            const MCK::Vect2D<float> CENTER_B
-                = sprite_B->get_pos().as_Vect2D<float>()
-                    + CENTER_OFFSET_B; 
-
-            // Get previous centre of rectangles
-            const MCK::Vect2D<float> PREV_CENTER_A
-                = sprite_A->get_prev_pos().as_Vect2D<float>() 
-                    + CENTER_OFFSET_A; 
-            const MCK::Vect2D<float> PREV_CENTER_B
-                = sprite_B->get_prev_pos().as_Vect2D<float>() 
-                    + CENTER_OFFSET_B; 
-
-            // Calculate max centre-to-centre non-overlapping dist
-            const float MAX_OVERLAP_X = ( width_A + width_B ) / 2.0f;;
-            const float MAX_OVERLAP_Y = ( height_A + height_B ) / 2.0f;
-
-            // Calculate previous overlap (if any)
-            bool PREV_OVERLAP_X =  
-                fabs( PREV_CENTER_A.get_x() - PREV_CENTER_B.get_x() )
-                    - MAX_OVERLAP_X
-                        < 0.0f;
-            bool PREV_OVERLAP_Y = 
-                fabs( PREV_CENTER_A.get_y() - PREV_CENTER_B.get_y() )
-                    - MAX_OVERLAP_Y
-                        < 0.0f;
-
-            // Calculate current overlap (if any)
-            bool OVERLAP_X = 
-                fabs( CENTER_A.get_x() - CENTER_B.get_x() )
-                    - MAX_OVERLAP_X
-                        < 0.0f;
-            bool OVERLAP_Y = 
-                fabs( CENTER_A.get_y() - CENTER_B.get_y() )
-                    - MAX_OVERLAP_Y
-                        < 0.0f;
+            const bool PREV_OVERLAP_Y
+                = !( PREV_TOP_LEFT_A.get_y() + rect_A->get_height()
+                        < PREV_TOP_LEFT_B.get_y()
+                    || PREV_TOP_LEFT_A.get_y()
+                        > PREV_TOP_LEFT_B.get_y() + rect_B->get_height()
+                  );
 
             // If new X overlap, change x velocities
-            if( OVERLAP_X && !PREV_OVERLAP_X )
+            if( !PREV_OVERLAP_X )
             {
                 const float OLD_VEL_A = sprite_A->vel.get_x(); 
                 const float OLD_VEL_B = sprite_B->vel.get_x();
@@ -244,7 +220,7 @@ class SpriteMotionConstVel : public SpriteMotionBase
             }
 
             // If new Y overlap, change y velocities
-            if( OVERLAP_Y && !PREV_OVERLAP_Y )
+            if( !PREV_OVERLAP_Y )
             {
                 const float OLD_VEL_A = sprite_A->vel.get_y(); 
                 const float OLD_VEL_B = sprite_B->vel.get_y();
@@ -264,7 +240,7 @@ class SpriteMotionConstVel : public SpriteMotionBase
                 );
             }
         }
-         
+
         const Point<float>& get_prev_pos( void ) const noexcept
         {
             return this->prev_pos;

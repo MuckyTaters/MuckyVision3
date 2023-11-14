@@ -45,6 +45,11 @@
 #include "CollisionProcessing.h"
 #include "Vect2D.h"
 
+// DEBUG
+#include"GeoNamespace.h"
+// END OF DEBUG
+
+
 
 /////////////////////////////////////////////
 // DEMO PARAMETERS
@@ -74,7 +79,7 @@ const float Y_MID = Y_MIN + Y_SPAN / 2.0f;
 const float XY_MIN_SCALE = 1.0f; 
 const float XY_SCALE_PER_Z = ( 1.0f - XY_MIN_SCALE ) / float( Z_SPAN );
 
-const int QUAD_TREE_LEVELS = 1;
+const int QUAD_TREE_LEVELS = 3;
 const int BALL_RAW_PIXEL_SIZE = 64;
 const int BALL_SCALE = 1;
 const int BALL_SCALE_DENOM = 6;
@@ -84,12 +89,12 @@ const int BALL_PIXEL_SIZE
             / float( BALL_SCALE_DENOM )
     );
 const int BALL_SPEED = 2;
-const int NUM_BALLS = 256;
+const int NUM_BALLS = 0;
 const int BALL_SPIN_SPEED = 1;
 
 const int RECT_SPEED = 3;
 const int RECT_RAW_PIXEL_SIZE = 64;
-const int NUM_RECTS = 0;
+const int NUM_RECTS = 64;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -309,6 +314,10 @@ void process_circ_to_rect_collision(
     std::shared_ptr<MCK::SpriteMotionConstVel> rect_motion
 )
 {
+    // DEBUG
+    return;
+
+    /*
     // Get center of circle
     const float CENTER_A_X
         = circle->get_center_x();
@@ -405,6 +414,7 @@ void process_circ_to_rect_collision(
             &alt_center
         );
     }
+    */
 }
 
 
@@ -482,6 +492,52 @@ void split_image_data(
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )
 {
+    // DEBUG
+    auto test_circle_a = std::make_shared<MCK::GEO::Circle<float>>(
+        10.0f,
+        MCK::Vect2D<float>( 10.0f, 10.0f ),
+        MCK::Vect2D<float>( 15.0f, 7.5f )
+    );
+    auto test_circle_b = std::make_shared<MCK::GEO::Circle<float>>(
+        12.0f,
+        MCK::Vect2D<float>( 12.0f, 12.0f )
+    );
+    auto test_rect_a = std::make_shared<MCK::GEO::Rectangle<float>>(
+        10.0f,
+        20.0f,
+        MCK::Vect2D<float>( 10.0f, 20.0f ),
+        MCK::Vect2D<float>( 15.0f, 7.5f )
+    );
+    auto test_rect_b = std::make_shared<MCK::GEO::Rectangle<float>>(
+        24.0f,
+        12.0f,
+        MCK::Vect2D<float>( 24.0f, 12.0f )
+    );
+    std::cout << std::boolalpha << "@?*" 
+              << MCK::GEO::overlap(
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_a ),
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_b )
+             
+                )
+              << ", "
+              << MCK::GEO::overlap(
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_a ),
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_b )
+                )
+              << ", "
+              << MCK::GEO::overlap(
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_a ),
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_b )
+                )
+              << ", "
+              << MCK::GEO::overlap(
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_a ),
+                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_b )
+                )
+              << std::endl;
+    // END OF DEBUG
+
+
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER
     MCK::GameEng &game_eng = MCK::GameEng::get_singleton();
@@ -2387,12 +2443,10 @@ int main( int argc, char** argv )
                     MCK::SpriteMotionConstVel::elastic_collision_rect(
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
                         std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
+                        std::dynamic_pointer_cast<MCK::GEO::Rectangle<float>>( COLL_BASE_A ),
+                        std::dynamic_pointer_cast<MCK::GEO::Rectangle<float>>( COLL_BASE_B ),
                         COLL_BASE_A->get_width() * COLL_BASE_A->get_height(),  // mass A
-                        COLL_BASE_B->get_width() * COLL_BASE_B->get_height(),  // mass B
-                        COLL_BASE_A->get_width(),
-                        COLL_BASE_A->get_height(),
-                        COLL_BASE_B->get_width(),
-                        COLL_BASE_B->get_height() 
+                        COLL_BASE_B->get_width() * COLL_BASE_B->get_height()   // mass B
                     );
                 }
                 // Check if A and B are circles

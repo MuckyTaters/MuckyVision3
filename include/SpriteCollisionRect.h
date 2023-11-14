@@ -32,17 +32,18 @@
 #ifndef MCK_SPRITE_COL_RECT_H
 #define MCK_SPRITE_COL_RECT_H
 
+#include "GeoNamespace.h"
 #include "SpriteCollisionBase.h"
 
 namespace MCK
 {
 
-class SpriteCollisionRect : public SpriteCollisionBase
+class SpriteCollisionRect : public SpriteCollisionBase, public GEO::Rectangle<float>
 {
     public:
 
         //! Default constructor
-        SpriteCollisionRect( void )
+        SpriteCollisionRect( void ) : SpriteCollisionBase(), GEO::Rectangle<float>()
         {
             this->collision_type = MCK::SpriteCollisionType::RECT;
             this->left_bound = 0;
@@ -73,12 +74,20 @@ class SpriteCollisionRect : public SpriteCollisionBase
         }
 
         //! Get width
+        /*! Note: Parent class GEO::Rectangle::get_width() exists,
+         *        but this version is needed to override
+         *        SpriteCollisionBase::get_width()
+         */
         virtual float get_width( void ) const noexcept
         {
             return this->width;
         }
 
         //! Get height
+        /*! Note: Parent class GEO::Rectangle::get_height() exists,
+         *        but this version is needed to override
+         *        SpriteCollisionBase::get_height()
+         */
         virtual float get_height( void ) const noexcept
         {
             return this->height;
@@ -114,14 +123,16 @@ class SpriteCollisionRect : public SpriteCollisionBase
         /*! Base version of this method returns zeros */
         virtual float get_center_x( void ) const noexcept
         {
-            return this->left_bound + this->width / 2.0f;
+            return this->center.get_x();
+            // return this->left_bound + this->width / 2.0f;
         }
 
         //! Get center y coord
         /*! Base version of this method returns zeros */
         virtual float get_center_y( void ) const noexcept
         {
-            return this->top_bound + this->height / 2.0f;
+            return this->center.get_y();
+            // return this->top_bound + this->height / 2.0f;
         }
 
         //! Get void pointer to sprite's current node in collision tree
@@ -166,8 +177,9 @@ class SpriteCollisionRect : public SpriteCollisionBase
     protected:
 
         // Make this class non-abstract
-        virtual void dummy( void ) {};
+        // virtual void dummy( void ) {};
 
+        /*
         float width;
         float height;
 
@@ -175,6 +187,7 @@ class SpriteCollisionRect : public SpriteCollisionBase
         float top_bound;
         float right_bound;
         float bottom_bound;
+        */
 
         // Pointer to node in quad-tree that currently
         // contains this sprite

@@ -164,6 +164,12 @@ class Point
             return ans;
         }
 
+        //! Homogeneoous assignment from Vect2D
+        constexpr MCK::Vect2D<T> as_Vect2D( void ) const noexcept
+        {
+            return MCK::Vect2D<T>( this->x, this->y ); 
+        }
+
         //! Convert to Vect2D
         template <class U>
         constexpr Point& operator=( const MCK::Vect2D<U> &other ) noexcept

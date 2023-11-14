@@ -27,27 +27,30 @@
 //  program. If not, see http://www.gnu.org/license
 ////////////////////////////////////////////
 
-#ifndef MCK_SPRITE_COL_CIRCLE_H
-#define MCK_SPRITE_COL_CIRCLE_H
+#ifndef MCK_SPRITE_COL_ALT_CIRCLE_H
+#define MCK_SPRITE_COL_ALT_CIRCLE_H
 
+#include "GeoNamespace.h"
 #include "SpriteCollisionBase.h"
 
 namespace MCK
 {
 
-class SpriteCollisionCircle : public SpriteCollisionBase
+class SpriteCollisionCircle : public SpriteCollisionBase, public GEO::Circle<float>
 {
     public:
 
         //! Default constructor
-        SpriteCollisionCircle( void )
+        SpriteCollisionCircle( void ) : SpriteCollisionBase(), GEO::Circle<float>()
         {
             this->collision_type = MCK::SpriteCollisionType::CIRCLE;
+            /*
             this->radius = 0.0f;
             this->center_x_offset = 0.0f;
             this->center_y_offset = 0.0f;
             this->center_x_offset = 0.0f;
             this->center_y_offset = 0.0f;
+            */
         }
         
         //! Setting radius and offsets
@@ -57,17 +60,15 @@ class SpriteCollisionCircle : public SpriteCollisionBase
             float _center_y_offset
         ) noexcept
         {
-            this->center_x_offset = _center_x_offset;
-            this->center_y_offset = _center_y_offset;
             this->radius = std::max( 0.0f, _radius );
+            this->set_center_offset(
+                this->SpritePos::pos.as_Vect2D(),
+                MCK::Vect2D<float>(
+                    _center_x_offset,
+                    _center_y_offset
+                )
+            );
             this->update_bounds();
-            /*
-            this->left_bound = this->SpritePos::pos.get_x() - this->center_x_offset;
-            this->top_bound = this->SpritePos::pos.get_y() - this->center_y_offset;
-            this->width = this->height = _radius * 2.0f;
-            this->right_bound = this->left_bound + this->width;
-            this->bottom_bound = this->top_bound + this->height;
-            */
         }
 
         virtual ~SpriteCollisionCircle( void ) {}
@@ -83,45 +84,43 @@ class SpriteCollisionCircle : public SpriteCollisionBase
 
         virtual void update_bounds( void ) noexcept
         {
-            /*
-            this->left_bound = this->SpritePos::pos.get_x();
-            this->top_bound = this->SpritePos::pos.get_y();
-            this->right_bound = this->left_bound + this->width;
-            this->bottom_bound = this->top_bound + this->height;
-            */
-            this->center_x = this->SpritePos::pos.get_x() 
-                                + this->center_x_offset;
-            this->center_y = this->SpritePos::pos.get_y()
-                                + this->center_y_offset;
+            this->change_pos(
+                this->SpritePos::pos.as_Vect2D()
+            );
         }
 
         float get_dist_sq_from_center( float x, float y ) const noexcept
         {
-            return 
-                ( this->center_x - x ) * ( this->center_x - x )
-                + ( this->center_y - y ) * ( this->center_y - y );
+            return MCK::pow2<float>(
+                        this->center.get_x() - x 
+                   ) + MCK::pow2<float>(
+                        this->center.get_y() - y
+                   );  
         }
 
         //! Returns true if specified point lies within circle
         bool contains( float x, float y ) const noexcept
         {
-            return this->get_dist_sq_from_center( x, y )
-                            < ( this->radius * this->radius );
+            return this->dist_sq_from_center(
+                            MCK::Vect2D<float>( x, y )
+                         ) < this->radius_sq;
         }
 
-        float get_radius( void ) const noexcept
+        //! Returns true if specified point lies within circle
+        bool contains( MCK::Vect2D<float> point ) const noexcept
         {
-            return this->radius;
+            return this->dist_sq_from_center( point )
+                           < this->radius_sq;
         }
 
         float get_center_x_offset( void ) const noexcept
         {
-            return center_x_offset;
+            return this->center_offset.get_x();
         }
 
         float get_center_y_offset( void ) const noexcept
         {
-            return center_y_offset;
+            return this->center_offset.get_y();
         }
 
         //! Get rectangular bounds
@@ -132,24 +131,24 @@ class SpriteCollisionCircle : public SpriteCollisionBase
             float& bottom
         ) const noexcept
         {
-            left = this->center_x - this->center_x_offset;
-            top = this->center_y - this->center_y_offset;
-            right = this->center_x + this->center_x_offset;
-            bottom = this->center_y + this->center_y_offset;
+            left = this->left_bound;
+            top = this->top_bound;
+            right = this->right_bound;
+            bottom = this->bottom_bound;
         }
         
         //! Get center x coord
         /*! Base version of this method returns zeros */
         virtual float get_center_x( void ) const noexcept
         {
-            return this->center_x;
+            return this->center.get_x();
         }
 
         //! Get center y coord
         /*! Base version of this method returns zeros */
         virtual float get_center_y( void ) const noexcept
         {
-            return this->center_y;
+            return this->center.get_y();
         }
 
         //! Get void pointer to sprite's current node in collision tree
@@ -188,17 +187,8 @@ class SpriteCollisionCircle : public SpriteCollisionBase
             return this->radius;
         }
 
-
     protected:
 
-        float center_x_offset;
-        float center_y_offset;
-
-        float center_x;
-        float center_y;
-
-        float radius;
-        
         // Pointer to node in quad-tree that currently
         // contains this sprite
         void* quad_tree_node;

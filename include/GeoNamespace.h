@@ -72,6 +72,15 @@ class Base2D
             return this->center_offset;
         }
 
+        virtual void set_center_offset(
+            const Vect2D<T>& pos,
+            const Vect2D<T>& _center_offset
+        ) noexcept
+        {
+            this->center_offset = _center_offset;
+            this->change_pos( pos );
+        }
+
         virtual const T get_left_bound( void ) const noexcept
         {
             return this->left_bound;
@@ -96,7 +105,7 @@ class Base2D
         virtual bool contains( const MCK::Vect2D<T> &point ) const noexcept = 0;
 
         //! Get sqauare of distance of point from center
-        virtual T dist_sq_from_center( MCK::Vect2D<T> point ) const noexcept
+        virtual T dist_sq_from_center( const MCK::Vect2D<T> &point ) const noexcept
         {
             return MCK::Vect2D<T>::dist_sq( point, this->center ); 
         }
@@ -159,6 +168,12 @@ class Circle : public Base2D<T>
             return this->radius;
         }
 
+        virtual void set_radius( T _radius ) noexcept
+        {
+            this->radius = _radius;
+            this->radius_sq = _radius * radius;
+        }
+
         virtual T get_radius_sq( void ) const noexcept
         {
             return this->radius_sq;
@@ -187,11 +202,10 @@ class Circle : public Base2D<T>
         }
 
         //! Returns true if this circle overlaps specified circle
-        /*! Will throw if 'other' does not point to a valid instance*/
-        virtual bool overlaps( std::shared_ptr<MCK::GEO::Circle<T>> other ) const
+        virtual bool overlaps( const MCK::GEO::Circle<T> &other ) const
         {
-            const T DIST = this->radius + other->radius;
-            return this->dist_sq_from_center( other->center ) 
+            const T DIST = this->radius + other.radius;
+            return this->dist_sq_from_center( other.center ) 
                         <= DIST * DIST;
         }
 
@@ -250,34 +264,48 @@ class Rectangle : public Base2D<T>
         }
 
         //! Returns true if this rectangle overlaps specified rectangle
-        /*! Will throw if 'other' does not point to a valid instance*/
-        virtual bool overlaps( std::shared_ptr<MCK::GEO::Rectangle<T>> other ) const
+        virtual bool overlaps( const MCK::GEO::Rectangle<T> &other ) const
         {
-            return !( this->right_bound < other->left_bound
-                      || this->left_bound > other->right_bound
-                      || this->bottom_bound < other->top_bound
-                      || this->top_bound > other->bottom_bound
+            return !( this->right_bound < other.left_bound
+                      || this->left_bound > other.right_bound
+                      || this->bottom_bound < other.top_bound
+                      || this->top_bound > other.bottom_bound
+                    );
+        }
+
+        //! Returns true if this rectangle overlaps specified rectangle in X dimension
+        virtual bool overlaps_hoz( const MCK::GEO::Rectangle<T> &other ) const
+        {
+            return !( this->right_bound < other.left_bound
+                      || this->left_bound > other.right_bound
+                    );
+        }
+
+        //! Returns true if this rectangle overlaps specified rectangle in Y dimension
+        virtual bool overlaps_vert( const MCK::GEO::Rectangle<T> &other ) const
+        {
+            return !( this->bottom_bound < other.top_bound
+                      || this->top_bound > other.bottom_bound
                     );
         }
 
         //! Returns true if this rectangle overlaps specified circle
-        /*! Will throw if 'other' does not point to a valid instance*/
-        virtual bool overlaps( std::shared_ptr<MCK::GEO::Circle<T>> other ) const
+        virtual bool overlaps( const MCK::GEO::Circle<T> &other ) const
         {
             // Check for bound overlap
-            if( !( this->right_bound < other->left_bound
-                      || this->left_bound > other->right_bound
-                      || this->bottom_bound < other->top_bound
-                      || this->top_bound > other->bottom_bound
+            if( !( this->right_bound < other.left_bound
+                      || this->left_bound > other.right_bound
+                      || this->bottom_bound < other.top_bound
+                      || this->top_bound > other.bottom_bound
                 )
             )
             {
                 // Exclude corner cases
-                const T X = other->get_center().get_x();
-                const T Y = other->get_center().get_y();
+                const T X = other.get_center().get_x();
+                const T Y = other.get_center().get_y();
                 if( X < this->left_bound  // Top left corner
                     && Y < this->top_bound
-                    && !other->contains(
+                    && !other.contains(
                         Vect2D<float>(
                             this->left_bound,
                             this->top_bound
@@ -285,7 +313,7 @@ class Rectangle : public Base2D<T>
                     ) || (
                     X > this->right_bound  // Top right corner
                     && Y < this->top_bound
-                    && !other->contains(
+                    && !other.contains(
                             Vect2D<float>(
                                 this->right_bound,
                                 this->top_bound
@@ -294,7 +322,7 @@ class Rectangle : public Base2D<T>
                     ) || (
                     X < this->left_bound  // Bottom left corner
                     && Y > this->bottom_bound
-                    && !other->contains(
+                    && !other.contains(
                             Vect2D<float>(
                                 this->left_bound,
                                 this->bottom_bound
@@ -303,7 +331,7 @@ class Rectangle : public Base2D<T>
                     ) || (
                     X > this->right_bound  // Bottom right corner
                     && Y > this->bottom_bound
-                    && !other->contains(
+                    && !other.contains(
                             Vect2D<float>(
                                 this->right_bound,
                                 this->bottom_bound
@@ -328,7 +356,17 @@ class Rectangle : public Base2D<T>
         {
             return this->width * this->height;
         }
-        
+
+        virtual T get_width( void ) const noexcept
+        {
+            return this->width;
+        }
+
+        virtual T get_height( void ) const noexcept
+        {
+            return this->height;
+        }
+
 
     protected:
 
@@ -340,6 +378,7 @@ class Rectangle : public Base2D<T>
 /////////////////////////////////////////////
 // Methods relating to multiple instances
 
+//! Returns true is shapes overlap
 /*! Will throw if 'a' or 'b' do not point to a valid instance
  * Note: Returns false if no overlap comparison available for 
  *       given types
@@ -360,7 +399,7 @@ bool overlap(
                     
                     return std::static_pointer_cast<MCK::GEO::Circle<T>>( b )
                         ->overlaps(
-                            std::static_pointer_cast<MCK::GEO::Circle<T>>( a )
+                            *std::static_pointer_cast<MCK::GEO::Circle<T>>( a )
                         );
                     break;
                 
@@ -368,7 +407,7 @@ bool overlap(
                     
                     return std::static_pointer_cast<MCK::GEO::Rectangle<T>>( b )
                         ->overlaps(
-                            std::static_pointer_cast<MCK::GEO::Circle<T>>( a )
+                            *std::static_pointer_cast<MCK::GEO::Circle<T>>( a )
                         );
                     break;
             }
@@ -381,7 +420,7 @@ bool overlap(
                     
                     return std::static_pointer_cast<MCK::GEO::Rectangle<T>>( a )
                         ->overlaps(
-                            std::static_pointer_cast<MCK::GEO::Rectangle<T>>( b )
+                            *std::static_pointer_cast<MCK::GEO::Rectangle<T>>( b )
                         );
                     break;
                 
@@ -389,7 +428,7 @@ bool overlap(
                     
                     return std::static_pointer_cast<MCK::GEO::Rectangle<T>>( a )
                         ->overlaps(
-                            std::static_pointer_cast<MCK::GEO::Circle<T>>( b )
+                            *std::static_pointer_cast<MCK::GEO::Circle<T>>( b )
                         );
                     break;
             }
@@ -397,6 +436,65 @@ bool overlap(
         // TODO: Other types
     }
 
+
+    // DEBUG
+    std::cout << "@?@ Overlap not supported for geometric type(s)"
+              << std::endl;
+
+    return false;
+}
+
+//! Returns true is shapes overlap
+template<typename T>
+bool overlap(
+    const MCK::GEO::Base2D<T>* a,
+    const MCK::GEO::Base2D<T>* b
+) noexcept
+{
+    switch( a->get_type() )
+    {
+        case MCK::GEO::Type::CIRCLE:
+
+            switch( b->get_type() )
+            {
+                case MCK::GEO::Type::CIRCLE:
+                    
+                    return static_cast<MCK::GEO::Circle<T>*>( b )->overlaps(
+                            static_cast<MCK::GEO::Circle<T>*>( a )
+                        );
+                    break;
+                
+                case MCK::GEO::Type::RECT:
+                    
+                    return static_cast<MCK::GEO::Rectangle<T>*>( b )->overlaps(
+                            *static_cast<MCK::GEO::Circle<T>*>( a )
+                        );
+                    break;
+            }
+
+        case MCK::GEO::Type::RECT:
+
+            switch( b->get_type() )
+            {
+                case MCK::GEO::Type::RECT:
+                    
+                    return static_cast<MCK::GEO::Rectangle<T>*>( a )
+                        ->overlaps(
+                            *static_cast<MCK::GEO::Rectangle<T>*>( b )
+                        );
+                    break;
+                
+                case MCK::GEO::Type::CIRCLE:
+                    
+                    return static_cast<MCK::GEO::Rectangle<T>*>( a )
+                        ->overlaps(
+                            *static_cast<MCK::GEO::Circle<T>*>( b )
+                        );
+                    break;
+            }
+
+        // TODO: Other types
+    }
 
     // DEBUG
     std::cout << "@?@ Overlap not supported for geometric type(s)"
