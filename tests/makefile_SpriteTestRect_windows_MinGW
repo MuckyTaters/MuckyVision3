@@ -3,7 +3,7 @@
 ##  ---MUCKY VISION 3 (BASIC ENGINE)---
 ##  -----------------------------------
 ##
-##  makefile_SpriteTest_windows_MinGW
+##  makefile_SpriteTestRect_windows_MinGW
 ##
 ##  Makefile to build sprite
 ##  animation and collision test
@@ -38,8 +38,8 @@
 ## DISCLAIMER: Dependencies described herein
 ## are maintained on a best-effort basis and
 ## may not be 100% correct. If in doubt,
-## execute 'make -f makefile_SpriteTest_windows_MinGW clean'
-## then 'make -f makefile_SpriteTest_windows_MinGW' to
+## execute 'make -f makefile_SpriteTestRect_windows_MinGW clean'
+## then 'make -f makefile_SpriteTestRect_windows_MinGW' to
 ## rebuild the entire project
 #############################################
 
@@ -48,7 +48,7 @@
 #############################################
 
 #List of all files to be built
-BUILDS := build\GameEngRenderBase.o build\GameEng.o build\GameEngAudio.o build\Envelope.o build\VoiceSynth.o build\ImageDataASCII.o build\ImageMan.o build\ImageText.o build\SpritePos.o build\SpriteTest.o 
+BUILDS := build\GameEngRenderBase.o build\GameEng.o build\GameEngAudio.o build\Envelope.o build\VoiceSynth.o build\ImageDataASCII.o build\ImageMan.o build\ImageText.o build\SpritePos.o build\SpriteTestRect.o 
 
 #CC specifies which compiler we're using
 CC := g++
@@ -98,7 +98,7 @@ $(info LINKER_FLAGS = $(LINKER_FLAGS) )
 $(info INC = $(INC) )
 
 #OUTPUT specifies the name of our exectuable
-OUTPUT := SpriteTest
+OUTPUT := SpriteTestRect
 
 
 #############################################
@@ -149,9 +149,9 @@ build\ImageText.o: ..\src\ImageText.cpp ..\include\ImageText.h build\GameEng.o b
 build\SpritePos.o: ..\src\SpritePos.cpp ..\include\SpritePos.h 
 	$(CC) -c ..\src\SpritePos.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\SpritePos.o
 
-## SpriteTest ##
-build\SpriteTest.o: SpriteTest.cpp ..\include\LineSegment.h ..\include\BezierCurveBase.h ..\include\BezierCurveLinear.h ..\include\BezierCurveQuad.h ..\include\BezierCurveCubic.h ..\include\Point.h ..\include\Vect2D.h ..\include\GeoNamespace.h build\GameEng.o build\ImageText.o ..\include\QuadTree.h build\SpritePos.o ..\include\SpriteMotionBase.h ..\include\SpriteMotionConstVel.h ..\include\SpriteAnimBase.h ..\include\SpriteAnimTime.h ..\include\SpriteCollisionBase.h ..\include\SpriteCollisionRect.h ..\include\SpriteCollisionCircle.h ..\include\CollisionNode.h ..\include\CollisionProcessing.h ..\include\SpriteFrame.h ..\include\Sprite.h 
-	$(CC) -c SpriteTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\SpriteTest.o
+## SpriteTestRect ##
+build\SpriteTestRect.o: SpriteTestRect.cpp ..\include\LineSegment.h ..\include\BezierCurveBase.h ..\include\BezierCurveLinear.h ..\include\BezierCurveQuad.h ..\include\BezierCurveCubic.h ..\include\Point.h ..\include\Vect2D.h ..\include\GeoNamespace.h build\GameEng.o build\ImageText.o ..\include\QuadTree.h build\SpritePos.o ..\include\SpriteMotionBase.h ..\include\SpriteMotionConstVel.h ..\include\SpriteAnimBase.h ..\include\SpriteAnimTime.h ..\include\SpriteCollisionBase.h ..\include\SpriteCollisionRect.h ..\include\SpriteCollisionCircle.h ..\include\CollisionNode.h ..\include\CollisionProcessing.h ..\include\SpriteFrame.h ..\include\Sprite.h 
+	$(CC) -c SpriteTestRect.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build\SpriteTestRect.o
 
 
 #############################################
