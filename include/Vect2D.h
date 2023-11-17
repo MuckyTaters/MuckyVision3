@@ -303,7 +303,7 @@ class Vect2D
 
 #if defined MCK_STD_OUT
         //! Print x,y coords
-        constexpr std::string str( void ) const
+        constexpr std::string str( void ) const noexcept
         {
             return "(" + std::to_string( x ) + ","
                    + std::to_string( y ) + ")";
@@ -319,5 +319,3 @@ class Vect2D
 }  // End of namespace MCK
 
 #endif
-
-

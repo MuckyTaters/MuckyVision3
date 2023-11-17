@@ -32,6 +32,11 @@
 
 #include "Vect2D.h"
 
+#if defined MCK_STD_OUT
+#include <iostream>          
+#include <string>
+#endif
+
 namespace MCK
 {
 
@@ -50,7 +55,7 @@ class Base2D
 {
     public:
 
-        Base2D( void )
+        Base2D( void ) noexcept
         {
             this->type = MCK::GEO::Type::BASE;
         }
@@ -116,6 +121,24 @@ class Base2D
         //! Get area of shape
         virtual T get_area( void ) const noexcept = 0;
 
+#if defined MCK_STD_OUT
+        virtual std::string str( void ) const noexcept
+        {
+            return "{left_bound=" 
+                   + std::to_string( this->left_bound )
+                   + ",top_bound="
+                   + std::to_string( this->top_bound )
+                   + ",right_bound="
+                   + std::to_string( this->right_bound )
+                   + ",bottom_bound="
+                   + std::to_string( this->bottom_bound )
+                   + ",center="
+                   + this->center.str()
+                   + ",center_offset="
+                   + this->center_offset.str()
+                   + "}";
+        }
+#endif
 
     protected:
 
@@ -142,17 +165,17 @@ class Circle : public Base2D<T>
         // Friendship granted for efficiency
         friend MCK::GEO::Rectangle<T>;
 
-        Circle( void ) : Base2D<T>()
+        Circle( void ) noexcept : Base2D<T>()
         {
             this->type = MCK::GEO::Type::CIRCLE;
-            this->radius = 1.0f;
+            this->radius_sq = this->radius = 1.0f;
         }
 
         Circle(
             T _radius,
             MCK::Vect2D<T> _center_offset,
             MCK::Vect2D<T> pos = MCK::Vect2D<T>()
-        ) : Base2D<T>()
+        ) noexcept : Base2D<T>()
         {
             this->type = MCK::GEO::Type::CIRCLE;
             this->center_offset = _center_offset;
@@ -171,7 +194,7 @@ class Circle : public Base2D<T>
         virtual void set_radius( T _radius ) noexcept
         {
             this->radius = _radius;
-            this->radius_sq = _radius * radius;
+            this->radius_sq = _radius * _radius;
         }
 
         virtual T get_radius_sq( void ) const noexcept
@@ -209,6 +232,17 @@ class Circle : public Base2D<T>
                         <= DIST * DIST;
         }
 
+#if defined MCK_STD_OUT
+        virtual std::string str( void ) const noexcept
+        {
+            return "Circle{radius="
+                   + std::to_string( this->radius )
+                   + ",radius_sq="
+                   + std::to_string( this->radius_sq )
+                   + this->MCK::GEO::Base2D<T>::str()
+                   + "}";
+        }
+#endif
 
     protected:
 
@@ -223,26 +257,50 @@ class Rectangle : public Base2D<T>
 {
     public:
 
-        Rectangle( void ) : Base2D<T>()
+        Rectangle( void ) noexcept : Base2D<T>()
         {
             this->type = MCK::GEO::Type::RECT;
+            this->width = T( 0 );
+            this->height = T( 0 );
         }
 
         Rectangle(
             T _width,
             T _height,
             MCK::Vect2D<T> _center_offset,
-            MCK::Vect2D<T> pos = MCK::Vect2D<T>()
-        ) : Base2D<T>()
+            MCK::Vect2D<T> pos  // = MCK::Vect2D<T>()
+        ) noexcept : Base2D<T>()
         {
             this->width = _width;
             this->height = _height;
             this->type = MCK::GEO::Type::RECT;
             this->center_offset = _center_offset;
             this->change_pos( pos );
+
+            // DEBUG
+            std::cout << "@@ center = " << this->center.str();
         }
 
         virtual ~Rectangle( void ) {}
+
+        //! Copy constructor
+        Rectangle( const GEO::Rectangle<T> &other ) noexcept = default;
+
+        //! Constructor from circle
+        constexpr Rectangle( const GEO::Circle<T> &circle ) noexcept
+        {
+            this->width = this->height = circle.get_radius() * 2;
+            this->type = MCK::GEO::Type::RECT;
+            this->center = circle.get_center();
+            this->center_offset = circle.get_center_offset();
+            this->left_bound = circle.get_left_bound();
+            this->top_bound = circle.get_top_bound();
+            this->right_bound = circle.get_right_bound();
+            this->bottom_bound = circle.get_bottom_bound();
+        }
+
+        //! Assignment constructor
+        constexpr Rectangle& operator=( const GEO::Rectangle<T> &other ) noexcept = default;
 
         //! Change position
         virtual void change_pos( Vect2D<T> pos ) noexcept
@@ -342,7 +400,7 @@ class Rectangle : public Base2D<T>
                 {
                     return false;
                 }
-                else
+                else 
                 {
                     return true;
                 }
@@ -367,6 +425,15 @@ class Rectangle : public Base2D<T>
             return this->height;
         }
 
+#if defined MCK_STD_OUT
+        virtual std::string str( void ) const noexcept
+        {
+            return "Rect{width=" + std::to_string( this->width )
+                   + ",height=" + std::to_string( this->height )
+                   + this->MCK::GEO::Base2D<T>::str()
+                   + "}";
+        }
+#endif
 
     protected:
 
@@ -432,14 +499,7 @@ bool overlap(
                         );
                     break;
             }
-
-        // TODO: Other types
     }
-
-
-    // DEBUG
-    std::cout << "@?@ Overlap not supported for geometric type(s)"
-              << std::endl;
 
     return false;
 }
@@ -492,13 +552,7 @@ bool overlap(
                         );
                     break;
             }
-
-        // TODO: Other types
     }
-
-    // DEBUG
-    std::cout << "@?@ Overlap not supported for geometric type(s)"
-              << std::endl;
 
     return false;
 }

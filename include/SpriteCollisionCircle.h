@@ -44,13 +44,6 @@ class SpriteCollisionCircle : public SpriteCollisionBase, public GEO::Circle<flo
         SpriteCollisionCircle( void ) : SpriteCollisionBase(), GEO::Circle<float>()
         {
             this->collision_type = MCK::SpriteCollisionType::CIRCLE;
-            /*
-            this->radius = 0.0f;
-            this->center_x_offset = 0.0f;
-            this->center_y_offset = 0.0f;
-            this->center_x_offset = 0.0f;
-            this->center_y_offset = 0.0f;
-            */
         }
         
         //! Setting radius and offsets
@@ -72,15 +65,6 @@ class SpriteCollisionCircle : public SpriteCollisionBase, public GEO::Circle<flo
         }
 
         virtual ~SpriteCollisionCircle( void ) {}
-  
-        /*
-        //! For circle this method does nothing
-        virtual void set_width_and_height(
-            float _width,
-            float _height
-        )
-        {}
-        */
 
         virtual void update_bounds( void ) noexcept
         {
@@ -138,14 +122,12 @@ class SpriteCollisionCircle : public SpriteCollisionBase, public GEO::Circle<flo
         }
         
         //! Get center x coord
-        /*! Base version of this method returns zeros */
         virtual float get_center_x( void ) const noexcept
         {
             return this->center.get_x();
         }
 
         //! Get center y coord
-        /*! Base version of this method returns zeros */
         virtual float get_center_y( void ) const noexcept
         {
             return this->center.get_y();
@@ -186,6 +168,7 @@ class SpriteCollisionCircle : public SpriteCollisionBase, public GEO::Circle<flo
         {
             return this->radius;
         }
+
 
     protected:
 

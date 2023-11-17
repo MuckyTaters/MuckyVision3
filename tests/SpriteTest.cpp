@@ -5,7 +5,7 @@
 //
 //  SpriteTest.cpp
 //
-//  Shoot-em-up demo test, with audio.
+//  Circular sprite demo test, with audio.
 //
 //  Copyright (c) Muckytaters 2023
 //
@@ -44,11 +44,6 @@
 #include "CollisionNode.h"
 #include "CollisionProcessing.h"
 #include "Vect2D.h"
-
-// DEBUG
-#include"GeoNamespace.h"
-// END OF DEBUG
-
 
 
 /////////////////////////////////////////////
@@ -89,12 +84,8 @@ const int BALL_PIXEL_SIZE
             / float( BALL_SCALE_DENOM )
     );
 const int BALL_SPEED = 2;
-const int NUM_BALLS = 0;
+const int NUM_BALLS = 256;
 const int BALL_SPIN_SPEED = 1;
-
-const int RECT_SPEED = 3;
-const int RECT_RAW_PIXEL_SIZE = 64;
-const int NUM_RECTS = 64;
 
 const float SONG_SPEED = 1.5f; 
 
@@ -306,118 +297,6 @@ const std::vector<uint32_t> SONG_DATA
 const std::vector<std::string> NOTES { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
 
-// Method to process circle-vs-rectangle collisions
-void process_circ_to_rect_collision(
-    std::shared_ptr<MCK::SpriteCollisionBase> circle,
-    std::shared_ptr<MCK::SpriteCollisionBase> rect,
-    std::shared_ptr<MCK::SpriteMotionConstVel> circle_motion,
-    std::shared_ptr<MCK::SpriteMotionConstVel> rect_motion
-)
-{
-    // DEBUG
-    return;
-
-    /*
-    // Get center of circle
-    const float CENTER_A_X
-        = circle->get_center_x();
-    const float CENTER_A_Y
-        = circle->get_center_y();
-    
-    // Get rectangle bounds
-    float left_bound_B, top_bound_B, 
-          right_bound_B, bottom_bound_B;
-    rect->get_bounds(
-        left_bound_B,
-        top_bound_B,
-        right_bound_B,
-        bottom_bound_B
-    );
-    
-    // Check for side-on collision
-    if( ( 
-            CENTER_A_X >= left_bound_B
-            && CENTER_A_X <= right_bound_B
-        ) || (
-            CENTER_A_Y >= top_bound_B
-            && CENTER_A_Y <= bottom_bound_B
-        )
-    )
-    {
-        // Treat as rectangle-on-rectangle
-        // collision
-        MCK::SpriteMotionConstVel::elastic_collision_rect(
-            circle_motion,
-            rect_motion,
-            pow( circle->get_half_width(), 2 ) * MCK_PI,  // mass A
-            rect->get_width() * rect->get_height(),  // mass B
-            circle->get_width(),
-            circle->get_height(),
-            rect->get_width(),
-            rect->get_height() 
-        );
-    }
-    else
-    {
-        // Test corner cases
-
-        // This must be set to corner of rectangle that
-        // the circle is colliding with
-        MCK::Vect2D<float> alt_center;
-    
-        // Top-left corner case
-        if( CENTER_A_X <= left_bound_B
-             && CENTER_A_Y <= top_bound_B
-        )
-        {
-            alt_center.set_x( left_bound_B );
-            alt_center.set_y( top_bound_B );
-        }
-        // Top-right corner case
-        else if( CENTER_A_X >= right_bound_B
-             && CENTER_A_Y <= top_bound_B
-        )
-        {
-            alt_center.set_x( right_bound_B );
-            alt_center.set_y( top_bound_B );
-        }
-        // Bottom-left corner case
-        else if( CENTER_A_X <= left_bound_B
-             && CENTER_A_Y >= bottom_bound_B
-        )
-        {
-            alt_center.set_x( left_bound_B );
-            alt_center.set_y( bottom_bound_B );
-        }
-        // Bottom-right corner case
-        else if( CENTER_A_X >= right_bound_B
-             && CENTER_A_Y >= bottom_bound_B
-        )
-        {
-            alt_center.set_x( right_bound_B );
-            alt_center.set_y( bottom_bound_B );
-        }
-        else
-        {
-            // TODO Error
-        }
-
-        // Treat as circle-on-circle collision
-        MCK::SpriteMotionConstVel::elastic_collision_circ(
-            circle_motion,
-            rect_motion,
-            pow( circle->get_half_width(), 2 ) * MCK_PI,  // mass A
-            rect->get_width() * rect->get_height(),  // mass B
-            circle->get_half_width(),
-            0.001f,   // Near zero radius
-            NULL,
-            &alt_center
-        );
-    }
-    */
-}
-
-
 // Method to reverse sprite motion when touch edge of window
 void window_edge_bounce( std::shared_ptr<MCK::SpriteMotionConstVel> sprite )
 {
@@ -492,52 +371,6 @@ void split_image_data(
 // TOP LEVEL ENTRY POINT OF THE TEST APPLICATION
 int main( int argc, char** argv )
 {
-    // DEBUG
-    auto test_circle_a = std::make_shared<MCK::GEO::Circle<float>>(
-        10.0f,
-        MCK::Vect2D<float>( 10.0f, 10.0f ),
-        MCK::Vect2D<float>( 15.0f, 7.5f )
-    );
-    auto test_circle_b = std::make_shared<MCK::GEO::Circle<float>>(
-        12.0f,
-        MCK::Vect2D<float>( 12.0f, 12.0f )
-    );
-    auto test_rect_a = std::make_shared<MCK::GEO::Rectangle<float>>(
-        10.0f,
-        20.0f,
-        MCK::Vect2D<float>( 10.0f, 20.0f ),
-        MCK::Vect2D<float>( 15.0f, 7.5f )
-    );
-    auto test_rect_b = std::make_shared<MCK::GEO::Rectangle<float>>(
-        24.0f,
-        12.0f,
-        MCK::Vect2D<float>( 24.0f, 12.0f )
-    );
-    std::cout << std::boolalpha << "@?*" 
-              << MCK::GEO::overlap(
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_a ),
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_b )
-             
-                )
-              << ", "
-              << MCK::GEO::overlap(
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_a ),
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_b )
-                )
-              << ", "
-              << MCK::GEO::overlap(
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_a ),
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_b )
-                )
-              << ", "
-              << MCK::GEO::overlap(
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_rect_a ),
-                    std::shared_ptr<MCK::GEO::Base2D<float>>( test_circle_b )
-                )
-              << std::endl;
-    // END OF DEBUG
-
-
     //////////////////////////////////////////////
     // INITIALIZE SDL, CREATE WINDOW & RENDERER
     MCK::GameEng &game_eng = MCK::GameEng::get_singleton();
@@ -1298,75 +1131,6 @@ int main( int argc, char** argv )
         0b0000000000000000000000000011111111111100000000000000000000000000,  // 63
     };
 
-    // Checker rectangle 0
-    const MCK_IMG_ID_TYPE RECT_IMAGE_ID = 2;
-    const std::vector<uint64_t> RECT_IMAGE_64bit =
-    {
-        0b1111111111111111111111111111111111111111111111111111111111111111,  // 0
-        0b1111111111111111111111111111111111111111111111111111111111111111,  // 1
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 2
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 3
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 4
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 5
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 6
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 7
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 8
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 9
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 10
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 00
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 12
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 13
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 14
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 15
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 16
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 17
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 18
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 19
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 20
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 21
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 22
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 23
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 24
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 25
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 26
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 27
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 28
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 29
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 30
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 31
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 32
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 33
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 34
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 35
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 36
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 37
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 38
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 39
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 40
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 41
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 42
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 43
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 44
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 45
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 46
-        0b1100000000000000111111111111111100000000000000001111111111111111,  // 47
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 48
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 49
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 50
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 51
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 52
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 53
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 54
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 55
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 56
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 57
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 58
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 59
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 60
-        0b1111111111111111000000000000000011111111111111110000000000000011,  // 61
-        0b1111111111111111111111111111111111111111111111111111111111111111,  // 62
-        0b1111111111111111111111111111111111111111111111111111111111111111,  // 63
-    };
     
     // Split 64 bit image data into 8 bit image data
     std::vector<uint8_t> ball_0_image;
@@ -1415,12 +1179,6 @@ int main( int argc, char** argv )
     split_image_data(
         BALL_3A_IMAGE_64bit,
         ball_3a_image
-    );
-
-    std::vector<uint8_t> rect_image;
-    split_image_data(
-        RECT_IMAGE_64bit,
-        rect_image
     );
 
 
@@ -1598,23 +1356,6 @@ int main( int argc, char** argv )
     {
         throw( std::runtime_error(
             std::string( "Failed to create ball 3a image, error: ")
-            + e.what() ) );
-    }
-
-    MCK_IMG_ID_TYPE rect_image_id;
-    try
-    {
-        rect_image_id = image_man.create_custom_image(
-            &rect_image,
-            1,  // bits_per_pixel,
-            RECT_RAW_PIXEL_SIZE,
-            RECT_RAW_PIXEL_SIZE
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create rect image, error: ")
             + e.what() ) );
     }
 
@@ -1845,6 +1586,36 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
 
+    ///////////////////////////////////////////////////
+    // CREATE COLLISION PROCESSING TIME READ OUT
+    std::shared_ptr<MCK::ImageText> coll_ticks_text =
+        std::make_shared<MCK::ImageText>();
+    try
+    {
+        coll_ticks_text->init(
+            game_eng,
+            image_man,
+            game_eng.get_prime_render_block(),
+            title_palette_id,
+            CHAR_WIDTH * 12,  // x_pos,
+            WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT * 2,  // y_pos,
+            40,  // width in chars
+            CHAR_WIDTH,
+            CHAR_HEIGHT,
+            "0",
+            MCK::ImageText::Just::LEFT,
+            0,  // char spacing
+            0,  // Default ASCII set
+            MCK::MAX_Z_VALUE  // Render on top
+        );
+    }
+    catch( std::exception &e )
+    {
+        throw( std::runtime_error(
+            std::string( "Failed to create collision time text, error: ")
+            + e.what() ) );
+    }
+
 
     /////////////////////////////////////////////////////
     // PREPARE FOR SPRITES
@@ -1937,7 +1708,6 @@ int main( int argc, char** argv )
             bool rc = coll_proc.add_sprite(
                 std::dynamic_pointer_cast<MCK::SpriteCollisionBase>( ball_sprites.back() )
             );
-            std::cout << "rc = " << rc << std::endl;
         }
         catch( std::exception &e )
         {
@@ -2007,109 +1777,6 @@ int main( int argc, char** argv )
                 )
             }
         );
-    }
-
-
-    /////////////////////////////////////////////////////
-    // CREATE RECTANGLES WITH COLLISION DETECTION
-    std::vector<
-        std::shared_ptr<
-            MCK::Sprite<
-                MCK::SpriteMotionConstVel,
-                MCK::SpriteAnimBase,
-                MCK::SpriteCollisionRect
-            >
-        >
-    > rect_sprites;
-    rect_sprites.reserve( NUM_RECTS );
-
-    for( int i = 0; i < NUM_RECTS; i++ )
-    {
-        int size_w;
-        {
-            int temp = rand() % 100;
-            if( temp <= 50 ) { size_w = 1; }
-            else if( temp <= 75 ) { size_w = 2; }
-            else { size_w = 3; }
-        }
-
-        const int WIDTH = float( RECT_RAW_PIXEL_SIZE ) 
-                            / float(size_w ); 
-
-        int size_h;
-        {
-            int temp = rand() % 100;
-            if( temp <= 50 ) { size_h = 1; }
-            else if( temp <= 75 ) { size_h = 2; }
-            else { size_h = 3; }
-        }
-
-        const int HEIGHT = float( RECT_RAW_PIXEL_SIZE ) 
-                            / float(size_h ); 
-
-        rect_sprites.push_back(
-            std::make_shared<
-                MCK::Sprite<
-                    MCK::SpriteMotionConstVel,
-                    MCK::SpriteAnimBase,
-                    MCK::SpriteCollisionRect
-                >
-            >(
-            )
-        );
-
-        try
-        {
-            rect_sprites.back()->init(
-                sprite_block,
-                rect_image_id,
-                ball_1_palette_id,
-                WIDTH * 2.5f  // x coord
-                    + rand() % ( WINDOW_WIDTH_IN_PIXELS - 5 * WIDTH ),
-                HEIGHT * 2.5f  // y coord
-                    + rand() % ( WINDOW_HEIGHT_IN_PIXELS - 5 * HEIGHT ),
-                MCK::MAX_Z_VALUE,
-                WIDTH,  // width_in_pixels,
-                HEIGHT  // height_in_pixels,
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create rectangle sprite, error :" )
-                + e.what() ) );
-        }
-
-        // Initialize motion for const velocity test sprite 
-        rect_sprites.back()->MCK::SpriteMotionConstVel::set_vel(
-            MCK::Point<float>(
-                ( ( rand() % 10 ) - 5 ) * 0.01f * RECT_SPEED,
-                ( ( rand() % 10 ) - 5 ) * 0.01f * RECT_SPEED
-            )
-        );
-
-        // Initialize rectangular collision by setting width and height 
-        rect_sprites.back()->MCK::SpriteCollisionRect::set_width_and_height(
-            WIDTH,
-            HEIGHT
-        );
-
-        // Add test_sprite to collision processing
-        try
-        {
-            MCK::Point<float> pos 
-                = rect_sprites.back()->MCK::SpritePos::get_pos();
-            bool rc = coll_proc.add_sprite(
-                rect_sprites.back()
-            );
-            // std::cout << "rc = " << rc << std::endl;
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to add rect test_sprite to coll_proc, error :" )
-                + e.what() ) );
-        }
     }
 
 
@@ -2322,43 +1989,6 @@ int main( int argc, char** argv )
                     + e.what() ) );
             }
         }
-
-        for( auto &sprite : rect_sprites )
-        {
-            // Process sprite (move, animate etc.)
-            try
-            {
-                sprite->process();
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to process sprite, error :" )
-                    + e.what() ) );
-            }
-
-            // For demo purposes, bounce sprite off edge
-            // of window
-            window_edge_bounce(
-                std::dynamic_pointer_cast<
-                    MCK::SpriteMotionConstVel
-                >( sprite )
-            );
-
-            // Update sprite's position in collision detection
-            // system
-            try
-            {
-                coll_proc.update_sprite_pos( sprite );
-            }
-            catch( std::exception &e )
-            {
-                throw( std::runtime_error(
-                    std::string( "Failed to update sprite pos, error :" )
-                    + e.what() ) );
-            }
-
-        }
         
 
         ////////////////////////////////////////
@@ -2368,8 +1998,29 @@ int main( int argc, char** argv )
         uint32_t t1 = game_eng.get_ticks();
         coll_proc.process( collisions );
         uint32_t t2 = game_eng.get_ticks();
-        std::cout << "Collision processing: " << t2 - t1 
-                  << " ticks." << std::endl;
+
+
+        ////////////////////////////////////////
+        // Update collision processing time
+        if( frame_num % 10 == 0 )
+        {
+            try
+            {
+                coll_ticks_text->set_content(
+                    std::string( "Collision detection time: " )
+                    + std::to_string(
+                        t2 - t1
+                    )
+                    + std::string( "ms per frame" )
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to set coll proc time, error: ")
+                    + e.what() ) );
+            }
+        }
 
 
         ////////////////////////////////////////
@@ -2385,28 +2036,6 @@ int main( int argc, char** argv )
                 {
                     continue;
                 }
-
-                /*
-                // DEBUG - SHAKE SPRITES TO IDENTIFY COLLISIONS
-                if( frame_num % 2 == 0 )
-                {
-                    coll.sprite_A->adjust_pos(
-                        MCK::Point<float>( 4.0f, 0.0f )
-                    );
-                    coll.sprite_B->adjust_pos(
-                        MCK::Point<float>( -4.0f, 0.0f )
-                    );
-                }
-                else
-                {
-                    coll.sprite_A->adjust_pos(
-                        MCK::Point<float>( -4.0f, 0.0f )
-                    );
-                    coll.sprite_B->adjust_pos(
-                        MCK::Point<float>( 4.0f, 0.0f )
-                    );
-                }
-                */
 
                 // Get sprite positions
                 const MCK::Point<float> &POS_A
@@ -2435,22 +2064,8 @@ int main( int argc, char** argv )
                     continue;
                 }
 
-                // Check if A and B are rectangles
-                if( COLL_TYPE_A == MCK::SpriteCollisionType::RECT
-                    && COLL_TYPE_B == MCK::SpriteCollisionType::RECT
-                )
-                {
-                    MCK::SpriteMotionConstVel::elastic_collision_rect(
-                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
-                        std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
-                        std::dynamic_pointer_cast<MCK::GEO::Rectangle<float>>( COLL_BASE_A ),
-                        std::dynamic_pointer_cast<MCK::GEO::Rectangle<float>>( COLL_BASE_B ),
-                        COLL_BASE_A->get_width() * COLL_BASE_A->get_height(),  // mass A
-                        COLL_BASE_B->get_width() * COLL_BASE_B->get_height()   // mass B
-                    );
-                }
                 // Check if A and B are circles
-                else if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
+                if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
                     && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
                 )
                 {
@@ -2474,50 +2089,6 @@ int main( int argc, char** argv )
                         &CENTER_A,
                         &CENTER_B
                     );
-                }
-                // Check if A is a circle and B is a rectangle
-                else if( COLL_TYPE_A == MCK::SpriteCollisionType::CIRCLE
-                    && COLL_TYPE_B == MCK::SpriteCollisionType::RECT
-                )
-                {
-                    try
-                    {
-                        process_circ_to_rect_collision(
-                            COLL_BASE_A,
-                            COLL_BASE_B,
-                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A ),
-                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B )
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-                        throw( std::runtime_error(
-                            std::string( "Failed to process circ-rect collision, error :" )
-                            + e.what() ) );
-                    }
-                    
-                }
-                // Check if A is a rectangle and B is a circle
-                else if( COLL_TYPE_A == MCK::SpriteCollisionType::RECT
-                    && COLL_TYPE_B == MCK::SpriteCollisionType::CIRCLE
-                )
-                {
-                    try
-                    {
-                        process_circ_to_rect_collision(
-                            COLL_BASE_B,
-                            COLL_BASE_A,
-                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_B ),
-                            std::dynamic_pointer_cast<MCK::SpriteMotionConstVel>( coll.sprite_A )
-                        );
-                    }
-                    catch( std::exception &e )
-                    {
-                        throw( std::runtime_error(
-                            std::string( "Failed to process circ-rect collision (2), error :" )
-                            + e.what() ) );
-                    }
-
                 }
                 else
                 {

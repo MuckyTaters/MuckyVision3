@@ -57,6 +57,8 @@ class SpriteCollisionRect : public SpriteCollisionBase, public GEO::Rectangle<fl
 
         virtual void update_bounds( void ) noexcept
         {
+            this->center = this->SpritePos::pos.as_Vect2D()
+                                + this->center_offset;
             this->left_bound = this->SpritePos::pos.get_x();
             this->top_bound = this->SpritePos::pos.get_y();
             this->right_bound = this->left_bound + this->width;
@@ -71,6 +73,11 @@ class SpriteCollisionRect : public SpriteCollisionBase, public GEO::Rectangle<fl
         {
             this->width = _width;
             this->height = _height;
+            this->center_offset = MCK::Vect2D<float>(
+                _width / 2.0f,
+                _height / 2.0f
+            );
+            this->update_bounds();
         }
 
         //! Get width
@@ -147,47 +154,8 @@ class SpriteCollisionRect : public SpriteCollisionBase, public GEO::Rectangle<fl
             this->quad_tree_node = val;
         }
 
-        /*
-        //! Get left bound
-        float get_left_bound( void ) const noexcept
-        {
-            return left_bound;
-        }
-
-        //! Get top bound
-        float get_top_bound( void ) const noexcept
-        {
-            return top_bound;
-        }
-
-        //! Get right bound
-        float get_right_bound( void ) const noexcept
-        {
-            return right_bound;
-        }
-
-        //! Get bottom bound
-        float get_bottom_bound( void ) const noexcept
-        {
-            return bottom_bound;
-        }
-        */
-
 
     protected:
-
-        // Make this class non-abstract
-        // virtual void dummy( void ) {};
-
-        /*
-        float width;
-        float height;
-
-        float left_bound;
-        float top_bound;
-        float right_bound;
-        float bottom_bound;
-        */
 
         // Pointer to node in quad-tree that currently
         // contains this sprite
