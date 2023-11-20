@@ -345,6 +345,9 @@ namespace MCK
      */
     const uint16_t MAX_SPRITES = 4096; 
 
+    //! Number of pixel subdivisions required for smooth distance based sprite animation
+    const uint16_t SPRITE_DIST_GRANULARITY = 32;
+
     /////////////////////////////////
     // SPRITE COLLISION TEAMS
 #define MCK_NUM_COLL_TEAMS 16

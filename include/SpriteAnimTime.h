@@ -127,7 +127,7 @@ class SpriteAnimTime : public SpriteAnimBase
             this->select_frame( this->frame_num + 1 );
         }
 
-        void select_frame( size_t _frame_num )
+        virtual void select_frame( size_t _frame_num )
         {
             // If there are no frames, no nothing
             if( this->frames.size() == 0 )
@@ -141,10 +141,6 @@ class SpriteAnimTime : public SpriteAnimBase
             // Get shortcut to new frame
             const SpriteFrame* const FRM
                 = &this->frames[ this->frame_num ];
-                
-            // Set time
-            this->ticks_to_next_frame
-                = this->frames[ this->frame_num ].duration_in_ticks; 
        
             // Set texture
             if( this->SpritePos::update_render_instance )
@@ -215,26 +211,33 @@ class SpriteAnimTime : public SpriteAnimBase
                             + FRM->offset_y
                     );
                 }
+                
+                // Set ticks/distance/etc. for next frame
+                this->steps_to_next_frame
+                    = this->frames[ this->frame_num ].duration; 
             }
         }
 
+        //! Calculate next frame, baseed on current ticks
+        /*! Note: Frames with 0 duration will be displayed
+         *        for one frame only before proceeding to the
+         *        next. This is to prevent an infinite loop
+         *        occuring if all frame durations are set
+         *        to zero.
+         */
         virtual void calc_frame( void )
         {
-            // Safety check, to prevent infinite loop
-            if( this->ticks_to_next_frame == 0 )
-            {
-                this->select_frame( this->frame_num + 1 );
-                return;
-            }
-
             // Change frame until ticks used up
             uint32_t ticks = MCK::SpritePos::ticks_elapsed;
-            while( ticks > this->ticks_to_next_frame )
+            while( ticks > this->steps_to_next_frame )
             {
-                ticks -= this->ticks_to_next_frame;
+                ticks -= this->steps_to_next_frame;
                 this->select_frame( this->frame_num + 1 );
+                
+                // Safety check, to prevent infinite loop
+                if( this->steps_to_next_frame == 0 ) { break; }
             }
-            this->ticks_to_next_frame -= ticks;
+            this->steps_to_next_frame -= ticks;
         }
 
         //! Returns true if sprite uses offsets
@@ -250,7 +253,7 @@ class SpriteAnimTime : public SpriteAnimBase
 
         size_t frame_num;
 
-        uint32_t ticks_to_next_frame;
+        uint32_t steps_to_next_frame;
 
         bool use_offsets;
 };

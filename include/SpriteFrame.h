@@ -37,17 +37,17 @@ namespace MCK
 
 struct SpriteFrame
 {
-    uint32_t duration_in_ticks;
+    uint32_t duration;
     MCK_IMG_ID_TYPE image_id;
     MCK_PAL_ID_TYPE palette_id;
     bool keep_orig_dest_rect_size;
     int offset_x;
     int offset_y;
 
-    // Default constructor
+    //! Default constructor
     SpriteFrame( void )
     {
-        this->duration_in_ticks = 0;
+        this->duration = 0;
         this->image_id = MCK::INVALID_IMG_ID;
         this->palette_id = MCK::INVALID_PAL_ID;
         this->keep_orig_dest_rect_size = true;
@@ -55,16 +55,18 @@ struct SpriteFrame
         this->offset_y = 0;
     }
 
-    // Constructor
+    //! Constructor
+    /*! @param _duration: Duration of frame (in ticks or pixels)
+     */
     SpriteFrame(
-        uint32_t _duration_in_ticks,
+        uint32_t _duration,
         MCK_IMG_ID_TYPE _image_id,
         MCK_PAL_ID_TYPE _palette_id,
         bool _keep_orig_dest_rect_size = true,
         int _offset_x = 0,
         int _offset_y = 0
     ) : 
-        duration_in_ticks( _duration_in_ticks ),
+        duration( _duration ),
         image_id( _image_id ),
         palette_id ( _palette_id ),
         keep_orig_dest_rect_size( _keep_orig_dest_rect_size ),

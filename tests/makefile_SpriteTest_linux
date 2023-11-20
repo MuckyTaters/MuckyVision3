@@ -118,7 +118,7 @@ build/SpritePos.o: ../src/SpritePos.cpp ../include/SpritePos.h
 	$(CC) -c ../src/SpritePos.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/SpritePos.o
 
 ## SpriteTest ##
-build/SpriteTest.o: SpriteTest.cpp ../include/LineSegment.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h ../include/Vect2D.h ../include/GeoNamespace.h build/GameEng.o build/ImageText.o ../include/QuadTree.h build/SpritePos.o ../include/SpriteMotionBase.h ../include/SpriteMotionConstVel.h ../include/SpriteAnimBase.h ../include/SpriteAnimTime.h ../include/SpriteCollisionBase.h ../include/SpriteCollisionRect.h ../include/SpriteCollisionCircle.h ../include/CollisionNode.h ../include/CollisionProcessing.h ../include/SpriteFrame.h ../include/Sprite.h 
+build/SpriteTest.o: SpriteTest.cpp ../include/LineSegment.h ../include/BezierCurveBase.h ../include/BezierCurveLinear.h ../include/BezierCurveQuad.h ../include/BezierCurveCubic.h ../include/Point.h ../include/Vect2D.h ../include/GeoNamespace.h build/GameEng.o build/ImageText.o ../include/QuadTree.h build/SpritePos.o ../include/SpriteMotionBase.h ../include/SpriteMotionConstVel.h ../include/SpriteAnimBase.h ../include/SpriteAnimTime.h ../include/SpriteAnimDist.h ../include/SpriteCollisionBase.h ../include/SpriteCollisionRect.h ../include/SpriteCollisionCircle.h ../include/CollisionNode.h ../include/CollisionProcessing.h ../include/SpriteFrame.h ../include/Sprite.h 
 	$(CC) -c SpriteTest.cpp $(COMPILER_FLAGS) $(INC) $(LINKER_FLAGS) -o build/SpriteTest.o
 
 
