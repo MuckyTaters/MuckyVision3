@@ -44,6 +44,7 @@ class SpriteAnimTime : public SpriteAnimBase
         SpriteAnimTime( void ) : SpriteAnimBase()
         {
             this->anim_type = MCK::SpriteAnimType::TEMPORAL;
+            this->use_offsets = false;
         }
 
         bool has_frames( void ) const noexcept
@@ -54,7 +55,8 @@ class SpriteAnimTime : public SpriteAnimBase
         //! Create new frame set
         void set_frames(
             std::vector<MCK::SpriteFrame> _frames,
-            size_t starting_frame_num = 0
+            size_t starting_frame_num = 0,
+            bool _use_offsets = false
         )
         {
             if( _frames.size() == 0 )
@@ -78,6 +80,8 @@ class SpriteAnimTime : public SpriteAnimBase
 #endif
                 ) );
             }
+
+            this->use_offsets = _use_offsets;
 
             // Dummy pointer, pointing to NULL by default
             // Explainer: using a NULL render info pointer
@@ -185,6 +189,7 @@ class SpriteAnimTime : public SpriteAnimBase
 #endif
                         ) );
                     }
+
                 }
                 else
                 {
@@ -197,11 +202,32 @@ class SpriteAnimTime : public SpriteAnimBase
 #endif
                     ) );
                 }
+
+                // Adjust offsets
+                if( this->use_offsets 
+                    && this->SpritePos::render_instance.get() != NULL
+                )
+                {
+                    this->SpritePos::render_instance->set_pos(
+                        this->SpritePos::render_instance->get_x()
+                            + FRM->offset_x,
+                        this->SpritePos::render_instance->get_y()
+                            + FRM->offset_y
+                    );
+                }
             }
         }
 
         virtual void calc_frame( void )
         {
+            // Safety check, to prevent infinite loop
+            if( this->ticks_to_next_frame == 0 )
+            {
+                this->select_frame( this->frame_num + 1 );
+                return;
+            }
+
+            // Change frame until ticks used up
             uint32_t ticks = MCK::SpritePos::ticks_elapsed;
             while( ticks > this->ticks_to_next_frame )
             {
@@ -211,6 +237,13 @@ class SpriteAnimTime : public SpriteAnimBase
             this->ticks_to_next_frame -= ticks;
         }
 
+        //! Returns true if sprite uses offsets
+        bool uses_offsets( void ) const noexcept
+        {
+            return this->use_offsets;
+        }
+
+
     protected:
 
         std::vector<MCK::SpriteFrame> frames;
@@ -218,6 +251,8 @@ class SpriteAnimTime : public SpriteAnimBase
         size_t frame_num;
 
         uint32_t ticks_to_next_frame;
+
+        bool use_offsets;
 };
 
 }  // End of namespace MCK

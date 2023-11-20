@@ -41,16 +41,18 @@ struct SpriteFrame
     MCK_IMG_ID_TYPE image_id;
     MCK_PAL_ID_TYPE palette_id;
     bool keep_orig_dest_rect_size;
+    int offset_x;
+    int offset_y;
 
-    // TODO: offsets?
-    
     // Default constructor
     SpriteFrame( void )
     {
-        duration_in_ticks = 0;
-        image_id = MCK::INVALID_IMG_ID;
-        palette_id = MCK::INVALID_PAL_ID;
-        keep_orig_dest_rect_size = true;
+        this->duration_in_ticks = 0;
+        this->image_id = MCK::INVALID_IMG_ID;
+        this->palette_id = MCK::INVALID_PAL_ID;
+        this->keep_orig_dest_rect_size = true;
+        this->offset_x = 0;
+        this->offset_y = 0;
     }
 
     // Constructor
@@ -58,12 +60,16 @@ struct SpriteFrame
         uint32_t _duration_in_ticks,
         MCK_IMG_ID_TYPE _image_id,
         MCK_PAL_ID_TYPE _palette_id,
-        bool _keep_orig_dest_rect_size = true
+        bool _keep_orig_dest_rect_size = true,
+        int _offset_x = 0,
+        int _offset_y = 0
     ) : 
         duration_in_ticks( _duration_in_ticks ),
         image_id( _image_id ),
         palette_id ( _palette_id ),
-        keep_orig_dest_rect_size( _keep_orig_dest_rect_size )
+        keep_orig_dest_rect_size( _keep_orig_dest_rect_size ),
+        offset_x( _offset_x ),
+        offset_y( _offset_y )
     {}
 };
 

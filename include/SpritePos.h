@@ -216,7 +216,7 @@ class SpritePos
         std::shared_ptr<GameEngRenderBase> render_instance;
 
         bool update_render_instance;
-
+        
         // Time values for *all* sprite instances
         static uint32_t current_ticks;
         static uint32_t prev_ticks;

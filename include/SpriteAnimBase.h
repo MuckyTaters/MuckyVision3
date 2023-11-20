@@ -56,16 +56,9 @@ class SpriteAnimBase : virtual public SpritePos
         /*! Note: base version does nothing, i.e. leaves appearance as is.*/
         virtual void calc_frame( void ) {}
 
-        /*
-        MCK::SpriteAnimType get_type( void ) const noexcept
-        {
-            return this->MCK::SpriteAnimBase::type;
-        }
-        */
 
     protected:
 
-        // MCK::SpriteAnimType type;
 };
 
 }  // End of namespace MCK
