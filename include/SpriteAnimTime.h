@@ -53,7 +53,7 @@ class SpriteAnimTime : public SpriteAnimBase
         }
 
         //! Create new frame set
-        void set_frames(
+        virtual void set_frames(
             std::vector<MCK::SpriteFrame> _frames,
             size_t starting_frame_num = 0,
             bool _use_offsets = false
@@ -135,6 +135,11 @@ class SpriteAnimTime : public SpriteAnimBase
                 return;
             }
 
+            // Get pointer to existing frame
+            const MCK::SpriteFrame* PREV_FRM
+                = this->frame_num < frames.size() ?
+                    &this->frames.at( this->frame_num ) : NULL;
+
             // Set new frame number (wrap around if necessary)
             this->frame_num = _frame_num % this->frames.size();
 
@@ -142,61 +147,69 @@ class SpriteAnimTime : public SpriteAnimBase
             const SpriteFrame* const FRM
                 = &this->frames[ this->frame_num ];
        
-            // Set texture
+            // Update render instance
             if( this->SpritePos::update_render_instance )
             {
-                if( MCK::SpritePos::image_man == NULL )
-                {
-                    throw( std::runtime_error(
-#if defined MCK_STD_OUT
-                        "Cannot set new render texture as 'SpritePos::image_man' NULL."
-#else
-                        ""
-#endif
-                    ) );
-                }
-
-                if( this->SpritePos::render_instance.get() != NULL
-                    && this->SpritePos::render_instance->get_type()
-                        == MCK::RenderInstanceType::INFO
+                // Update texture
+                if (
+                    PREV_FRM == NULL
+                    || PREV_FRM->image_id != FRM->image_id
+                    || PREV_FRM->palette_id != FRM->palette_id
                 )
                 {
-                    try
-                    {
-                        // GameEngRenderInfo
-                        image_man->change_render_info_tex(
-                            std::dynamic_pointer_cast<
-                                MCK::GameEngRenderInfo
-                            >( this->SpritePos::render_instance ),
-                            FRM->image_id,
-                            FRM->palette_id,
-                            FRM->keep_orig_dest_rect_size
-                        );
-                    }
-                    catch( std::exception &e )
+                    if( MCK::SpritePos::image_man == NULL )
                     {
                         throw( std::runtime_error(
 #if defined MCK_STD_OUT
-                            std::string( "Cannot update render info " )
-                            + std::string( "for select frame, error =  " )
-                            + e.what()
+                            "Cannot set new render texture as 'SpritePos::image_man' NULL."
 #else
                             ""
 #endif
                         ) );
                     }
 
-                }
-                else
-                {
-                    // TODO: GameEngRenderBlock
-                    throw( std::runtime_error(
+                    if( this->SpritePos::render_instance.get() != NULL
+                        && this->SpritePos::render_instance->get_type()
+                            == MCK::RenderInstanceType::INFO
+                    )
+                    {
+                        try
+                        {
+                            // GameEngRenderInfo
+                            image_man->change_render_info_tex(
+                                std::dynamic_pointer_cast<
+                                    MCK::GameEngRenderInfo
+                                >( this->SpritePos::render_instance ),
+                                FRM->image_id,
+                                FRM->palette_id,
+                                FRM->keep_orig_dest_rect_size
+                            );
+                        }
+                        catch( std::exception &e )
+                        {
+                            throw( std::runtime_error(
 #if defined MCK_STD_OUT
-                        "Cannot set new texture."
+                                std::string( "Cannot update render info " )
+                                + std::string( "for select frame, error =  " )
+                                + e.what()
 #else
-                        ""
+                                ""
 #endif
-                    ) );
+                            ) );
+                        }
+
+                    }
+                    else
+                    {
+                        // TODO: GameEngRenderBlock
+                        throw( std::runtime_error(
+#if defined MCK_STD_OUT
+                            "Cannot set new texture."
+#else
+                            ""
+#endif
+                        ) );
+                    }
                 }
 
                 // Adjust offsets
@@ -205,9 +218,9 @@ class SpriteAnimTime : public SpriteAnimBase
                 )
                 {
                     this->SpritePos::render_instance->set_pos(
-                        this->SpritePos::render_instance->get_x()
+                        int( this->SpritePos::pos.get_x() + 0.5f )
                             + FRM->offset_x,
-                        this->SpritePos::render_instance->get_y()
+                        int( this->SpritePos::pos.get_y() + 0.5f )
                             + FRM->offset_y
                     );
                 }
@@ -215,6 +228,17 @@ class SpriteAnimTime : public SpriteAnimBase
                 // Set ticks/distance/etc. for next frame
                 this->steps_to_next_frame
                     = this->frames[ this->frame_num ].duration; 
+            
+                // Update flags
+                if( this->MCK::SpritePos::render_instance != NULL
+                    && this->MCK::SpritePos::render_instance->get_type()
+                        == MCK::RenderInstanceType::INFO
+                )
+                {
+                    std::static_pointer_cast<MCK::GameEngRenderInfo>(
+                        this->MCK::SpritePos::render_instance
+                    )->set_flags( FRM->flags );
+                }
             }
         }
 

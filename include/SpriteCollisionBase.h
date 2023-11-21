@@ -72,6 +72,9 @@ class SpriteCollisionBase : virtual public SpritePos
             left = top = right = bottom = 0.0f;
         }
 
+        //! Updated bounds (in base class this does nothing)
+        virtual void update_bounds( void ) const noexcept {}
+
         //! Get width
         /*! Base version of this method returns zero*/
         virtual float get_width( void ) const noexcept

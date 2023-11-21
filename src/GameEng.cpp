@@ -864,7 +864,7 @@ void MCK::GameEng::render_all(
                             ( info->flags & MCK::GameEngRenderInfo::ROTATION_MASK )
                                 >> MCK::GameEngRenderInfo::ROTATION_RSHIFT
                         ) * 90.0f;
-                
+               
                     // Get flip
                     SDL_RendererFlip flip = SDL_FLIP_NONE;
                     if( info->get_flip_x() )

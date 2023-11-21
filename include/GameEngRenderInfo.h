@@ -42,11 +42,15 @@ namespace MCK
 
 // Forward declaration
 class GameEngRenderBlock;
+class SpriteAnimTime;
+class SpriteAnimDist;
 
 class GameEngRenderInfo : public GameEngRenderBase
 {
     //! Friendship so GameEng can access protected/private members
     friend class GameEng;
+    friend class SpriteAnimTime;
+    friend class SpriteAnimDist;
 
     public:
 
@@ -291,9 +295,27 @@ class GameEngRenderInfo : public GameEngRenderBase
             }
         } 
             
+        //! Calculate flag byte
+        /*! Use to calculate flag values for sprite frames.*/
+        static uint8_t calc_flags(
+            int rotation,
+            bool flip_x,
+            bool flip_y
+        )
+        {
+            return ( ( rotation % 4 ) << ROTATION_RSHIFT )
+                   | ( flip_x ? FLIP_X_MASK : 0 )
+                   | ( flip_y ? FLIP_Y_MASK : 0 );
+        }
         
 
     protected:
+
+        //! Set flags for rotation and x/y flip (always use 'calc_flags' method to obtain a valid value)
+        void set_flags( uint8_t _flags ) noexcept
+        {
+            this->flags = _flags;
+        }
 
         // Disabled to prevent copying,
         // as this would cause chaos
@@ -319,18 +341,6 @@ class GameEngRenderInfo : public GameEngRenderBase
         //! Flags to indicate rotation and flipping
         /*! See flag masks */
         uint8_t flags;
-
-        //! Calculate flag byte
-        static uint8_t calc_flags(
-            int rotation,
-            bool flip_x,
-            bool flip_y
-        )
-        {
-            return ( ( rotation % 4 ) << ROTATION_RSHIFT )
-                   || ( flip_x ? FLIP_X_MASK : 0 )
-                   || ( flip_y ? FLIP_Y_MASK : 0 );
-        }
         
         // Dummy method to this class non-abstract
         void dummy( void ) {}

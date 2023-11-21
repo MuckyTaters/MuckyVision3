@@ -93,34 +93,23 @@ class SpriteAnimDist : public SpriteAnimTime
         virtual void calc_frame( void )
         {
             // Get pixels moved
-            uint16_t pixels;
+            float pixels;
             if( count_hoz_pixels && !count_vert_pixels )
             {
-                pixels = int( 
-                    MCK::SPRITE_DIST_GRANULARITY * (
-                        fabs( this->MCK::SpritePos::pos.get_x()
-                            - this->prev_x )
-                    ) + 0.5f
-                );
+                pixels = fabs( this->MCK::SpritePos::pos.get_x()
+                            - this->prev_x );
             }
             else if( !count_hoz_pixels && count_vert_pixels )
             {
-                pixels = int(
-                    MCK::SPRITE_DIST_GRANULARITY * (
-                        fabs( this->MCK::SpritePos::pos.get_y()
-                            - this->prev_y )
-                    ) + 0.5f
-                );
+                pixels = fabs( this->MCK::SpritePos::pos.get_y()
+                            - this->prev_y );
             }
             else
             {
-                pixels = int( 
-                    MCK::SPRITE_DIST_GRANULARITY
-                        * sqrt( 
+                pixels = sqrt( 
                             MCK::pow2( this->MCK::SpritePos::pos.get_x() - this->prev_x )
                             + MCK::pow2( this->MCK::SpritePos::pos.get_y() - this->prev_y )
-                        ) + 0.5f
-                    );
+                        );
             }
             
             // Update previous position
@@ -128,15 +117,28 @@ class SpriteAnimDist : public SpriteAnimTime
             this->prev_y = this->MCK::SpritePos::pos.get_y();
 
             // Change frame until pixels used up
-            while( pixels > this->steps_to_next_frame )
+            while( pixels > this->dist_to_next_frame )
             {
-                pixels -= this->steps_to_next_frame;
+                pixels -= this->dist_to_next_frame;
+
+                std::cout << "Select frame " << this->frame_num + 1 
+                          << std::endl;
+
                 this->select_frame( this->frame_num + 1 );
                 
                 // Safety check, to prevent infinite loop
-                if( this->steps_to_next_frame == 0 ) { break; }
+                if( this->dist_to_next_frame == 0 ) { break; }
             }
-            this->steps_to_next_frame -= pixels;
+            this->dist_to_next_frame -= pixels;
+        }
+
+        virtual void select_frame( size_t _frame_num )
+        {
+            MCK::SpriteAnimTime::select_frame( _frame_num );
+            
+            // Set ticks/distance/etc. for next frame
+            this->dist_to_next_frame
+                = this->frames[ this->frame_num ].duration; 
         }
 
 
@@ -147,6 +149,8 @@ class SpriteAnimDist : public SpriteAnimTime
 
         float prev_x;
         float prev_y;
+        
+        float dist_to_next_frame;
 };
 
 }  // End of namespace MCK
