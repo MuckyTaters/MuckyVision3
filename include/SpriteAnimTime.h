@@ -182,7 +182,8 @@ class SpriteAnimTime : public SpriteAnimBase
                                 >( this->SpritePos::render_instance ),
                                 FRM->image_id,
                                 FRM->palette_id,
-                                FRM->keep_orig_dest_rect_size
+                                FRM->keep_orig_dest_rect_width,
+                                FRM->keep_orig_dest_rect_height
                             );
                         }
                         catch( std::exception &e )

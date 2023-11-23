@@ -36,6 +36,7 @@
 #include "ImageText.h"
 #include "GameEngAudio.h"
 #include "SpriteAnimTime.h"
+#include "SpriteAnimDist.h"
 #include "SpriteMotionConstVel.h"
 #include "SpriteCollisionCircle.h"
 #include "SpriteCollisionRect.h"
@@ -1717,66 +1718,109 @@ int main( int argc, char** argv )
         }
 
         MCK_PAL_ID_TYPE pal_id;
-        int frame_ticks;
+        int frame_duration;
         switch( rand() % 2 )
         {
             case 0:
                 pal_id = ball_2_palette_id;
-                frame_ticks = 66 / BALL_SPIN_SPEED;
+                frame_duration = 66 / BALL_SPIN_SPEED;
                 break;
 
             case 1:
                 pal_id = ball_3_palette_id;
-                frame_ticks = 66 / BALL_SPIN_SPEED;
+                frame_duration = 66 / BALL_SPIN_SPEED;
                 break;
         }
+
+        // Setting this to non-zero tests sprite offset
+        const int OFFSET_MAG = 0;
 
         // Initialize animation for test sprite
         std::dynamic_pointer_cast<MCK::SpriteAnimTime>( ball_sprites.back() )
             ->set_frames(
             {
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_0_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    0,
+                    OFFSET_MAG
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_0a_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    OFFSET_MAG,
+                    OFFSET_MAG
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_1_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    OFFSET_MAG,
+                    0
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_1a_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    OFFSET_MAG,
+                    -1 * OFFSET_MAG
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_2_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    0,
+                    -1 * OFFSET_MAG
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_2a_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    -1 * OFFSET_MAG,
+                    -1 * OFFSET_MAG
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_3_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    -1 * OFFSET_MAG,
+                    0
                 ),
                 MCK::SpriteFrame(
-                    frame_ticks,
+                    frame_duration,
                     ball_3a_image_id,
-                    pal_id
+                    pal_id,
+                    true,
+                    true,
+                    -1 * OFFSET_MAG,
+                    OFFSET_MAG
                 )
-            }
+            },
+            0,  // Starting frame
+            OFFSET_MAG > 0  // Use offsets
         );
+   
+        /*
+        // Set direction of distance based animtation
+        std::dynamic_pointer_cast<MCK::SpriteAnimDist>( ball_sprites.back() )
+            ->count_vert_pixels_only();
+        */
     }
 
 

@@ -698,7 +698,8 @@ void MCK::ImageMan::change_render_info_tex(
     std::shared_ptr<MCK::GameEngRenderInfo> info,
     MCK_IMG_ID_TYPE image_id,
     MCK_PAL_ID_TYPE local_palette_id,
-    bool keep_orig_dest_rect_size
+    bool keep_orig_dest_rect_width,
+    bool keep_orig_dest_rect_height
 ) const
 {
     if( !this->initialized )
@@ -852,10 +853,60 @@ void MCK::ImageMan::change_render_info_tex(
     }
 
     // If necessary, update size of destination rect
-    if( info.get() != NULL && !keep_orig_dest_rect_size )
+    if( info.get() != NULL )
     {
-        info->dest_rect.set_w( META_DATA->get_pitch_in_pixels() );
-        info->dest_rect.set_h( META_DATA->get_height_in_pixels() );
+        // If keeping neither width or height, just use
+        // source image size
+        if( !keep_orig_dest_rect_width
+            && !keep_orig_dest_rect_height
+        )
+        {
+            info->dest_rect.set_w( META_DATA->get_pitch_in_pixels() );
+            info->dest_rect.set_h( META_DATA->get_height_in_pixels() );
+
+        }
+        // If keeping width, set height of new image using existing
+        // horizontal scale
+        else if( keep_orig_dest_rect_width )
+        {
+            // Adjust height, in proportion current hoz scale (sic)
+            const int RAW_WIDTH = META_DATA->get_pitch_in_pixels();
+            if( RAW_WIDTH > 0 )
+            {
+                const float HOZ_SCALE
+                    = info->dest_rect.get_w() / RAW_WIDTH;
+                info->dest_rect.set_h(
+                    META_DATA->get_height_in_pixels() * HOZ_SCALE
+                );
+            }
+            else
+            {
+                info->dest_rect.set_h(
+                    META_DATA->get_height_in_pixels()
+                );
+            }
+        }
+        // If keeping height, set width of new image using existing
+        // vertical scale
+        else if( keep_orig_dest_rect_height )
+        {
+            // Adjust width, in proportion current vert scale (sic)
+            const int RAW_HEIGHT = META_DATA->get_height_in_pixels();
+            if( RAW_HEIGHT > 0 )
+            {
+                const float VERT_SCALE
+                    = info->dest_rect.get_h() / RAW_HEIGHT;
+                info->dest_rect.set_w(
+                    META_DATA->get_pitch_in_pixels() * VERT_SCALE
+                );
+            }
+            else
+            {
+                info->dest_rect.set_w(
+                    META_DATA->get_pitch_in_pixels()
+                );
+            }
+        }
     }
 }
 

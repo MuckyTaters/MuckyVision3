@@ -40,7 +40,8 @@ struct SpriteFrame
     uint32_t duration;
     MCK_IMG_ID_TYPE image_id;
     MCK_PAL_ID_TYPE palette_id;
-    bool keep_orig_dest_rect_size;
+    bool keep_orig_dest_rect_width;
+    bool keep_orig_dest_rect_height;
     int offset_x;
     int offset_y;
     uint8_t flags;
@@ -51,7 +52,8 @@ struct SpriteFrame
         this->duration = 0;
         this->image_id = MCK::INVALID_IMG_ID;
         this->palette_id = MCK::INVALID_PAL_ID;
-        this->keep_orig_dest_rect_size = true;
+        this->keep_orig_dest_rect_width = true;
+        this->keep_orig_dest_rect_height = true;
         this->offset_x = 0;
         this->offset_y = 0;
         this->flags = 0;
@@ -64,7 +66,8 @@ struct SpriteFrame
         uint32_t _duration,
         MCK_IMG_ID_TYPE _image_id,
         MCK_PAL_ID_TYPE _palette_id,
-        bool _keep_orig_dest_rect_size = true,
+        bool _keep_orig_dest_rect_width = true,
+        bool _keep_orig_dest_rect_height = true,
         int _offset_x = 0,
         int _offset_y = 0,
         uint8_t _flags = 0
@@ -72,7 +75,8 @@ struct SpriteFrame
         duration( _duration ),
         image_id( _image_id ),
         palette_id ( _palette_id ),
-        keep_orig_dest_rect_size( _keep_orig_dest_rect_size ),
+        keep_orig_dest_rect_width( _keep_orig_dest_rect_width ),
+        keep_orig_dest_rect_height( _keep_orig_dest_rect_height ),
         offset_x( _offset_x ),
         offset_y( _offset_y ),
         flags( _flags )

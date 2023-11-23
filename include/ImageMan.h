@@ -201,7 +201,9 @@ class ImageMan
             std::shared_ptr<MCK::GameEngRenderInfo> info,
             MCK_IMG_ID_TYPE image_id,
             MCK_PAL_ID_TYPE local_palette_id,
-            bool keep_orig_dest_rect_size = false
+            bool keep_orig_dest_rect_width = false,
+            bool keep_orig_dest_rect_height = false
+            
         ) const;
 
         //! Assign new ASCII texture to render info object, keeping original dest_rect size
