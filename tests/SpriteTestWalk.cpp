@@ -28,22 +28,12 @@
 ////////////////////////////////////////////
 
 #include <iostream>
-//#include "Point.h"
-//#include "BezierCurveCubic.h"
-//#include "LineSegment.h"
 #include "GameEng.h"
 #include "ImageMan.h"
 #include "ImageText.h"
-//#include "GameEngAudio.h"
 #include "SpriteAnimWalk.h"
-#include "SpriteAnimDist.h"
 #include "SpriteMotionConstVel.h"
-#include "SpriteCollisionRect.h"
 #include "Sprite.h"
-//#include "QuadTree.h"
-//#include "CollisionNode.h"
-//#include "CollisionProcessing.h"
-//#include "Vect2D.h"
 
 
 /////////////////////////////////////////////
@@ -51,8 +41,8 @@
 // (global for convenience, as only a short program)
 
 // Define window size (these can be changed to any sensible value)
-const int WINDOW_WIDTH_IN_PIXELS = 1280;
-const int WINDOW_HEIGHT_IN_PIXELS = 720;
+const int WINDOW_WIDTH_IN_PIXELS = 640;  //  1280;
+const int WINDOW_HEIGHT_IN_PIXELS = 360;  // 720;
 
 // Demo specific parameters
 const int CHAR_WIDTH = 16;
@@ -73,33 +63,18 @@ const float X_MID = X_MIN + X_SPAN / 2.0f;
 const float Y_MID = Y_MIN + Y_SPAN / 2.0f;
 const float XY_MIN_SCALE = 1.0f; 
 const float XY_SCALE_PER_Z = ( 1.0f - XY_MIN_SCALE ) / float( Z_SPAN );
+const int NUM_CHAR_LINES = WINDOW_HEIGHT_IN_PIXELS / CHAR_HEIGHT;
+const int CHAR_LINE_LEN = WINDOW_WIDTH_IN_PIXELS / CHAR_WIDTH;
 
-const int WALKING_SPRITE_SCALE = 4;
-const int NUM_WALKING_SPRITES = 3;
+const int WALKING_SPRITE_SCALE = 3;
+const int NUM_WALKING_SPRITES = 6;
 const int FRAME_WIDTH = 8;
 const int FRAME_HEIGHT = 16;
-const float WALKING_SPEED = 0.32f;
+const float WALKING_SPEED = 0.08f;
 
-const int STAR_1_WIDTH = 4;
-const int STAR_1_HEIGHT = 2;
-const int STAR_2_WIDTH = 4;
-const int STAR_2_HEIGHT = 2;
-const size_t STARFIELD_1_SIZE
-    = WINDOW_WIDTH_IN_PIXELS / STAR_1_WIDTH / 8
-        * WINDOW_HEIGHT_IN_PIXELS / STAR_1_HEIGHT;
-const size_t STARFIELD_2_SIZE
-    = WINDOW_WIDTH_IN_PIXELS / STAR_2_WIDTH / 8
-        * WINDOW_HEIGHT_IN_PIXELS / STAR_2_HEIGHT;
-const int STARFIELD_1_PIXEL_WIDTH 
-    = WINDOW_WIDTH_IN_PIXELS / STAR_1_WIDTH;
-const int STARFIELD_1_PIXEL_HEIGHT 
-    = WINDOW_HEIGHT_IN_PIXELS / STAR_1_HEIGHT;
-const int STARFIELD_2_PIXEL_WIDTH 
-    = WINDOW_WIDTH_IN_PIXELS / STAR_2_WIDTH;
-const int STARFIELD_2_PIXEL_HEIGHT 
-    = WINDOW_HEIGHT_IN_PIXELS / STAR_2_HEIGHT;
-const float STARFIELD_1_SPEED = 32.0f / 1000.0f;  // Pixels per tick
-const float STARFIELD_2_SPEED = 24.0f / 1000.0f;  // Pixels per tick
+const int CORRIDOR_HEIGHT_IN_CHARS = 5;
+const int CORRIDOR_HEIGHT = CHAR_HEIGHT * CORRIDOR_HEIGHT_IN_CHARS;
+const int Y_START = CORRIDOR_HEIGHT - WALKING_SPRITE_SCALE * FRAME_HEIGHT;
 
 
 ////////////////////////////////////////////////////////
@@ -122,7 +97,7 @@ int main( int argc, char** argv )
     try
     {
         game_eng.init(
-            "SpriteTestWalk",  // Window name
+            "Sprite Running Test",  // Window name
             0,  // Window x pos
             0,  // Window y pos
             WINDOW_WIDTH_IN_PIXELS,
@@ -155,9 +130,14 @@ int main( int argc, char** argv )
     ///////////////////////////////////////////
     // CREATE LOCAL PALETTE(S)
     MCK_PAL_ID_TYPE title_palette_id;
-    MCK_PAL_ID_TYPE starfield_1_palette_id;
-    MCK_PAL_ID_TYPE starfield_2_palette_id;
     MCK_PAL_ID_TYPE purple_palette_id;
+    MCK_PAL_ID_TYPE cyan_palette_id;
+    MCK_PAL_ID_TYPE green_palette_id;
+    MCK_PAL_ID_TYPE blue_palette_id;
+    MCK_PAL_ID_TYPE orange_palette_id;
+    MCK_PAL_ID_TYPE red_palette_id;
+    MCK_PAL_ID_TYPE brick_palette_id;
+    MCK_PAL_ID_TYPE bg_palette_id;
     try
     {
         title_palette_id = image_man.create_local_palette(
@@ -168,27 +148,67 @@ int main( int argc, char** argv )
                 }
             )
         );
-        starfield_1_palette_id = image_man.create_local_palette(
-            std::make_shared<std::vector<uint8_t>>(
-                std::vector<uint8_t>{
-                    MCK::COL_TRANSPARENT,
-                    MCK::COL_MID_GRAY,
-                }
-            )
-        );
-        starfield_2_palette_id = image_man.create_local_palette(
-            std::make_shared<std::vector<uint8_t>>(
-                std::vector<uint8_t>{
-                    MCK::COL_TRANSPARENT,
-                    MCK::COL_DARK_GRAY,
-                }
-            )
-        );
         purple_palette_id = image_man.create_local_palette(
             std::make_shared<std::vector<uint8_t>>(
                 std::vector<uint8_t>{
                     MCK::COL_TRANSPARENT,
                     MCK::COL_PURPLE
+                }
+            )
+        );
+        cyan_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_CYAN
+                }
+            )
+        );
+        green_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_GREEN
+                }
+            )
+        );
+        blue_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_BLUE
+                }
+            )
+        );
+        orange_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_ORANGE
+                }
+            )
+        );
+        red_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_RED
+                }
+            )
+        );
+        brick_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_DARK_RED
+                }
+            )
+        );
+        bg_palette_id = image_man.create_local_palette(
+            std::make_shared<std::vector<uint8_t>>(
+                std::vector<uint8_t>{
+                    MCK::COL_TRANSPARENT,
+                    MCK::COL_MID_GRAY
                 }
             )
         );
@@ -203,30 +223,6 @@ int main( int argc, char** argv )
     
     ///////////////////////////////////////////
     // CREATE IMAGE DATA
-   
-    // Starfield 1
-    std::vector<uint8_t> starfield_1(
-        STARFIELD_1_SIZE,
-        0x00000000
-    );
-    for( int i = 0; i < 40; i++ )
-    {
-        // Set random pixel to '1'
-        starfield_1.at( rand() % STARFIELD_1_SIZE )
-            |= ( 1 << rand() % 8 ); 
-    }
-
-    // Starfield 2
-    std::vector<uint8_t> starfield_2(
-        STARFIELD_2_SIZE,
-        0x00000000
-    );
-    for( int i = 0; i < 40; i++ )
-    {
-        // Set random pixel to '1'
-        starfield_2.at( rand() % STARFIELD_2_SIZE )
-            |= ( 1 << rand() % 8 ); 
-    }
 
     // Frame 0
     const std::vector<uint8_t> FRAME_0_IMAGE =
@@ -439,114 +435,8 @@ int main( int argc, char** argv )
     };
 
 
-    /*
-    // Frame 0
-    const MCK_IMG_ID_TYPE FRAME_0_IMAGE_ID = 2;
-    const std::vector<uint8_t> FRAME_0_IMAGE =
-    {
-        0b00000000,  // 0
-        0b00011000,  // 1
-        0b00011000,  // 2
-        0b01001000,  // 3
-        0b01001100,  // 4
-        0b01111110,  // 5
-        0b00001101,  // 6
-        0b00001101,  // 7
-        0b00001110,  // 8
-        0b00111000,  // 9
-        0b00101000,  // 10
-        0b00101100,  // 11
-        0b00100110,  // 12
-        0b00100011,  // 13
-        0b11100001,  // 14
-        0b00000000,  // 15
-    };
-    
-    // Frame 1
-    const MCK_IMG_ID_TYPE FRAME_1_IMAGE_ID = 3;
-    const std::vector<uint8_t> FRAME_1_IMAGE =
-    {
-        0b00000000,  // 0
-        0b00110000,  // 1
-        0b00110000,  // 2
-        0b00010000,  // 3
-        0b00011000,  // 4
-        0b10111000,  // 5
-        0b11111000,  // 6
-        0b00111000,  // 7
-        0b00111000,  // 8
-        0b01110000,  // 9
-        0b01010000,  // 10
-        0b01011000,  // 11
-        0b01001100,  // 12
-        0b01100111,  // 13
-        0b11100001,  // 14
-        0b00000000,  // 15
-    };
-    
-    // Frame 2
-    const MCK_IMG_ID_TYPE FRAME_2_IMAGE_ID = 4;
-    const std::vector<uint8_t> FRAME_2_IMAGE =
-    {
-        0b00000000,  // 0
-        0b00011000,  // 1
-        0b00011000,  // 2
-        0b00001000,  // 3
-        0b00001100,  // 4
-        0b11001100,  // 5
-        0b00111100,  // 6
-        0b00001100,  // 7
-        0b00001100,  // 8
-        0b00001100,  // 9
-        0b00011000,  // 10
-        0b00110000,  // 11
-        0b00011000,  // 12
-        0b00001100,  // 13
-        0b00001100,  // 14
-        0b00000000,  // 15
-    };
-    */
-
     ////////////////////////////////////////////
     // CREATE IMAGES
-    
-    MCK_IMG_ID_TYPE starfield_1_image_id;
-    try
-    {
-        starfield_1_image_id = image_man.create_custom_image(
-            std::make_shared<const std::vector<uint8_t>>(
-                starfield_1
-            ),
-            1,  // bits_per_pixel,
-            STARFIELD_1_PIXEL_WIDTH,
-            STARFIELD_1_PIXEL_HEIGHT
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create starfield 1 image, error: ")
-            + e.what() ) );
-    }
-    
-    MCK_IMG_ID_TYPE starfield_2_image_id;
-    try
-    {
-        starfield_2_image_id = image_man.create_custom_image(
-            std::make_shared<const std::vector<uint8_t>>(
-                starfield_2
-            ),
-            1,  // bits_per_pixel,
-            STARFIELD_2_PIXEL_WIDTH,
-            STARFIELD_2_PIXEL_HEIGHT
-        );
-    }
-    catch( std::exception &e )
-    {
-        throw( std::runtime_error(
-            std::string( "Failed to create starfield 2 image, error: ")
-            + e.what() ) );
-    }
 
     MCK_IMG_ID_TYPE frame_0_image_id;
     try
@@ -736,22 +626,17 @@ int main( int argc, char** argv )
 
     ///////////////////////////////////////////
     // CREATE RENDER BLOCKS
-    std::shared_ptr<MCK::GameEngRenderBlock> starfield_1_block;
-    std::shared_ptr<MCK::GameEngRenderBlock> starfield_2_block;
     std::shared_ptr<MCK::GameEngRenderBlock> sprite_block;
+    std::shared_ptr<MCK::GameEngRenderBlock> bg_block;
     try
     {
-        starfield_1_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),
-            MCK::DEFAULT_Z_VALUE - 1
-        );
-        starfield_2_block = game_eng.create_empty_render_block(
-            game_eng.get_prime_render_block(),
-            MCK::DEFAULT_Z_VALUE - 2
-        );
         sprite_block = game_eng.create_empty_render_block(
             game_eng.get_prime_render_block(),
             MCK::DEFAULT_Z_VALUE
+        );
+        bg_block = game_eng.create_empty_render_block(
+            game_eng.get_prime_render_block(),
+            MCK::DEFAULT_Z_VALUE + 1
         );
     }
     catch( std::exception &e )
@@ -761,68 +646,64 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
 
-    
+
     /////////////////////////////////////////////
-    // CREATE STARFIELDS
+    // ADD BACKGROUND
+    std::vector<MCK::ImageText> bg1_lines( NUM_CHAR_LINES );
+    std::vector<MCK::ImageText> bg2_lines( NUM_CHAR_LINES );
     {
-        // Starfield 1
-        try
+        std::string brick( 1, uint8_t( 246 ) );
+        std::string rev_blank( 1, uint8_t( 230 ) );
+        std::string bg1_wall_line;
+        std::string bg1_corridor_line;
+        std::string bg2_wall_line;
+        std::string bg2_corridor_line;
+        for( int j = 0; j < CHAR_LINE_LEN; j++ )
         {
-            image_man.create_render_info(
-                starfield_1_image_id,
-                starfield_1_palette_id,
-                0,
-                -1 * WINDOW_HEIGHT_IN_PIXELS,
-                WINDOW_WIDTH_IN_PIXELS,
-                WINDOW_HEIGHT_IN_PIXELS,
-                starfield_1_block
-            );
-            image_man.create_render_info(
-                starfield_1_image_id,
-                starfield_1_palette_id,
-                0,
-                0,
-                WINDOW_WIDTH_IN_PIXELS,
-                WINDOW_HEIGHT_IN_PIXELS,
-                starfield_1_block
-            );
+            bg1_wall_line += rev_blank;
+            bg2_wall_line += brick;
+            bg1_corridor_line += ( j == 0 || j == CHAR_LINE_LEN - 1 )?
+                             rev_blank : " ";
+            bg2_corridor_line += ( j == 0 || j == CHAR_LINE_LEN - 1 )?
+                             brick : " ";
         }
-        catch( std::exception &e )
+        for( int i = 0; i < NUM_CHAR_LINES; i++ )
         {
-            throw( std::runtime_error(
-                std::string( "Failed to create starfield 1 " )
-                + std::string( "render info, error: " )
-                + e.what() ) );
-        }
-        
-        // Starfield 2
-        try
-        {
-            image_man.create_render_info(
-                starfield_2_image_id,
-                starfield_2_palette_id,
-                0,
-                -1 * WINDOW_HEIGHT_IN_PIXELS,
-                WINDOW_WIDTH_IN_PIXELS,
-                WINDOW_HEIGHT_IN_PIXELS,
-                starfield_2_block
-            );
-            image_man.create_render_info(
-                starfield_2_image_id,
-                starfield_2_palette_id,
-                0,
-                0,
-                WINDOW_WIDTH_IN_PIXELS,
-                WINDOW_HEIGHT_IN_PIXELS,
-                starfield_2_block
-            );
-        }
-        catch( std::exception &e )
-        {
-            throw( std::runtime_error(
-                std::string( "Failed to create starfield 2 " )
-                + std::string( "render info, error: " )
-                + e.what() ) );
+            try
+            {
+                bg1_lines[i].init(
+                    game_eng,
+                    image_man,
+                    bg_block,
+                    bg_palette_id,
+                    0,
+                    i * CHAR_HEIGHT,
+                    CHAR_LINE_LEN,
+                    CHAR_WIDTH,
+                    CHAR_HEIGHT,
+                    i % CORRIDOR_HEIGHT_IN_CHARS == 0 ?
+                        bg1_wall_line : bg1_corridor_line
+                );
+                bg2_lines[i].init(
+                    game_eng,
+                    image_man,
+                    bg_block,
+                    brick_palette_id,
+                    0,
+                    i * CHAR_HEIGHT,
+                    CHAR_LINE_LEN,
+                    CHAR_WIDTH,
+                    CHAR_HEIGHT,
+                    i % CORRIDOR_HEIGHT_IN_CHARS == 0 ?
+                        bg2_wall_line : bg2_corridor_line
+                );
+            }
+            catch( std::exception &e )
+            {
+                throw( std::runtime_error(
+                    std::string( "Failed to create bg line, error :" )
+                    + e.what() ) );
+            }
         }
     }
 
@@ -878,7 +759,7 @@ int main( int argc, char** argv )
                     - s.length() * CHAR_WIDTH
                         - ( s.length() - 1 ) * CHAR_SPACING
                 ) - CHAR_WIDTH * 2,  // x_pos,
-                WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT * 2,  // y_pos,
+                WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT * 1,  // y_pos,
                 s.length(),
                 CHAR_WIDTH,
                 CHAR_HEIGHT,
@@ -909,7 +790,7 @@ int main( int argc, char** argv )
             game_eng.get_prime_render_block(),
             title_palette_id,
             CHAR_WIDTH * 2,  // x_pos,
-            WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT * 2,  // y_pos,
+            WINDOW_HEIGHT_IN_PIXELS - CHAR_HEIGHT * 1,  // y_pos,
             8,  // width in chars
             CHAR_WIDTH,
             CHAR_HEIGHT,
@@ -964,14 +845,42 @@ int main( int argc, char** argv )
             )
         );
 
+        MCK_PAL_ID_TYPE pal_id;
+        switch( i % 6 )
+        {
+            case 0:
+                pal_id = purple_palette_id;
+                break;
+
+            case 1:
+                pal_id = cyan_palette_id;
+                break;
+
+            case 2:
+                pal_id = green_palette_id;
+                break;
+            
+            case 3:
+                pal_id = blue_palette_id;
+                break;
+
+            case 4:
+                pal_id = orange_palette_id;
+                break;
+
+            case 5:
+                pal_id = red_palette_id;
+                break;
+        }
+
         try
         {
             walking_sprites.back()->init(
                 sprite_block,
                 frame_0_image_id,
-                purple_palette_id,
+                pal_id,
                 WIDTH * i * 2 + 50,  // x coord
-                100,  // y coord
+                Y_START,  // y coord
                 MCK::MAX_Z_VALUE,
                 WIDTH,  // width_in_pixels,
                 HEIGHT  // height_in_pixels,
@@ -987,7 +896,7 @@ int main( int argc, char** argv )
         // Initialize motion for const velocity test sprite 
         walking_sprites.back()->MCK::SpriteMotionConstVel::set_vel(
             MCK::Point<float>(
-                WALKING_SPEED * ( 1.0f + i * 0.05f ),
+                WALKING_SPEED * ( 1.0f + i * 0.3f ),
                 0
             )
         );
@@ -1000,25 +909,6 @@ int main( int argc, char** argv )
             false
         );
 
-        /*
-        // DEBUG
-        std::vector<MCK::SpriteFrame> frames;
-        for( int i = 0; i < 32; i++ )
-        {
-            frames.push_back(
-                MCK::SpriteFrame(
-                    1,
-                    frame_0_image_id,
-                    purple_palette_id,
-                    true,
-                    0,
-                    0,
-                    FLAGS
-                )
-            );
-        }
-        */
-
         const int FRAME_DURATION
             = int( float( WALKING_SPRITE_SCALE ) * 1.5f + 0.5f );
 
@@ -1028,7 +918,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_0_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     0,
@@ -1038,7 +928,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_1_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     0,
@@ -1048,7 +938,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_2_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( 1.5f * float( WALKING_SPRITE_SCALE ) ),
@@ -1058,7 +948,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_3_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     0, // int( 1.5f * float( WALKING_SPRITE_SCALE ) + 0.5f ),
@@ -1068,7 +958,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_4_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( -1.5f * float( WALKING_SPRITE_SCALE ) + 0.5f ),
@@ -1078,7 +968,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_5_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( -3.0f * float( WALKING_SPRITE_SCALE ) + 0.5f ),
@@ -1088,7 +978,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_6_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( -3.0f * float( WALKING_SPRITE_SCALE ) + 0.5f ),
@@ -1098,7 +988,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_7_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( -3.0f * float( WALKING_SPRITE_SCALE ) + 0.5f ),
@@ -1108,7 +998,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_8_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( -1.5f * float( WALKING_SPRITE_SCALE ) + 0.5f ),
@@ -1118,7 +1008,7 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     FRAME_DURATION,
                     frame_9_image_id,
-                    purple_palette_id,
+                    pal_id,
                     false,
                     true,
                     int( -1.5f * float( WALKING_SPRITE_SCALE ) ),
@@ -1214,13 +1104,15 @@ int main( int argc, char** argv )
                     + e.what() ) );
             }
 
-            // TEST CODE
+            // Reposition sprites when they reach edge of window
             if( sprite->::MCK::SpritePos::get_pos().get_x() > X_MAX )
             {
+                float POS_Y = sprite->::MCK::SpritePos::get_pos().get_y();
                 sprite->::MCK::SpritePos::set_pos(
                     MCK::Point<float>(
                         0,
-                        sprite->::MCK::SpritePos::get_pos().get_y() + 50
+                        POS_Y < Y_MAX - CORRIDOR_HEIGHT ? 
+                            POS_Y + CORRIDOR_HEIGHT : Y_START
                     )
                 );
             }
@@ -1257,47 +1149,6 @@ int main( int argc, char** argv )
                 }
 
                 // TODO: Other keyboard input
-            }
-        }
-
-
-        //////////////////////////////////////////////
-        // ANIMATION
-
-        const uint32_t TICKS_SINCE_LAST_ANIM
-            = CURRENT_TICKS - ticks_at_last_animation;
-        ticks_at_last_animation = CURRENT_TICKS;
-        if( TICKS_SINCE_LAST_ANIM > 0 )
-        {
-            /////////////////////////
-            // Move starfields
-            { 
-                // Get total pixels moved by starfield 1 since
-                // start
-                const uint32_t RAW_Y_POS 
-                    = uint32_t( 
-                        float( CURRENT_TICKS - START_TICKS )
-                            * STARFIELD_1_SPEED
-                    );
-
-                // Apply this to starfield block using modulo
-                // to create wrap around effect.
-                starfield_1_block->vert_offset
-                    = RAW_Y_POS % WINDOW_HEIGHT_IN_PIXELS; 
-            }
-            { 
-                // Get total pixels moved by starfield 2 since
-                // start
-                const uint32_t RAW_Y_POS 
-                    = uint32_t( 
-                        float( CURRENT_TICKS - START_TICKS )
-                            * STARFIELD_2_SPEED
-                    );
-
-                // Apply this to starfield block using modulo
-                // to create wrap around effect.
-                starfield_2_block->vert_offset
-                    = RAW_Y_POS % WINDOW_HEIGHT_IN_PIXELS; 
             }
         }
 

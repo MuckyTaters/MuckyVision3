@@ -121,9 +121,6 @@ class SpriteAnimDist : public SpriteAnimTime
             {
                 pixels -= this->dist_to_next_frame;
 
-                std::cout << "Select frame " << this->frame_num + 1 
-                          << std::endl;
-
                 this->select_frame( this->frame_num + 1 );
                 
                 // Safety check, to prevent infinite loop
