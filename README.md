@@ -95,7 +95,9 @@ Sprite animation options are currently:
 
     * SpriteAnimBase.h : No animation
     * SpriteAnimTime.h : Each frame displayed for a set number of ticks
-
+    * SpriteAnimDist.h : Each frame displayed for a set (non-integer) number of pixels
+    * SpriteAnimWalk.h : As SpriteAnimDist but motion is frozen between frames
+    
 Sprite collision options are currently:
 
     * SpriteCollisionBase.h : No collision
