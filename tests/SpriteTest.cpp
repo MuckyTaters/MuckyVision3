@@ -1403,6 +1403,10 @@ int main( int argc, char** argv )
             + e.what() ) );
     }
 
+    // DEBUG
+    starfield_1_block->active = false;
+    starfield_2_block->active = false;
+
 
     /////////////////////////////////////////////
     // CREATE COLLISION PROCESSING
@@ -1732,9 +1736,6 @@ int main( int argc, char** argv )
                 break;
         }
 
-        // Setting this to non-zero tests sprite offset
-        const int OFFSET_MAG = 0;
-
         // Initialize animation for test sprite
         std::dynamic_pointer_cast<MCK::SpriteAnimTime>( ball_sprites.back() )
             ->set_frames(
@@ -1742,85 +1743,46 @@ int main( int argc, char** argv )
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_0_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    0,
-                    OFFSET_MAG
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_0a_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    OFFSET_MAG,
-                    OFFSET_MAG
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_1_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    OFFSET_MAG,
-                    0
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_1a_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    OFFSET_MAG,
-                    -1 * OFFSET_MAG
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_2_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    0,
-                    -1 * OFFSET_MAG
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_2a_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    -1 * OFFSET_MAG,
-                    -1 * OFFSET_MAG
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_3_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    -1 * OFFSET_MAG,
-                    0
+                    pal_id
                 ),
                 MCK::SpriteFrame(
                     frame_duration,
                     ball_3a_image_id,
-                    pal_id,
-                    true,
-                    true,
-                    -1 * OFFSET_MAG,
-                    OFFSET_MAG
+                    pal_id
                 )
             },
-            0,  // Starting frame
-            OFFSET_MAG > 0  // Use offsets
+            0  // Starting frame
         );
-   
-        /*
-        // Set direction of distance based animtation
-        std::dynamic_pointer_cast<MCK::SpriteAnimDist>( ball_sprites.back() )
-            ->count_vert_pixels_only();
-        */
     }
 
 

@@ -185,6 +185,12 @@ class SpriteAnimTime : public SpriteAnimBase
                                 FRM->keep_orig_dest_rect_width,
                                 FRM->keep_orig_dest_rect_height
                             );
+
+                            // DEBUG
+                            MCK::GameEngRenderInfo::Rect dr
+                                = std::dynamic_pointer_cast<
+                                    MCK::GameEngRenderInfo
+                                >( this->SpritePos::render_instance )->dest_rect;
                         }
                         catch( std::exception &e )
                         {
@@ -254,9 +260,11 @@ class SpriteAnimTime : public SpriteAnimBase
         {
             // Change frame until ticks used up
             uint32_t ticks = MCK::SpritePos::ticks_elapsed;
+
             while( ticks > this->steps_to_next_frame )
             {
                 ticks -= this->steps_to_next_frame;
+                
                 this->select_frame( this->frame_num + 1 );
                 
                 // Safety check, to prevent infinite loop

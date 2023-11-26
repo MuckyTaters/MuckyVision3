@@ -874,9 +874,14 @@ void MCK::ImageMan::change_render_info_tex(
             if( RAW_WIDTH > 0 )
             {
                 const float HOZ_SCALE
-                    = info->dest_rect.get_w() / RAW_WIDTH;
+                    = float( info->dest_rect.get_w() ) 
+                        / float( RAW_WIDTH );
                 info->dest_rect.set_h(
-                    META_DATA->get_height_in_pixels() * HOZ_SCALE
+                    int(
+                        float( META_DATA->get_height_in_pixels() )
+                            * HOZ_SCALE
+                        + 0.5f
+                    )
                 );
             }
             else
@@ -895,9 +900,14 @@ void MCK::ImageMan::change_render_info_tex(
             if( RAW_HEIGHT > 0 )
             {
                 const float VERT_SCALE
-                    = info->dest_rect.get_h() / RAW_HEIGHT;
+                    = float( info->dest_rect.get_h() ) 
+                        / float( RAW_HEIGHT );
                 info->dest_rect.set_w(
-                    META_DATA->get_pitch_in_pixels() * VERT_SCALE
+                    int(
+                        float( META_DATA->get_pitch_in_pixels() )
+                            * VERT_SCALE
+                        + 0.5f
+                    )
                 );
             }
             else
