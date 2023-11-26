@@ -103,4 +103,3 @@ class SpriteAnimWalk : public SpriteAnimDist
 }  // End of namespace MCK
 
 #endif
-

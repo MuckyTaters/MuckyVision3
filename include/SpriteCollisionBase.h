@@ -52,13 +52,6 @@ class SpriteCollisionBase : virtual public SpritePos
         }
         
         virtual ~SpriteCollisionBase( void ) {}
-   
-        
-        // //! Check for collision
-        // /*! Base version of this method does nothing */
-        // virtual void check_all_collisions( 
-        //     std::vector<MCK::CollisionEvent> &collisions
-        // ) const {}
 
         //! Get rectangular bounds
         /*! Base version of this method returns zeros */

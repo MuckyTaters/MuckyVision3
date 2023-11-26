@@ -276,9 +276,6 @@ class Rectangle : public Base2D<T>
             this->type = MCK::GEO::Type::RECT;
             this->center_offset = _center_offset;
             this->change_pos( pos );
-
-            // DEBUG
-            std::cout << "@@ center = " << this->center.str();
         }
 
         virtual ~Rectangle( void ) {}

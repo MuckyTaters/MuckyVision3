@@ -56,9 +56,7 @@ class SpriteAnimBase : virtual public SpritePos
         /*! Note: base version does nothing, i.e. leaves appearance as is.*/
         virtual void calc_frame( void ) {}
 
-
-    protected:
-
+        //! Get containing
 };
 
 }  // End of namespace MCK

@@ -151,7 +151,7 @@ class SpriteAnimTime : public SpriteAnimBase
             if( this->SpritePos::update_render_instance )
             {
                 // Update texture
-                if (
+                if(
                     PREV_FRM == NULL
                     || PREV_FRM->image_id != FRM->image_id
                     || PREV_FRM->palette_id != FRM->palette_id

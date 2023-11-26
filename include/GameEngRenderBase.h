@@ -108,6 +108,12 @@ class GameEngRenderBase
         //! Get y position
         virtual int get_y( void ) const noexcept = 0;
 
+        //! Get width
+        virtual int get_width( void ) const noexcept = 0;
+
+        //! Get height position
+        virtual int get_height( void ) const noexcept = 0;
+
         //! Get position of bottom edge
         virtual int get_bottom( void ) const noexcept = 0;
     

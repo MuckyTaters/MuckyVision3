@@ -113,6 +113,20 @@ class GameEngRenderBlock : public GameEngRenderBase
             return vert_offset;
         }
 
+        //! Get width
+        virtual int get_width( void ) const noexcept
+        {
+            // TODO: NOT YET IMPLEMENTED
+            return 0;
+        }
+
+        //! Get height position
+        virtual int get_height( void ) const noexcept
+        {
+            // TODO: NOT YET IMPLEMENTED
+            return 0;
+        }
+
         //! Get position of bottom edge
         virtual int get_bottom( void ) const noexcept
         {

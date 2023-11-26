@@ -1019,11 +1019,10 @@ int main( int argc, char** argv )
             )
         );
 
+        // COMMENT OUT TO USE SIZE FROM RENDER INFO
+        // (CURRENTLY NOT WORKING WITH QUAD TREE)
         // Initialize rectangular collision by setting width and height 
-        rect_sprites.back()->MCK::SpriteCollisionRect::set_width_and_height(
-            WIDTH,
-            HEIGHT
-        );
+        rect_sprites.back()->MCK::SpriteCollisionRect::set_width_and_height_from_current_texture();
 
         // Add test_sprite to collision processing
         try
